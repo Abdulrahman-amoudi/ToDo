@@ -344,7 +344,7 @@ export default function NoteExplorer({
                                   {isPdf ? 'PDF' : 'NOTE'}
                                 </span>
                                 {note.wordCount > 0 && (
-                                  <span>{Math.round(note.wordCount / 100) / 10}k words</span>
+                                  <span className="text-zinc-400 font-mono text-[10px]">{Math.round(note.wordCount / 100) / 10}k words</span>
                                 )}
                               </div>
                             </div>

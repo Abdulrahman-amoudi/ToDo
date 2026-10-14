@@ -1186,30 +1186,114 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[var(--theme-bg,#080b14)] transition-colors duration-500 font-sans text-white">
-      <main className={`w-full ${selectedNote ? 'max-w-[100vw] px-0 md:px-4' : (!isListView && activeTab === 'lists' && activeCatObj?.type === 'study') ? 'max-w-[100vw] px-2 sm:px-6' : (activeTab === 'settings' ? 'max-w-5xl' : 'max-w-md')} mx-auto ${selectedNote ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-[100dvh] pb-24'} flex flex-col relative transition-all duration-500`}>
+    <div className="min-h-screen w-full bg-[var(--theme-bg,#080b14)] transition-colors duration-500 font-sans text-white relative overflow-x-hidden">
+      {/* Ambient Top Aura Glow */}
+      <div 
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-[720px] max-w-[100vw] h-[380px] rounded-full blur-[120px] pointer-events-none opacity-25 sm:opacity-35 transition-all duration-700 -z-0"
+        style={{ background: 'radial-gradient(circle, var(--theme-primary,#3b82f6) 0%, transparent 70%)' }}
+      />
+      <main className={`w-full ${selectedNote ? 'max-w-[100vw] px-0 md:px-4' : (!isListView && activeTab === 'lists' && activeCatObj?.type === 'study') ? 'max-w-[100vw] px-2 sm:px-6' : (activeTab === 'settings' ? 'max-w-5xl px-4' : (isListView || activeTab === 'stats') ? 'max-w-md md:max-w-3xl lg:max-w-4xl px-4 sm:px-6' : 'max-w-md md:max-w-2xl px-4')} mx-auto ${selectedNote ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-[100dvh] pb-24'} flex flex-col relative transition-all duration-500`}>
         {/* Header */}
-        {activeTab !== 'settings' && (
-          !selectedNote && (
-            <header className="pt-10 pb-4 px-6 relative z-30 flex justify-between items-center border-b transition-colors duration-500 bg-[var(--theme-bg,#080b14)]/95 backdrop-blur-md border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
-            <div className="flex-1">
-              <h1 className={`text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
-                {activeTab === 'lists' ? (isListView ? 'My Lists' : activeCatObj.name) : activeTab === 'today' ? 'Today' : 'Stats'}
-              </h1>
-              {!isListView && activeTab === 'lists' && (
-                <div className="flex items-center gap-2 mt-1">
-                  {activeCatObj.type === 'study' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/20">
-                      <GraduationCap size={12} /> Study
-                    </span>
-                  ) : (
-                    <p className={`text-xs font-mono transition-colors ${t.textSecondary}`}>{completedCount} of {totalCount} completed</p>
-                  )}
+        {activeTab !== 'settings' && !selectedNote && (
+          <header className="pt-6 pb-2 px-2 relative z-30 transition-colors duration-500">
+            {activeTab === 'lists' && isListView ? (
+              /* Hero Header Banner for My Lists */
+              <div className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-4 sm:gap-5 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] bg-[var(--theme-surface,#12141a)]/70 backdrop-blur-md shadow-lg">
+                <div 
+                  className="relative cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible flex-shrink-0"
+                  onClick={() => triggerMascot('orbit', 'heureux')}
+                  title="Interact with Bloub"
+                >
+                  {(() => {
+                    const isAnim = animState !== 'idle';
+                    const heroExpr = mascotExpression || 'heureux';
+                    return (
+                      <BloubMascot 
+                        size={64}
+                        state={animState} 
+                        expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
+                        shape={heroShape} 
+                        color={heroColor} 
+                        onInteract={() => triggerMascot('orbit', 'heureux')}
+                      />
+                    );
+                  })()}
                 </div>
-              )}
-            </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className={`text-2xl sm:text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
+                      My Lists
+                    </h1>
+                    <span className="text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/25">
+                      {categories.length} Lists
+                    </span>
+                  </div>
+                  <p className={`text-xs sm:text-sm mt-0.5 truncate ${t.textSecondary}`}>
+                    {todos.filter(t => !t.completed).length === 0 ? "Welcome back! All tasks completed." : `Welcome back! ${todos.filter(t => !t.completed).length} pending tasks.`}
+                  </p>
+                </div>
+              </div>
+            ) : activeTab === 'stats' ? (
+              /* Hero Header Banner for Stats */
+              <div className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-4 sm:gap-5 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] bg-[var(--theme-surface,#12141a)]/70 backdrop-blur-md shadow-lg">
+                <div className="relative flex-shrink-0">
+                  {(() => {
+                    const totalPending = todos.filter(t => !t.completed).length;
+                    const dynStats = getDynamicMascotProps(mascotShape, mascotColor, totalPending);
+                    return (
+                      <BloubMascot size={64} state="idle" expression={dynStats.expr} shape={mascotShape} color={dynStats.color} />
+                    );
+                  })()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className={`text-2xl sm:text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
+                      Your Progress
+                    </h1>
+                    <span className="text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/25">
+                      Overview
+                    </span>
+                  </div>
+                  <p className={`text-xs sm:text-sm mt-0.5 truncate ${t.textSecondary}`}>
+                    {todos.filter(t => !t.completed).length === 0 ? "You're all caught up! Enjoy your day." : "Keep up the momentum! You have tasks waiting."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Regular Header for inside individual list or Today */
+              <div className="flex justify-between items-center py-3 px-5 rounded-2xl bg-[var(--theme-bg,#080b14)]/95 backdrop-blur-md border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    {!isListView && activeTab === 'lists' && (
+                      <button 
+                        onClick={() => { setIsListView(true); setShowStudyExplorer(false); }}
+                        className="p-1.5 -ml-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                        title="Back to Lists"
+                      >
+                        <ArrowLeft size={18} />
+                      </button>
+                    )}
+                    <div>
+                      <h1 className={`text-2xl sm:text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
+                        {activeTab === 'lists' ? activeCatObj?.name : 'Today'}
+                      </h1>
+                      {!isListView && activeTab === 'lists' && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {activeCatObj?.type === 'study' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/20">
+                              <GraduationCap size={12} /> Study
+                            </span>
+                          ) : (
+                            <p className={`text-xs font-mono transition-colors ${t.textSecondary}`}>{completedCount} of {totalCount} completed</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </header>
-          )
         )}
 
       {/* Add Task Modal */}
@@ -1720,8 +1804,8 @@ export default function Home() {
           /* Main Content Area */
         <div className={`flex-1 relative flex flex-col min-h-0 ${selectedNote ? 'p-0 h-full' : 'px-6 py-6'}`}>
         
-        {/* Hero Mascot - shown on Lists and ToDo lists, hidden in deep study workspaces */}
-        {!selectedNote && (isListView || activeCatObj?.type !== 'study') && (
+        {/* Hero Mascot - shown on ToDo lists, hidden on Lists master view (integrated in hero header banner) and study workspaces */}
+        {!selectedNote && !isListView && activeCatObj?.type !== 'study' && (
           <div 
             data-mascot-container="hero"
             className={`flex justify-center relative items-center transition-all duration-300 overflow-visible ${showAddModal ? 'mb-1 pt-0' : 'mb-3 pt-2 pb-1'}`}
@@ -1751,8 +1835,11 @@ export default function Home() {
         {/* Lists Master View */}
         {activeTab === 'lists' && isListView ? (
           <div className="space-y-4">
-            <h2 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t.textMuted}`}>My Lists</h2>
-            <ul className="space-y-3 relative">
+            <div className="flex items-center justify-between px-1">
+              <h2 className={`text-xs font-semibold uppercase tracking-wider ${t.textMuted}`}>Collections</h2>
+              <span className="text-[11px] font-mono text-zinc-500">{categories.length} lists</span>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3.5 relative">
               <AnimatePresence mode="popLayout">
               {categories.map(cat => {
                 const count = todos.filter(t => t.categoryId === cat.id && !t.completed).length;
@@ -1953,36 +2040,45 @@ export default function Home() {
           </div>
         ) : activeTab === 'stats' ? (
           /* Stats View */
-          <div className="flex flex-col items-center justify-center py-8">
-            <h2 className={`text-2xl font-bold mb-8 ${t.textPrimary}`}>Your Progress</h2>
-            
-            <div className="w-full grid grid-cols-2 gap-4">
-              <div className={`p-6 rounded-3xl ${t.card} flex flex-col items-center justify-center`}>
-                <span className={`text-4xl font-bold mb-2 ${t.textPrimary}`}>{todos.filter(t => t.completed).length}</span>
-                <span className={`text-xs font-semibold uppercase tracking-wider ${t.textMuted}`}>Completed</span>
+          <div className="w-full space-y-4 py-2">
+            <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3.5">
+              <div className={`p-5 rounded-2xl ${t.card} flex flex-col items-center justify-center text-center`}>
+                <span className={`text-3xl sm:text-4xl font-bold mb-1 ${t.textPrimary}`}>{todos.filter(t => t.completed).length}</span>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${t.textMuted}`}>Completed</span>
               </div>
-              <div className={`p-6 rounded-3xl ${t.card} flex flex-col items-center justify-center`}>
-                <span className={`text-4xl font-bold mb-2 ${t.textPrimary}`}>{todos.filter(t => !t.completed).length}</span>
-                <span className={`text-xs font-semibold uppercase tracking-wider ${t.textMuted}`}>Pending</span>
+              <div className={`p-5 rounded-2xl ${t.card} flex flex-col items-center justify-center text-center`}>
+                <span className={`text-3xl sm:text-4xl font-bold mb-1 ${t.textPrimary}`}>{todos.filter(t => !t.completed).length}</span>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${t.textMuted}`}>Pending</span>
+              </div>
+              <div className={`p-5 rounded-2xl ${t.card} flex flex-col items-center justify-center text-center`}>
+                <span className={`text-3xl sm:text-4xl font-bold mb-1 ${t.textPrimary}`}>{todos.length}</span>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${t.textMuted}`}>Total Tasks</span>
+              </div>
+              <div className={`p-5 rounded-2xl ${t.card} flex flex-col items-center justify-center text-center`}>
+                <span className={`text-3xl sm:text-4xl font-bold mb-1 ${t.textPrimary}`}>
+                  {todos.length > 0 ? Math.round((todos.filter(t => t.completed).length / todos.length) * 100) : 0}%
+                </span>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${t.textMuted}`}>Completion</span>
               </div>
             </div>
-            
-            <div className={`w-full mt-6 p-6 rounded-3xl ${t.card} flex items-center gap-4`}>
-              {(() => {
-                const totalPending = todos.filter(t => !t.completed).length;
-                const dynStats = getDynamicMascotProps(mascotShape, mascotColor, totalPending);
-                return (
-                  <div className="w-16 h-16"><BloubMascot size={64} state="idle" expression={dynStats.expr} shape={mascotShape} color={dynStats.color} /></div>
-                );
-              })()}
-              <div>
-                <p className={`font-semibold ${t.textPrimary}`}>
-                  {todos.filter(t => !t.completed).length === 0 ? "You're all caught up!" : "Keep it up!"}
-                </p>
-                <p className={`text-sm ${t.textSecondary}`}>
-                  {todos.filter(t => !t.completed).length === 0 ? "Enjoy your day." : "You have tasks waiting."}
-                </p>
+
+            <div className={`w-full p-5 rounded-2xl ${t.card} flex items-center justify-between`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center">
+                  <CheckSquare size={20} />
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold ${t.textPrimary}`}>
+                    {todos.filter(t => !t.completed).length === 0 ? "All tasks completed!" : `${todos.filter(t => !t.completed).length} tasks remaining`}
+                  </p>
+                  <p className={`text-xs ${t.textSecondary}`}>
+                    Organized across {categories.length} active lists
+                  </p>
+                </div>
               </div>
+              <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-white/5 text-zinc-400">
+                {categories.length} Lists
+              </span>
             </div>
           </div>
           ) : activeTab === 'lists' && !isListView ? (
