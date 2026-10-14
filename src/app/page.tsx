@@ -23,7 +23,7 @@ import NoteGraph from '@/components/study/NoteGraph';
 import type { ObsidianNoteSummary, ParsedObsidianNote } from '@/types/obsidian';
 import { parseObsidianMarkdown } from '@/lib/obsidian/parser';
 import { recordMutation, markMutationSynced, markMutationFailed, type MutationType } from '@/lib/storage/offline-wal';
-import { getThemeVariables } from '@/lib/theme/tokens';
+import { THEMES, THEME_CATEGORIES, getThemeVariables, getThemeToken, type ThemeCategory } from '@/lib/theme/tokens';
 
 const PRIORITY_COLOR = { high: '#ef4444', medium: '#f59e0b', low: '#3b82f6' };
 const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
@@ -61,24 +61,7 @@ const getDynamicMascotProps = (shape: string, baseColor: string, pendingCount: n
   return { expr: 'attentif', color: baseColor };
 };
 
-export const THEMES = [
-  { id: 'bg-[#080d2a]', name: 'Dark Blue', color: '#080d2a' },
-  { id: 'bg-[#1a0b2e]', name: 'Midnight Violet', color: '#1a0b2e' },
-  { id: 'bg-[#022c22]', name: 'Emerald Night', color: '#022c22' },
-  { id: 'bg-[#3b0712]', name: 'Crimson Ember', color: '#3b0712' },
-  { id: 'bg-[#422006]', name: 'Solar Amber', color: '#422006' },
-  { id: 'bg-[#082f49]', name: 'Abyssal Cyan', color: '#082f49' },
-  { id: 'bg-[#380424]', name: 'Neon Rose', color: '#380424' },
-  { id: 'bg-[#052e16]', name: 'Forest Moss', color: '#052e16' },
-  { id: 'bg-[#1e1b4b]', name: 'Royal Indigo', color: '#1e1b4b' },
-  { id: 'bg-[#2e0854]', name: 'Deep Plum', color: '#2e0854' },
-  { id: 'bg-[#3c1605]', name: 'Burnt Bronze', color: '#3c1605' },
-  { id: 'bg-[#0f172a]', name: 'Titanium Slate', color: '#0f172a' },
-  { id: 'bg-[#030712]', name: 'Obsidian OLED', color: '#030712' },
-  { id: 'bg-[#18181b]', name: 'Phantom Charcoal', color: '#18181b' },
-  { id: 'bg-[#3b0d2d]', name: 'Mystic Magenta', color: '#3b0d2d' },
-  { id: 'bg-[#0c1a30]', name: 'Arctic Navy', color: '#0c1a30' }
-];
+
 
 const SHAPE_IDS = ['squircle', 'cercle', 'galet', 'capsule', 'triangle', 'hexagone', 'nuage', 'goutte', 'oeuf', 'soleil', 'fromage', 'livre'];
 
@@ -101,6 +84,7 @@ export default function Home() {
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [themeCategory, setThemeCategory] = useState<ThemeCategory | 'All'>('All');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showShapePicker, setShowShapePicker] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -469,8 +453,8 @@ export default function Home() {
       document.head.appendChild(meta);
     }
     const activeTheme = THEMES.find(t => t.id === bgTheme);
-    const themeColor = activeTheme ? activeTheme.color : '#080d2a';
-    meta.setAttribute('content', themeColor);
+    const themeBg = activeTheme ? (activeTheme.bgColor || '#080b14') : '#080b14';
+    meta.setAttribute('content', themeBg);
     
     if (bgTheme !== 'minimal') {
       document.documentElement.classList.add('dark');
@@ -1202,12 +1186,12 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0b0a0e] transition-colors duration-500 font-sans text-white">
+    <div className="min-h-screen w-full bg-[var(--theme-bg,#080b14)] transition-colors duration-500 font-sans text-white">
       <main className={`w-full ${selectedNote ? 'max-w-[100vw] px-0 md:px-4' : (!isListView && activeTab === 'lists' && activeCatObj?.type === 'study') ? 'max-w-[100vw] px-2 sm:px-6' : (activeTab === 'settings' ? 'max-w-5xl' : 'max-w-md')} mx-auto ${selectedNote ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-[100dvh] pb-24'} flex flex-col relative transition-all duration-500`}>
         {/* Header */}
         {activeTab !== 'settings' && (
           !selectedNote && (
-            <header className="pt-10 pb-4 px-6 relative z-30 flex justify-between items-center border-b transition-colors duration-500 bg-[#0b0a0e]/95 backdrop-blur-md border-white/10">
+            <header className="pt-10 pb-4 px-6 relative z-30 flex justify-between items-center border-b transition-colors duration-500 bg-[var(--theme-bg,#080b14)]/95 backdrop-blur-md border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
             <div className="flex-1">
               <h1 className={`text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
                 {activeTab === 'lists' ? (isListView ? 'My Lists' : activeCatObj.name) : activeTab === 'today' ? 'Today' : 'Stats'}
@@ -1396,23 +1380,23 @@ export default function Home() {
             </div>
 
             {/* Right side: Settings controls */}
-            <div className="w-full md:w-1/2 lg:w-2/5 h-full overflow-y-auto custom-scrollbar pb-32 pt-6 px-6 bg-slate-900/90 dark:bg-slate-900 border-l border-slate-800">
+            <div className="w-full md:w-1/2 lg:w-2/5 h-full overflow-y-auto custom-scrollbar pb-32 pt-6 px-6 bg-[var(--theme-surface,#101422)]/95 border-l border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
               
               {/* Mascot Preview inside Settings */}
-              <div className="bg-slate-900 rounded-3xl p-4 mb-6 border border-slate-800 flex flex-col items-center">
+              <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
                 <div className="w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('orbit', targetExpr)}>
                   <BloubMascot size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
 
                 {/* Horizontal Category Scroller */}
-                <div className="w-full flex gap-2.5 overflow-x-auto pb-4 pt-1 px-1 custom-scrollbar scroll-smooth border-t border-slate-800/80">
+                <div className="w-full flex gap-2.5 overflow-x-auto pb-4 pt-1 px-1 custom-scrollbar scroll-smooth border-t border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
                   <button
                     type="button"
                     onClick={() => setSettingsTarget('global')}
                     className={`flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
                       settingsTarget === 'global'
-                        ? 'bg-slate-700/90 border-blue-500 text-white shadow-md scale-105 ring-1 ring-blue-500/30'
-                        : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        ? 'bg-[var(--theme-primary,#3b82f6)]/20 border-[var(--theme-primary,#3b82f6)] text-white shadow-md scale-105 ring-1 ring-[var(--theme-primary,#3b82f6)]/40'
+                        : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
                     }`}
                   >
                     <div className="w-8 h-8 flex items-center justify-center pointer-events-none">
@@ -1430,8 +1414,8 @@ export default function Home() {
                         onClick={() => setSettingsTarget(cat.id)}
                         className={`flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
                           settingsTarget === cat.id
-                            ? 'bg-slate-700/90 border-blue-500 text-white shadow-md scale-105 ring-1 ring-blue-500/30'
-                            : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                            ? 'bg-[var(--theme-primary,#3b82f6)]/20 border-[var(--theme-primary,#3b82f6)] text-white shadow-md scale-105 ring-1 ring-[var(--theme-primary,#3b82f6)]/40'
+                            : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
                         }`}
                       >
                         <div className="w-8 h-8 flex items-center justify-center pointer-events-none">
@@ -1536,29 +1520,83 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Theme Section */}
+              {/* Theme Studio Section */}
               <div className="mb-6">
-                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                  <Palette size={14} /> Theme
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  {THEMES.map(theme => (
+                <div className="flex items-center justify-between mb-3">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <Palette size={14} className="text-[var(--theme-primary,#3b82f6)]" /> Theme Studio
+                  </span>
+                  <span className="text-[10px] font-mono text-[var(--theme-primary,#3b82f6)] uppercase tracking-wider font-bold">
+                    {THEMES.find(t => t.id === bgTheme)?.name || 'Default'}
+                  </span>
+                </div>
+
+                {/* Theme Category Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-3 custom-scrollbar">
+                  {THEME_CATEGORIES.map(cat => (
                     <button
-                      key={theme.id}
+                      key={cat}
                       type="button"
-                      onClick={() => setBgTheme(theme.id)}
-                      className={`flex items-center gap-2 py-2 px-3 text-xs font-medium rounded-xl border transition-all ${
-                        bgTheme === theme.id
-                          ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-transparent shadow-md font-semibold'
-                          : isDark
-                            ? 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-700/80 hover:text-white'
-                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400'
+                      onClick={() => setThemeCategory(cat)}
+                      className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all duration-150 flex-shrink-0 active:scale-95 ${
+                        themeCategory === cat
+                          ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm'
+                          : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
                       }`}
                     >
-                      <div className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-inner flex-shrink-0" style={{ backgroundColor: theme.color }} />
-                      <span className="truncate">{theme.name}</span>
+                      {cat}
                     </button>
                   ))}
+                </div>
+
+                {/* Theme Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {THEMES.filter(t => themeCategory === 'All' || t.category === themeCategory).map(theme => {
+                    const isSelected = bgTheme === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setBgTheme(theme.id)}
+                        className={`group relative flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-150 text-left active:scale-[0.98] ${
+                          isSelected
+                            ? 'bg-[var(--theme-surface-elevated)] border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/15 ring-1 ring-[var(--theme-primary,#3b82f6)]/40 text-white'
+                            : 'bg-slate-800/40 border-white/5 hover:bg-slate-800/70 hover:border-white/15 text-zinc-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {/* Dual-Tone Swatch Preview */}
+                          <div 
+                            className="w-9 h-7 rounded-xl flex items-center justify-center relative flex-shrink-0 shadow-inner border border-white/10 overflow-hidden"
+                            style={{ backgroundColor: theme.bgColor }}
+                          >
+                            <div 
+                              className="w-3.5 h-3.5 rounded-full shadow-md transition-transform group-hover:scale-110"
+                              style={{ 
+                                backgroundColor: theme.accentColor, 
+                                boxShadow: `0 0 8px ${theme.accentColor}90` 
+                              }}
+                            />
+                          </div>
+                          
+                          <div className="min-w-0 flex-1">
+                            <span className={`text-xs font-semibold block truncate leading-tight ${isSelected ? 'text-[var(--theme-primary,#3b82f6)]' : 'text-zinc-200'}`}>
+                              {theme.name}
+                            </span>
+                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider block mt-0.5">
+                              {theme.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-[var(--theme-primary,#3b82f6)] text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-in zoom-in-75 duration-150 mr-1">
+                            <CheckCircle2 size={12} className="text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
