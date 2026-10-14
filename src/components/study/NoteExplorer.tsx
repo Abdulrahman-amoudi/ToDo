@@ -313,27 +313,44 @@ export default function NoteExplorer({
                   <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-surface-elevated)] border border-[var(--theme-border-subtle)] text-[var(--theme-text-muted)]">{folderNotes.length}</span>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {folderNotes.map(note => {
                     const isSelected = selectedNoteId === note.id || selectedNoteId === note.relativePath;
+                    const isPdf = note.tags?.includes('pdf') || note.relativePath?.toLowerCase().includes('.pdf');
                     return (
                       <div key={note.id} className="relative group/note w-full">
                         <button
                           onClick={() => onSelectNote(note)}
-                          className={`w-full flex flex-col items-start text-left p-3.5 rounded-2xl transition-all duration-200 border ${
+                          className={`w-full flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-150 border active:scale-[0.99] ${
                             isSelected 
-                              ? 'bg-[var(--theme-primary)]/15 border-[var(--theme-primary)] shadow-[0_0_15px_var(--theme-focus-ring)] scale-[0.98]' 
-                              : 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border-subtle)] hover:bg-[var(--theme-surface-elevated)] hover:border-[var(--theme-border)] hover:shadow-md'
+                              ? 'bg-[var(--theme-primary)]/15 border-[var(--theme-primary)] shadow-[0_0_12px_var(--theme-focus-ring)] text-[var(--theme-primary)]' 
+                              : 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border-subtle)] hover:bg-[var(--theme-surface-elevated)] hover:border-[var(--theme-border)]'
                           }`}
                         >
-                          <div className="w-full flex justify-between items-start mb-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors border ${
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors border ${
                               isSelected 
-                                ? 'bg-[var(--theme-primary)]/25 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]' 
+                                ? 'bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]' 
                                 : 'bg-[var(--theme-surface-elevated)] border-[var(--theme-border-subtle)] text-[var(--theme-text-muted)] group-hover:text-[var(--theme-text-primary)]'
                             }`}>
-                              <FileText size={18} />
+                              <FileText size={16} />
                             </div>
+                            <div className="min-w-0 flex-1 text-left">
+                              <h5 className={`text-xs font-semibold truncate ${isSelected ? 'text-[var(--theme-primary)]' : 'text-[var(--theme-text-primary)]'}`}>
+                                {note.title}
+                              </h5>
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-[var(--theme-text-muted)]">
+                                <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-bold ${isPdf ? 'bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30' : 'bg-white/5 text-zinc-400'}`}>
+                                  {isPdf ? 'PDF' : 'NOTE'}
+                                </span>
+                                {note.wordCount > 0 && (
+                                  <span>{Math.round(note.wordCount / 100) / 10}k words</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
@@ -348,18 +365,13 @@ export default function NoteExplorer({
                                   alert('Failed to delete: ' + err.message);
                                 }
                               }}
-                              className="p-1.5 rounded-lg opacity-0 group-hover/note:opacity-100 transition-all hover:bg-red-500/20 text-red-400"
+                              className="p-1 rounded-md opacity-0 group-hover/note:opacity-100 transition-all hover:bg-red-500/20 text-red-400"
                               title="Delete note"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                             </button>
+                            <ChevronRight size={14} className="opacity-40 group-hover/note:opacity-80 transition-opacity text-[var(--theme-text-muted)]" />
                           </div>
-                          <h5 className={`text-xs font-bold truncate w-full mb-1 ${isSelected ? 'text-[var(--theme-primary)]' : 'text-[var(--theme-text-primary)]'}`}>{note.title}</h5>
-                          {note.tags && note.tags.length > 0 && (
-                            <span className="text-[9px] font-bold uppercase tracking-wider truncate w-full mt-auto text-[var(--theme-text-muted)]">
-                              {note.tags.join(', ')}
-                            </span>
-                          )}
                         </button>
                       </div>
                     );

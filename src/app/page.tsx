@@ -8,7 +8,7 @@ import {
   Flag, Calendar, BarChart3, ListTodo, Edit2, MoreVertical, Palette, Shapes, 
   PaintBucket, LogOut, Download, Smartphone, Repeat, Bell, Monitor, Flame, 
   Cpu, AlertCircle, Mic, Camera, GraduationCap, BookOpen, Sparkles, Brain, 
-  CheckSquare, Layers, FileText, Smile, ArrowLeft 
+  CheckSquare, Layers, FileText, Smile, ArrowLeft, Database 
 } from 'lucide-react';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
@@ -1202,12 +1202,12 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen w-full ${bgTheme} transition-colors duration-500 font-sans`}>
+    <div className="min-h-screen w-full bg-[#0b0a0e] transition-colors duration-500 font-sans text-white">
       <main className={`w-full ${selectedNote ? 'max-w-[100vw] px-0 md:px-4' : (!isListView && activeTab === 'lists' && activeCatObj?.type === 'study') ? 'max-w-[100vw] px-2 sm:px-6' : (activeTab === 'settings' ? 'max-w-5xl' : 'max-w-md')} mx-auto ${selectedNote ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-[100dvh] pb-24'} flex flex-col relative transition-all duration-500`}>
         {/* Header */}
         {activeTab !== 'settings' && (
           !selectedNote && (
-            <header className={`pt-10 pb-4 px-6 relative z-30 flex justify-between items-center border-b transition-colors duration-500 ${bgTheme} border-white/10`}>
+            <header className="pt-10 pb-4 px-6 relative z-30 flex justify-between items-center border-b transition-colors duration-500 bg-[#0b0a0e]/95 backdrop-blur-md border-white/10">
             <div className="flex-1">
               <h1 className={`text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
                 {activeTab === 'lists' ? (isListView ? 'My Lists' : activeCatObj.name) : activeTab === 'today' ? 'Today' : 'Stats'}
@@ -1215,7 +1215,7 @@ export default function Home() {
               {!isListView && activeTab === 'lists' && (
                 <div className="flex items-center gap-2 mt-1">
                   {activeCatObj.type === 'study' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/20">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/20">
                       <GraduationCap size={12} /> Study
                     </span>
                   ) : (
@@ -1294,7 +1294,7 @@ export default function Home() {
                   type="button"
                   onClick={() => setIsHabit(!isHabit)}
                   className={`w-11 h-6 rounded-full transition-all relative outline-none ${
-                    isHabit ? 'bg-blue-600' : isDark ? 'bg-slate-800' : 'bg-gray-200'
+                    isHabit ? 'bg-[var(--theme-primary,#3b82f6)]' : isDark ? 'bg-slate-800' : 'bg-gray-200'
                   }`}
                 >
                   <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all shadow-md ${
@@ -1331,7 +1331,7 @@ export default function Home() {
                               }}
                               className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-all ${
                                 isSelected 
-                                  ? 'bg-blue-600 text-white border-transparent' 
+                                  ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-transparent' 
                                   : isDark 
                                     ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700' 
                                     : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
@@ -1376,7 +1376,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={!inputText.trim() || isSubmitting}
-                className="w-full bg-blue-600 text-white font-semibold py-4 rounded-2xl shadow-md hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95"
+                className="w-full bg-[var(--theme-primary,#3b82f6)] text-white font-semibold py-4 rounded-2xl shadow-md hover:brightness-110 disabled:opacity-50 transition-all active:scale-95"
               >
                 {isSubmitting ? 'Saving...' : 'Save Task'}
               </button>
@@ -1549,7 +1549,7 @@ export default function Home() {
                       onClick={() => setBgTheme(theme.id)}
                       className={`flex items-center gap-2 py-2 px-3 text-xs font-medium rounded-xl border transition-all ${
                         bgTheme === theme.id
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md font-semibold'
+                          ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-transparent shadow-md font-semibold'
                           : isDark
                             ? 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-700/80 hover:text-white'
                             : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400'
@@ -1682,8 +1682,8 @@ export default function Home() {
           /* Main Content Area */
         <div className={`flex-1 relative flex flex-col min-h-0 ${selectedNote ? 'p-0 h-full' : 'px-6 py-6'}`}>
         
-        {/* Hero Mascot */}
-        {!selectedNote && (
+        {/* Hero Mascot - shown on Lists and ToDo lists, hidden in deep study workspaces */}
+        {!selectedNote && (isListView || activeCatObj?.type !== 'study') && (
           <div 
             data-mascot-container="hero"
             className={`flex justify-center relative items-center transition-all duration-300 overflow-visible ${showAddModal ? 'mb-1 pt-0' : 'mb-3 pt-2 pb-1'}`}
@@ -1764,11 +1764,11 @@ export default function Home() {
                             )}
                             <div className="flex items-center gap-1.5 mt-1">
                               {isStudyList ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-[var(--theme-text-muted,#94a3b8)] border border-white/10">
                                   <GraduationCap size={11} /> Study
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/25">
                                   <CheckSquare size={11} /> ToDo
                                 </span>
                               )}
@@ -1864,14 +1864,14 @@ export default function Home() {
             <div className={`p-4 rounded-2xl border transition-all ${t.card} mt-6`}>
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Create New List</span>
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/80 p-1 rounded-xl">
+                <div className="flex items-center gap-1 bg-zinc-900 border border-white/10 p-1 rounded-xl">
                   <button
                     type="button"
                     onClick={() => setNewCatType('todo')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                       newCatType === 'todo'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
                     <CheckSquare size={13} />
@@ -1882,8 +1882,8 @@ export default function Home() {
                     onClick={() => setNewCatType('study')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                       newCatType === 'study'
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : isDark ? 'text-slate-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
                     <GraduationCap size={13} />
@@ -1906,9 +1906,7 @@ export default function Home() {
                 <button 
                   type="submit" 
                   disabled={!newCatText.trim() || isSubmitting} 
-                  className={`p-2.5 rounded-xl text-white font-semibold shadow-md transition-all disabled:opacity-50 active:scale-95 ${
-                    newCatType === 'study' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                  className="p-2.5 rounded-xl text-white font-semibold shadow-md transition-all disabled:opacity-50 active:scale-95 bg-[var(--theme-primary,#3b82f6)] hover:brightness-110"
                 >
                   <Plus size={18}/>
                 </button>
@@ -1953,8 +1951,27 @@ export default function Home() {
             /* Main Workspace View: Branching based on List Type (Study vs ToDo) */
             <div className={selectedNote ? "h-full flex flex-col min-h-0 flex-1" : ""}>
             {!selectedNote && activeTab === "lists" && !isListView && (
-               <div className="mb-4">
-                 <button onClick={() => setIsListView(true)} className={`text-sm font-medium transition-colors ${isDark ? 'text-slate-400 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}>← Back to Lists</button>
+               <div className="mb-4 flex items-center gap-2 text-xs font-medium text-[var(--theme-text-muted)]">
+                 <button 
+                   onClick={() => { setIsListView(true); setShowStudyExplorer(false); }} 
+                   className="hover:text-[var(--theme-text-primary)] transition-colors flex items-center gap-1"
+                 >
+                   <ArrowLeft size={13} />
+                   <span>Lists</span>
+                 </button>
+                 <span>/</span>
+                 <button 
+                   onClick={() => setShowStudyExplorer(false)} 
+                   className={`transition-colors ${showStudyExplorer ? 'hover:text-[var(--theme-text-primary)] text-[var(--theme-text-muted)]' : 'text-[var(--theme-primary,#3b82f6)] font-semibold'}`}
+                 >
+                   {activeCatObj.name || 'Brain'}
+                 </button>
+                 {showStudyExplorer && (
+                   <>
+                     <span>/</span>
+                     <span className="text-[var(--theme-primary,#3b82f6)] font-semibold">Cloud Vault</span>
+                   </>
+                 )}
                </div>
             )}
 
@@ -1965,7 +1982,7 @@ export default function Home() {
                 {!selectedNote && !showStudyExplorer && !showGraphView && (
                   <div className={`p-6 rounded-3xl border transition-all ${t.card} relative overflow-hidden`}>
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-[var(--theme-primary,#3b82f6)]/10 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center flex-shrink-0">
                         <BookOpen size={24} />
                       </div>
                       <div>
@@ -2078,13 +2095,11 @@ export default function Home() {
                 ) : showStudyExplorer ? (
                   <div className={`flex flex-col h-[600px] border rounded-3xl overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-500 ${t.card}`}>
                     <div className="p-3 border-b flex items-center justify-between border-[var(--theme-border-subtle)] bg-[var(--theme-surface-subtle)]">
-                      <button 
-                        onClick={() => setShowStudyExplorer(false)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors hover:bg-[var(--theme-surface-elevated)] text-[var(--theme-text-primary)]"
-                      >
-                        <ChevronRight className="rotate-180" size={14} /> Back to Hub
-                      </button>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-muted)]">Cloud Vault</span>
+                      <div className="flex items-center gap-2">
+                        <Database size={15} className="text-[var(--theme-primary,#3b82f6)]" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-primary)]">Cloud Vault Documents</span>
+                      </div>
+                      <span className="text-[11px] font-medium text-[var(--theme-text-muted)]">Supabase Brain</span>
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <NoteExplorer 
@@ -2104,7 +2119,7 @@ export default function Home() {
                       className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
                     >
                       <div>
-                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3">
+                        <div className="w-9 h-9 rounded-xl bg-[var(--theme-primary,#3b82f6)]/10 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3">
                           <Brain size={18} />
                         </div>
                         <h4 className={`text-sm font-bold mb-1 ${t.textPrimary}`}>Vault Notes</h4>
@@ -2112,7 +2127,7 @@ export default function Home() {
                           Scan and browse Markdown notes, frontmatter tags, and wikilinks.
                         </p>
                       </div>
-                      <div className="mt-3 w-full pt-2.5 border-t border-dashed border-gray-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-blue-500">
+                      <div className="mt-3 w-full pt-2.5 border-t border-dashed border-gray-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-[var(--theme-primary,#3b82f6)]">
                         <span>Cloud Vault</span>
                         <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
                       </div>
@@ -2124,7 +2139,7 @@ export default function Home() {
                       className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
                     >
                       <div>
-                        <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                        <div className="w-9 h-9 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 group-hover:-rotate-3">
                           <Sparkles size={18} />
                         </div>
                         <h4 className={`text-sm font-bold mb-1 ${t.textPrimary}`}>NotebookLM AI Quiz</h4>
@@ -2132,7 +2147,7 @@ export default function Home() {
                           Generate interactive multi-choice quizzes and flashcards with Gemini.
                         </p>
                       </div>
-                      <div className="mt-3 w-full pt-2.5 border-t border-dashed border-gray-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-purple-500">
+                      <div className="mt-3 w-full pt-2.5 border-t border-dashed border-gray-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-[var(--theme-text-muted)] group-hover:text-[var(--theme-primary,#3b82f6)] transition-colors">
                         <span>Select a Note First</span>
                         <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
                       </div>
@@ -2173,7 +2188,7 @@ export default function Home() {
                         }} 
                       />
                       <div>
-                        <div className="w-9 h-9 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3 mb-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3 mb-2.5">
                           <FileText size={18} />
                         </div>
                         <div>
@@ -2191,7 +2206,7 @@ export default function Home() {
                       className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
                     >
                       <div>
-                        <div className="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3 mb-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3 mb-2.5">
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
                         </div>
                         <div>
@@ -2207,7 +2222,7 @@ export default function Home() {
 
                 {(!selectedNote && !showGraphView && !showQuizSession && !showStudyExplorer) && (
                   <div className={`p-8 rounded-3xl border border-dashed text-center flex flex-col items-center justify-center ${isDark ? 'border-slate-800 bg-slate-900/30' : 'border-gray-200 bg-gray-50/50'}`}>
-                    <div className="w-14 h-14 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mb-3.5">
+                    <div className="w-14 h-14 rounded-full bg-[var(--theme-primary,#3b82f6)]/10 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center mb-3.5">
                       <GraduationCap size={28} />
                     </div>
                     <h3 className={`text-sm font-bold mb-1 ${t.textPrimary}`}>Ready for Study Session</h3>
@@ -2220,7 +2235,7 @@ export default function Home() {
                         setShowStudyExplorer(true);
                         triggerMascot('orbit', 'fier');
                       }} 
-                      className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 shadow-md shadow-purple-600/20 transition-all active:scale-95 flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl bg-[var(--theme-primary,#3b82f6)] text-white text-xs font-semibold hover:brightness-110 shadow-md shadow-[var(--theme-primary,#3b82f6)]/25 transition-all active:scale-95 flex items-center gap-1.5"
                     >
                       <Sparkles size={13} />
                       Study with Bloub
@@ -2234,7 +2249,7 @@ export default function Home() {
                 {/* Add Task FAB */}
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="fixed bottom-24 right-6 sm:right-[calc(50%-13rem)] w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 transition-all hover:scale-105 active:scale-95 z-40"
+                  className="fixed bottom-24 right-6 sm:right-[calc(50%-13rem)] w-14 h-14 bg-[var(--theme-primary,#3b82f6)] text-white rounded-full shadow-xl shadow-[var(--theme-primary,#3b82f6)]/30 flex items-center justify-center hover:brightness-110 transition-all hover:scale-105 active:scale-95 z-40"
                 >
                   <Plus size={28} />
                 </button>
