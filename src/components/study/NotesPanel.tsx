@@ -141,7 +141,7 @@ export const NotesPanel = React.memo(function NotesPanel({
     debounceTimerRef.current = setTimeout(() => {
       debounceTimerRef.current = null;
       onChangeRef.current(currentPageRef.current, localNoteRef.current);
-    }, 500);
+    }, 600);
   }, []);
 
   const handleLangChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -350,9 +350,9 @@ export const NotesPanel = React.memo(function NotesPanel({
         }`}
         style={{
           backgroundImage: `repeating-linear-gradient(transparent, transparent 31px, ${
-            isDark ? 'var(--theme-border-subtle)' : 'rgba(167, 139, 250, 0.3)'
+            isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(167, 139, 250, 0.25)'
           } 31px, ${
-            isDark ? 'var(--theme-border-subtle)' : 'rgba(167, 139, 250, 0.3)'
+            isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(167, 139, 250, 0.25)'
           } 32px)`,
           backgroundAttachment: 'local'
         }}

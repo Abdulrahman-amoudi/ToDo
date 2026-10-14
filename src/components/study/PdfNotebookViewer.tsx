@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, Mou
 import { createClient } from '@/lib/supabase/client';
 import { updateFrontmatterField } from '@/lib/obsidian/parser';
 import { recordMutation, markMutationSynced, markMutationFailed } from '@/lib/storage/offline-wal';
+import { getCachedPdfBlob, cachePdfBlob } from '@/lib/pdf/pdf-cache';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -18,6 +19,8 @@ const options = {
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
   cMapPacked: true,
   standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+  disableAutoFetch: false,
+  disableStream: false,
 };
 
 interface PdfNotebookViewerProps {
@@ -50,6 +53,52 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
   const [highlightStart, setHighlightStart] = useState<{x: number, y: number} | null>(null);
   const [highlightCurrent, setHighlightCurrent] = useState<{x: number, y: number} | null>(null);
   
+  // Instant IndexedDB PDF Cache: Load in <50ms if opened before
+  const [resolvedPdfSource, setResolvedPdfSource] = useState<string | Blob>(pdfUrl);
+
+  useEffect(() => {
+    let isCancelled = false;
+    let createdBlobUrl: string | null = null;
+
+    async function loadWithCache() {
+      if (!pdfUrl) return;
+      try {
+        const cachedBlob = await getCachedPdfBlob(pdfUrl);
+        if (cachedBlob && !isCancelled) {
+          createdBlobUrl = URL.createObjectURL(cachedBlob);
+          setResolvedPdfSource(createdBlobUrl);
+          return;
+        }
+
+        // Use direct URL for immediate streaming
+        setResolvedPdfSource(pdfUrl);
+
+        // Fetch & cache in background into IndexedDB
+        fetch(pdfUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            if (!isCancelled && blob && blob.size > 0) {
+              cachePdfBlob(pdfUrl, blob);
+            }
+          })
+          .catch(() => {});
+      } catch {
+        if (!isCancelled) {
+          setResolvedPdfSource(pdfUrl);
+        }
+      }
+    }
+
+    loadWithCache();
+
+    return () => {
+      isCancelled = true;
+      if (createdBlobUrl) {
+        URL.revokeObjectURL(createdBlobUrl);
+      }
+    };
+  }, [pdfUrl]);
+
   // High-Precision Arabic Text Layer State
   const [activePageProxy, setActivePageProxy] = useState<any>(null);
   const [pageTextContent, setPageTextContent] = useState<any>(null);
@@ -75,11 +124,35 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
     }
   }, [zoomLevel, activePageProxy]);
 
+  // Explicit canvas context destruction and page cleanup on page change
   useEffect(() => {
+    if (activePageProxy && typeof activePageProxy.cleanup === 'function') {
+      try {
+        activePageProxy.cleanup();
+      } catch {}
+    }
+    if (overlayRef.current) {
+      const canvases = overlayRef.current.querySelectorAll('canvas');
+      canvases.forEach(c => {
+        c.width = 0;
+        c.height = 0;
+      });
+    }
     setActivePageProxy(null);
     setPageTextContent(null);
     setPageViewport(null);
   }, [pageNumber]);
+
+  // Cleanup on complete component unmount
+  useEffect(() => {
+    return () => {
+      if (activePageProxy && typeof activePageProxy.cleanup === 'function') {
+        try {
+          activePageProxy.cleanup();
+        } catch {}
+      }
+    };
+  }, [activePageProxy]);
   
   // Annotation State
   const [annotations, setAnnotations] = useState<Record<number, any[]>>({});
@@ -499,31 +572,64 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
           const selection = window.getSelection();
           if (selection && selection.rangeCount > 0 && selection.toString().trim().length > 0) {
             const range = selection.getRangeAt(0);
-            const rects = range.getClientRects();
-            if (rects.length > 0 && overlayRef.current) {
+            const clientRects = Array.from(range.getClientRects());
+            if (clientRects.length > 0 && overlayRef.current) {
               const containerRect = overlayRef.current.getBoundingClientRect();
-              let saveAnnotations = { ...annotations };
               
-              for (let i = 0; i < rects.length; i++) {
-                const rect = rects[i];
-                // Filter ghost micro-rectangles (<3px width or height)
-                if (rect.width < 3 || rect.height < 3) continue;
+              // 1. Filter out invalid, tiny, zero-width, zero-height, or pure whitespace rects
+              const validRects = clientRects
+                .filter(rect => rect.width >= 2 && rect.height >= 2)
+                .map(rect => ({
+                  left: (rect.left - containerRect.left) / zoomLevel,
+                  top: (rect.top - containerRect.top) / zoomLevel,
+                  width: rect.width / zoomLevel,
+                  height: rect.height / zoomLevel,
+                  right: (rect.right - containerRect.left) / zoomLevel,
+                  bottom: (rect.bottom - containerRect.top) / zoomLevel,
+                }));
 
-                const newAnn = {
-                  id: Date.now() + i,
-                  type: 'highlight',
-                  startX: (rect.left - containerRect.left) / zoomLevel,
-                  startY: (rect.top - containerRect.top) / zoomLevel,
-                  w: rect.width / zoomLevel,
-                  h: rect.height / zoomLevel,
-                  color: highlightColor,
-                  text: selection.toString()
-                };
-                saveAnnotations = {
-                  ...saveAnnotations,
-                  [pageNumber]: [...(saveAnnotations[pageNumber] || []), newAnn]
-                };
+              if (validRects.length === 0) return;
+
+              // 2. Sort by vertical line position, then horizontal
+              validRects.sort((a, b) => Math.abs(a.top - b.top) < (4 / zoomLevel) ? a.left - b.left : a.top - b.top);
+
+              // 3. Merge adjacent rects on the same line (Math.abs(r1.top - r2.top) < 4)
+              const mergedRects: typeof validRects = [];
+              for (const r of validRects) {
+                const prev = mergedRects[mergedRects.length - 1];
+                if (prev && Math.abs(prev.top - r.top) < (4 / zoomLevel) && Math.abs(prev.height - r.height) < (6 / zoomLevel)) {
+                  const newLeft = Math.min(prev.left, r.left);
+                  const newRight = Math.max(prev.right, r.right);
+                  const newTop = Math.min(prev.top, r.top);
+                  const newBottom = Math.max(prev.bottom, r.bottom);
+                  prev.left = newLeft;
+                  prev.right = newRight;
+                  prev.top = newTop;
+                  prev.bottom = newBottom;
+                  prev.width = newRight - newLeft;
+                  prev.height = newBottom - newTop;
+                } else {
+                  mergedRects.push({ ...r });
+                }
               }
+
+              let saveAnnotations = { ...annotationsRef.current };
+              const newAnns = mergedRects.map((r, i) => ({
+                id: Date.now() + i,
+                type: 'highlight',
+                startX: r.left,
+                startY: r.top,
+                w: r.width,
+                h: r.height,
+                color: highlightColor,
+                text: selection.toString()
+              }));
+
+              saveAnnotations = {
+                ...saveAnnotations,
+                [pageNumber]: [...(saveAnnotations[pageNumber] || []), ...newAnns]
+              };
+
               isDirtyRef.current = true;
               setAnnotations(saveAnnotations);
               selection.removeAllRanges();
@@ -539,7 +645,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
       document.removeEventListener('pointerup', handleGlobalMouseUp);
       document.removeEventListener('touchend', handleGlobalMouseUp);
     };
-  }, [pdfTool, highlightMode, annotations, pageNumber, zoomLevel, highlightColor]);
+  }, [pdfTool, highlightMode, pageNumber, zoomLevel, highlightColor]);
 
   const toolsPortal = typeof document !== 'undefined' ? document.getElementById('pdf-tools-portal') : null;
 
@@ -761,7 +867,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
          ) : (
          <div className="w-fit mx-auto relative flex flex-col items-center">
            <Document 
-              file={pdfUrl} 
+              file={resolvedPdfSource} 
               options={options}
               onLoadSuccess={onDocumentLoadSuccess} 
               loading={<div className="text-slate-400 font-mono text-sm animate-pulse flex h-full items-center">Loading Document...</div>}
@@ -970,7 +1076,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
                 scale={zoomLevel}
                 page={activePageProxy}
               />
-              <Page 
+              <Page devicePixelRatio={Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2)} 
                 pageNumber={pageNumber} 
                 renderTextLayer={false} 
                 renderAnnotationLayer={true} 
@@ -1028,12 +1134,12 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
       <>
         {/* Draggable Resizer */}
         <div 
-          className="w-2 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/40 active:bg-[var(--theme-primary)] transition-colors z-20 relative flex-shrink-0 group"
+          className="w-3 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/20 active:bg-[var(--theme-primary)]/40 transition-colors z-20 relative flex-shrink-0 group flex items-center justify-center" title="Drag to resize notebook pane"
           onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }} 
           onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
           aria-label="Resize Notes Panel"
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-10 bg-[var(--theme-border)] group-hover:bg-[var(--theme-primary)] rounded-full transition-colors pointer-events-none"></div>
+          <div className="w-1 h-12 bg-white/20 group-hover:bg-[var(--theme-primary)] group-hover:h-16 group-active:bg-[var(--theme-primary)] rounded-full transition-all pointer-events-none"></div>
         </div>
 
         {/* Handwriting / Markdown Notes Panel */}

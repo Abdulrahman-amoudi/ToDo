@@ -98,27 +98,27 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
 
   return (
     <div
-      className={`arabic-text-layer react-pdf__Page__textContent ${className || ''}`}
+      className={`arabic-text-layer textLayer react-pdf__Page__textContent ${className || ''}`}
       data-page-number={pageNumber}
       dir="ltr"
       style={{
         position: 'absolute',
         left: 0,
         top: 0,
-        right: 0,
-        bottom: 0,
-        width: viewport?.width ? `${viewport.width}px` : '100%',
-        height: viewport?.height ? `${viewport.height}px` : '100%',
+        width: viewport?.width ? `${Math.round(viewport.width)}px` : '100%',
+        height: viewport?.height ? `${Math.round(viewport.height)}px` : '100%',
         overflow: 'hidden',
-        pointerEvents: 'auto',
+        pointerEvents: 'none', // Strict isolation: parent catches zero whitespace clicks
         userSelect: 'text',
         WebkitUserSelect: 'text',
         lineHeight: 1,
         zIndex: 10,
+        ['--scale-factor' as any]: scale || 1.0,
       }}
     >
       <style>{`
         .arabic-text-layer {
+          pointer-events: none !important;
           user-select: text !important;
           -webkit-user-select: text !important;
         }
@@ -126,33 +126,44 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
           background: transparent !important;
         }
         .arabic-text-layer span.arabic-text-line {
+          display: inline-block !important;
+          white-space: pre !important;
+          transform-origin: 0% 0% !important;
+          line-height: 1 !important;
           color: transparent !important;
           cursor: text;
           user-select: text !important;
           -webkit-user-select: text !important;
           pointer-events: auto !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          box-sizing: border-box !important;
         }
         .arabic-text-layer span.arabic-text-line::selection {
           background: rgba(59, 130, 246, 0.35) !important;
           color: transparent !important;
         }
-        /* Inject a newline pseudo-element to help the browser break the selection bounding box cleanly */
+        /* Newline pseudo-element to guarantee natural line breaking on multiline text selections */
         .arabic-text-layer span.arabic-text-line::after {
           content: "\\A";
           white-space: pre;
           width: 0;
           height: 0;
           position: absolute;
+          pointer-events: none;
         }
       `}</style>
       {activeLines.map((line, index) => {
+        const isArabicText = /[\u0600-\u06FF]/.test(line.fullText);
+        const effectiveDir = isArabicText ? 'rtl' : (line.dir || 'ltr');
         const fontSize = line.items[0]?.fontSize || line.height;
+
         return (
           <span
             key={`page-${pageNumber}-line-${index}`}
             className="arabic-text-line"
-            dir={line.dir}
-            data-dir={line.dir}
+            dir={effectiveDir}
+            data-dir={effectiveDir}
             data-line-index={index}
             data-page-number={pageNumber}
             style={{
@@ -163,14 +174,15 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
               height: `${line.height}px`,
               fontSize: `${fontSize}px`,
               lineHeight: 1,
+              display: 'inline-block',
+              whiteSpace: 'pre',
+              transformOrigin: '0% 0%',
               unicodeBidi: 'isolate',
               WebkitUserSelect: 'text',
               userSelect: 'text',
               pointerEvents: 'auto',
               color: 'transparent',
-              whiteSpace: 'pre',
-              transformOrigin: '0 0',
-              fontFamily: line.dir === 'rtl' ? 'var(--font-lemonada), sans-serif' : 'sans-serif',
+              fontFamily: isArabicText ? 'var(--font-lemonada), sans-serif' : 'sans-serif',
             }}
           >
             {line.fullText}

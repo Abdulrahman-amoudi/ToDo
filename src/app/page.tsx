@@ -17,9 +17,32 @@ import { createClient } from '@/lib/supabase/client';
 import { VAPID_PUBLIC_KEY } from '@/lib/push-config';
 import type { Todo, Category, ListType, Subtask, Attachment } from '@/types/todo';
 import NoteExplorer from '@/components/study/NoteExplorer';
-import NoteViewer from '@/components/study/NoteViewer';
-import QuizSession from '@/components/study/QuizSession';
-import NoteGraph from '@/components/study/NoteGraph';
+import dynamic from 'next/dynamic';
+
+const NoteViewer = dynamic(() => import('@/components/study/NoteViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center p-8 text-zinc-400 font-mono text-sm animate-pulse">
+      Loading Document...
+    </div>
+  ),
+});
+const QuizSession = dynamic(() => import('@/components/study/QuizSession'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center p-8 text-zinc-400 font-mono text-sm animate-pulse">
+      Loading Quiz Session...
+    </div>
+  ),
+});
+const NoteGraph = dynamic(() => import('@/components/study/NoteGraph'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center p-8 text-zinc-400 font-mono text-sm animate-pulse">
+      Loading Knowledge Graph...
+    </div>
+  ),
+});
 import type { ObsidianNoteSummary, ParsedObsidianNote } from '@/types/obsidian';
 import { parseObsidianMarkdown } from '@/lib/obsidian/parser';
 import { recordMutation, markMutationSynced, markMutationFailed, type MutationType } from '@/lib/storage/offline-wal';
@@ -343,109 +366,140 @@ export default function Home() {
     }
   };
 
-  // Load settings when session changes (local storage wins, Supabase as cloud fallback)
+  // User-Scoped Preferences & Cloud Sync (remote Supabase metadata takes precedence to avoid race condition)
+  const hasHydratedRemoteSettingsRef = useRef(false);
+
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      hasHydratedRemoteSettingsRef.current = false;
+      return;
+    }
     const uid = session.user?.id;
-    const prefix = uid ? `${uid}_` : 'guest_';
+    if (!uid) return;
+    const prefKey = (key: string) => `bloub_prefs_${uid}_${key}`;
     const meta = session.user?.user_metadata || {};
-    
-    // Only import from remote Supabase metadata if localStorage is empty (e.g. new browser/device)
-    const localTheme = localStorage.getItem('vibe_bgTheme') || localStorage.getItem(`${prefix}bgTheme`);
-    if (!localTheme && meta.bgTheme) setBgTheme(meta.bgTheme);
 
-    const localShape = localStorage.getItem('vibe_mascotShape') || localStorage.getItem(`${prefix}mascotShape`);
-    if (!localShape && meta.mascotShape) setMascotShape(meta.mascotShape);
+    // 1. Remote Supabase metadata is the single source of truth across devices
+    // Check remote first, fallback to user-scoped localStorage, fallback to initial default
+    const effectiveTheme = meta.bgTheme || localStorage.getItem(prefKey('bgTheme')) || 'obsidian';
+    const effectiveShape = meta.mascotShape || localStorage.getItem(prefKey('mascotShape')) || 'squircle';
+    const effectiveColor = meta.mascotColor || localStorage.getItem(prefKey('mascotColor')) || 'bleu';
+    const effectiveExpr = (meta.mascotExpression || localStorage.getItem(prefKey('mascotExpression')) || 'timide') as ExpressionId;
+    const effectiveGaze = meta.mascotGaze || localStorage.getItem(prefKey('mascotGaze')) || 'center';
 
-    const localColor = localStorage.getItem('vibe_mascotColor') || localStorage.getItem(`${prefix}mascotColor`);
-    if (!localColor && meta.mascotColor) setMascotColor(meta.mascotColor);
-
-    const localExpr = localStorage.getItem('vibe_mascotExpression') || localStorage.getItem(`${prefix}mascotExpression`);
-    if (!localExpr && meta.mascotExpression) setMascotExpression(meta.mascotExpression as ExpressionId);
-
-    const localGaze = localStorage.getItem('vibe_mascotGaze') || localStorage.getItem(`${prefix}mascotGaze`);
-    if (!localGaze && meta.mascotGaze) setMascotGaze(meta.mascotGaze);
-
-    const localCat = localStorage.getItem('vibe_catSettings') || localStorage.getItem(`${prefix}catSettings`);
-    if (!localCat && meta.catSettings) {
-      if (typeof meta.catSettings === 'string') {
-        try { setCatSettings(JSON.parse(meta.catSettings)); } catch {}
-      } else if (meta.catSettings && typeof meta.catSettings === 'object') {
-        setCatSettings(meta.catSettings);
-      }
+    let effectiveCat = {};
+    if (meta.catSettings) {
+      effectiveCat = typeof meta.catSettings === 'string' ? JSON.parse(meta.catSettings) : meta.catSettings;
+    } else {
+      try {
+        const local = localStorage.getItem(prefKey('catSettings'));
+        if (local) effectiveCat = JSON.parse(local);
+      } catch {}
     }
 
-    const localApiKey = localStorage.getItem('vibe_geminiApiKey') || localStorage.getItem(`${prefix}geminiApiKey`);
-    if (!localApiKey && meta.geminiApiKey) setGeminiApiKey(meta.geminiApiKey);
+    const effectiveApiKey = meta.geminiApiKey || localStorage.getItem(prefKey('geminiApiKey')) || '';
+
+    // Apply to React state
+    setBgTheme(effectiveTheme);
+    setMascotShape(effectiveShape);
+    setMascotColor(effectiveColor);
+    setMascotExpression(effectiveExpr);
+    setMascotGaze(effectiveGaze);
+    if (Object.keys(effectiveCat).length > 0) setCatSettings(effectiveCat);
+    if (effectiveApiKey) setGeminiApiKey(effectiveApiKey);
+
+    // Save to user-scoped localStorage
+    try {
+      localStorage.setItem(prefKey('bgTheme'), effectiveTheme);
+      localStorage.setItem(prefKey('mascotShape'), effectiveShape);
+      localStorage.setItem(prefKey('mascotColor'), effectiveColor);
+      localStorage.setItem(prefKey('mascotExpression'), effectiveExpr);
+      localStorage.setItem(prefKey('mascotGaze'), effectiveGaze);
+      localStorage.setItem(prefKey('catSettings'), JSON.stringify(effectiveCat));
+      if (effectiveApiKey) localStorage.setItem(prefKey('geminiApiKey'), effectiveApiKey);
+    } catch {}
+
+    // Mark hydrated so we don't accidentally overwrite remote preferences with blank defaults!
+    hasHydratedRemoteSettingsRef.current = true;
   }, [session]);
 
   // Sync tab visibility without destructive network overwrites
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && session?.user?.id) {
         try {
-          const savedTheme = localStorage.getItem('vibe_bgTheme');
+          const uid = session.user.id;
+          const prefKey = (key: string) => `bloub_prefs_${uid}_${key}`;
+          const savedTheme = localStorage.getItem(prefKey('bgTheme'));
           if (savedTheme && savedTheme !== bgTheme) setBgTheme(savedTheme);
-          const savedShape = localStorage.getItem('vibe_mascotShape');
+          const savedShape = localStorage.getItem(prefKey('mascotShape'));
           if (savedShape && savedShape !== mascotShape) setMascotShape(savedShape);
-          const savedColor = localStorage.getItem('vibe_mascotColor');
+          const savedColor = localStorage.getItem(prefKey('mascotColor'));
           if (savedColor && savedColor !== mascotColor) setMascotColor(savedColor);
-          const savedGaze = localStorage.getItem('vibe_mascotGaze');
+          const savedGaze = localStorage.getItem(prefKey('mascotGaze'));
           if (savedGaze && savedGaze !== mascotGaze) setMascotGaze(savedGaze);
         } catch {}
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [bgTheme, mascotShape, mascotColor, mascotGaze]);
+  }, [bgTheme, mascotShape, mascotColor, mascotGaze, session]);
 
-  // Save persistent customization settings (immediate localStorage + debounced Supabase sync)
+  // Save persistent customization settings (immediate user-scoped localStorage + debounced Supabase sync)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const uid = session?.user?.id;
-    const prefix = uid ? `${uid}_` : 'guest_';
+    if (!session || !hasHydratedRemoteSettingsRef.current) return;
+    const uid = session.user?.id;
+    if (!uid) return;
+    const prefKey = (key: string) => `bloub_prefs_${uid}_${key}`;
 
-    // 1. Immediate synchronous localStorage write
+    // 1. Immediate synchronous user-scoped localStorage write
     try {
-      localStorage.setItem('vibe_mascotExpression', mascotExpression);
-      localStorage.setItem('vibe_mascotShape', mascotShape);
-      localStorage.setItem('vibe_mascotColor', mascotColor);
-      localStorage.setItem('vibe_mascotGaze', mascotGaze);
-      localStorage.setItem('vibe_bgTheme', bgTheme);
-      localStorage.setItem('vibe_catSettings', JSON.stringify(catSettings));
-
-      // Compatibility with prefix
-      localStorage.setItem(`${prefix}mascotExpression`, mascotExpression);
-      localStorage.setItem(`${prefix}mascotShape`, mascotShape);
-      localStorage.setItem(`${prefix}mascotColor`, mascotColor);
-      localStorage.setItem(`${prefix}mascotGaze`, mascotGaze);
-      localStorage.setItem(`${prefix}bgTheme`, bgTheme);
-      localStorage.setItem(`${prefix}catSettings`, JSON.stringify(catSettings));
+      localStorage.setItem(prefKey('mascotExpression'), mascotExpression);
+      localStorage.setItem(prefKey('mascotShape'), mascotShape);
+      localStorage.setItem(prefKey('mascotColor'), mascotColor);
+      localStorage.setItem(prefKey('mascotGaze'), mascotGaze);
+      localStorage.setItem(prefKey('bgTheme'), bgTheme);
+      localStorage.setItem(prefKey('catSettings'), JSON.stringify(catSettings));
+      if (geminiApiKey) localStorage.setItem(prefKey('geminiApiKey'), geminiApiKey);
     } catch (e) {
       console.warn('[Settings] localStorage write warning:', e);
     }
     
-    // 2. Debounced background Supabase sync
-    if (session) {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        supabase.auth.updateUser({
-          data: {
-            mascotExpression,
-            mascotShape,
-            mascotColor,
-            mascotGaze,
-            bgTheme,
-            catSettings,
-            geminiApiKey
-          }
-        }).catch(err => console.warn('[Settings] Supabase sync error:', err));
-      }, 500);
-    }
+    // 2. Debounced background Supabase sync only after hydration
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      supabase.auth.updateUser({
+        data: {
+          mascotExpression,
+          mascotShape,
+          mascotColor,
+          mascotGaze,
+          bgTheme,
+          catSettings,
+          geminiApiKey
+        }
+      }).catch(err => console.warn('[Settings] Supabase sync error:', err));
+    }, 600);
   }, [mascotExpression, mascotShape, mascotColor, mascotGaze, bgTheme, catSettings, geminiApiKey, session]);
 
   useEffect(() => {
+    // Strictly isolate unauthenticated/login page into a clean white theme
+    if (!session) {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.style.removeProperty('--theme-bg');
+      document.documentElement.style.removeProperty('--theme-surface');
+      document.documentElement.style.removeProperty('--theme-surface-elevated');
+      document.documentElement.style.removeProperty('--theme-primary');
+      document.documentElement.style.removeProperty('--theme-border');
+      document.body.style.backgroundColor = '#F8FAFC';
+      let meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#FFFFFF');
+      return;
+    }
+
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) {
       meta = document.createElement('meta');
@@ -474,7 +528,7 @@ export default function Home() {
     } catch (e) {
       console.warn('Failed to set theme variables:', e);
     }
-  }, [bgTheme]);
+  }, [bgTheme, session]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -1045,21 +1099,17 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className={`min-h-screen ${bgTheme} flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-500`}>
-        <motion.div initial={{y: 20, opacity: 0}} animate={{y: 0, opacity: 1}} className={`max-w-sm w-full p-8 rounded-3xl shadow-xl ${t.card} relative z-10 text-center flex flex-col items-center`}>
-          <div className="mb-8 drop-shadow-xl"><BloubMascot size={120} state="idle" expression="hilare" shape="soleil" color="ambre" /></div>
-          <h1 className={`text-2xl font-bold mb-2 tracking-tight ${t.textPrimary}`}>Vibe Todos</h1>
-          <p className={`text-sm mb-8 leading-relaxed ${t.textSecondary}`}>Sign in to sync your tasks and personal vibes across all your devices.</p>
-          <button onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/api/auth/callback`, queryParams: { prompt: 'select_account' } } })} className="w-full py-3.5 px-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-center gap-3 font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all active:scale-95">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+        <motion.div initial={{y: 20, opacity: 0}} animate={{y: 0, opacity: 1}} className="max-w-sm w-full p-8 rounded-3xl shadow-xl bg-white border border-slate-200 relative z-10 text-center flex flex-col items-center">
+          <div className="mb-8 drop-shadow-md"><BloubMascot size={120} state="idle" expression="hilare" shape="soleil" color="ambre" /></div>
+          <h1 className="text-2xl font-bold mb-2 tracking-tight text-[#0F172A]">Vibe Todos</h1>
+          <p className="text-sm mb-8 leading-relaxed text-[#475569]">Sign in to sync your tasks and personal vibes across all your devices.</p>
+          <button onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/api/auth/callback`, queryParams: { prompt: 'select_account' } } })} className="w-full py-3.5 px-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all active:scale-95">
             <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
             Continue with Google
           </button>
 
-          <button onClick={() => setShowDownloadMenu(true)} className={`mt-3 w-full py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm transition-all active:scale-95 border ${
-            isDark 
-              ? 'bg-slate-800 border-slate-700/60 text-slate-200 hover:bg-slate-700' 
-              : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-          }`}>
+          <button onClick={() => setShowDownloadMenu(true)} className="mt-3 w-full py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm transition-all active:scale-95 border bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100">
             <Download size={16} />
             Download App
           </button>
@@ -1067,13 +1117,13 @@ export default function Home() {
 
         {/* Download Menu Modal (Login Page) */}
         {showDownloadMenu && (
-          <div className="fixed inset-0 bg-black/40  z-50 flex items-center justify-center p-6 text-left"
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6 text-left"
             onClick={() => setShowDownloadMenu(false)}>
-            <div className={`rounded-3xl p-7 max-w-sm w-full shadow-2xl animate-pop-in ${isDark ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white text-gray-900'}`}
+            <div className="rounded-3xl p-7 max-w-sm w-full shadow-2xl animate-pop-in bg-white border border-slate-200 text-slate-900"
               onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold">Download Vibe Todos</h2>
-                <button onClick={() => setShowDownloadMenu(false)} className={`p-1.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-700'}`}><X size={18}/></button>
+                <h2 className="text-lg font-bold text-slate-900">Download Vibe Todos</h2>
+                <button onClick={() => setShowDownloadMenu(false)} className="p-1.5 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700"><X size={18}/></button>
               </div>
               
               <div className="space-y-3 pt-2">
@@ -1081,11 +1131,7 @@ export default function Home() {
                 <a 
                   href="/downloads/Todos.apk" 
                   download="Todos.apk"
-                  className={`w-full flex items-center justify-between py-3 px-4 rounded-2xl border transition-all font-semibold text-sm ${
-                    isDark 
-                      ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700' 
-                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="w-full flex items-center justify-between py-3 px-4 rounded-2xl border transition-all font-semibold text-sm bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   <span className="flex items-center gap-2">
                     <Smartphone size={18} className="text-green-500" />
@@ -1098,11 +1144,7 @@ export default function Home() {
                 <a 
                   href="/downloads/VibeTodosSetup.exe" 
                   download="VibeTodosSetup.exe"
-                  className={`w-full flex items-center justify-between py-3 px-4 rounded-2xl border transition-all font-semibold text-sm ${
-                    isDark 
-                      ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700' 
-                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="w-full flex items-center justify-between py-3 px-4 rounded-2xl border transition-all font-semibold text-sm bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   <span className="flex items-center gap-2">
                     <Monitor size={18} className="text-blue-500" />
@@ -1120,11 +1162,7 @@ export default function Home() {
                     setShowDownloadMenu(false);
                     setShowInstallGuide(true);
                   }}
-                  className={`w-full flex items-center justify-between py-3 px-4 rounded-2xl border transition-all font-semibold text-sm text-left ${
-                    isDark 
-                      ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700' 
-                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="w-full flex items-center justify-between py-3 px-4 rounded-2xl border transition-all font-semibold text-sm text-left bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   <span className="flex items-center gap-2">
                     <Smartphone size={18} className="text-indigo-500" />
@@ -1140,37 +1178,37 @@ export default function Home() {
 
         {/* PWA Install Guide Modal (Login Page) */}
         {showInstallGuide && (
-          <div className="fixed inset-0 bg-black/40  z-50 flex items-center justify-center p-6 text-left"
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6 text-left"
             onClick={() => setShowInstallGuide(false)}>
-            <div className={`rounded-3xl p-7 max-w-sm w-full shadow-2xl animate-pop-in ${isDark ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white text-gray-900'}`}
+            <div className="rounded-3xl p-7 max-w-sm w-full shadow-2xl animate-pop-in bg-white border border-slate-200 text-slate-900"
               onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold">Install Web App (PWA)</h2>
-                <button onClick={() => setShowInstallGuide(false)} className={`p-1.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-700'}`}><X size={18}/></button>
+                <h2 className="text-lg font-bold text-slate-900">Install Web App (PWA)</h2>
+                <button onClick={() => setShowInstallGuide(false)} className="p-1.5 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700"><X size={18}/></button>
               </div>
 
               <div className="space-y-5">
                 <div className="flex gap-3 items-start">
                   <Smartphone size={20} className="text-blue-500 mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold">iPhone & iPad (Safari)</h4>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Tap the share icon <span className="font-semibold">"Share"</span> at the bottom of Safari, and select <span className="font-semibold">"Add to Home Screen"</span>.</p>
+                    <h4 className="font-semibold text-slate-900">iPhone & iPad (Safari)</h4>
+                    <p className="text-xs text-slate-500">Tap the share icon <span className="font-semibold">"Share"</span> at the bottom of Safari, and select <span className="font-semibold">"Add to Home Screen"</span>.</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 items-start">
                   <Smartphone size={20} className="text-green-500 mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold">Android / Chrome / Brave</h4>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Tap the menu dots in the top-right and select <span className="font-semibold">"Install App"</span> or <span className="font-semibold">"Add to Home Screen"</span>.</p>
+                    <h4 className="font-semibold text-slate-900">Android / Chrome / Brave</h4>
+                    <p className="text-xs text-slate-500">Tap the menu dots in the top-right and select <span className="font-semibold">"Install App"</span> or <span className="font-semibold">"Add to Home Screen"</span>.</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 items-start">
                   <Monitor size={20} className="text-purple-500 mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold">Firefox / Other Browsers</h4>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Look for the install or download icon in the URL search bar, or use Chrome/Brave/Edge to install as a desktop shortcut.</p>
+                    <h4 className="font-semibold text-slate-900">Firefox / Other Browsers</h4>
+                    <p className="text-xs text-slate-500">Look for the install or download icon in the URL search bar, or use Chrome/Brave/Edge to install as a desktop shortcut.</p>
                   </div>
                 </div>
               </div>
@@ -1781,7 +1819,19 @@ export default function Home() {
                   <div className="pt-2 mt-2">
                     <button
                       onClick={async () => {
+                        hasHydratedRemoteSettingsRef.current = false;
+                        document.documentElement.classList.remove('dark');
+                        document.documentElement.removeAttribute('data-theme');
+                        document.documentElement.style.removeProperty('--theme-bg');
+                        document.documentElement.style.removeProperty('--theme-surface');
+                        document.documentElement.style.removeProperty('--theme-surface-elevated');
+                        document.documentElement.style.removeProperty('--theme-primary');
+                        document.documentElement.style.removeProperty('--theme-border');
+                        document.body.style.backgroundColor = '#F8FAFC';
+                        let meta = document.querySelector('meta[name="theme-color"]');
+                        if (meta) meta.setAttribute('content', '#FFFFFF');
                         await supabase.auth.signOut();
+                        setSession(null);
                         setTodos([]);
                         setCategories([]);
                         setShowSettings(false);
@@ -2114,15 +2164,30 @@ export default function Home() {
               <div className={selectedNote ? "h-full flex flex-col min-h-0 flex-1" : "space-y-5"}>
                 {/* Study Hub Hero Card - Hide when deep inside a view */}
                 {!selectedNote && !showStudyExplorer && !showGraphView && (
-                  <div className={`p-6 rounded-3xl border transition-all ${t.card} relative overflow-hidden`}>
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-[var(--theme-primary,#3b82f6)]/10 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center flex-shrink-0">
-                        <BookOpen size={24} />
+                  <div className={`p-5 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
+                    <div className="flex items-center gap-4">
+                      <div 
+                        className="w-14 h-14 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                        onClick={() => triggerMascot('orbit', 'heureux')}
+                      >
+                        <BloubMascot 
+                          size={56} 
+                          state={animState} 
+                          expression={animState !== 'idle' ? (animExpression || mascotExpression) : ((catSettings[activeCategory]?.expression || mascotExpression || 'neutre') as ExpressionId)} 
+                          shape={catSettings[activeCategory]?.shape || mascotShape || 'squircle'} 
+                          color={catSettings[activeCategory]?.color || mascotColor || '#3b82f6'} 
+                          onInteract={() => triggerMascot('orbit', 'heureux')}
+                        />
                       </div>
-                      <div>
-                        <h3 className={`text-lg font-bold ${t.textPrimary}`}>{activeCatObj.name}</h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className={`text-lg font-bold truncate ${t.textPrimary}`}>{activeCatObj.name}</h3>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-[var(--theme-text-muted,#94a3b8)] border border-white/10">
+                            Cloud Vault
+                          </span>
+                        </div>
                         <p className={`text-xs mt-1 leading-relaxed ${t.textSecondary}`}>
-                          Connected to Supabase Cloud Vault.
+                          Interactive study workspace & AI quiz generator
                         </p>
                       </div>
                     </div>
