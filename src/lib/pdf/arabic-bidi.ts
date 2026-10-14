@@ -945,7 +945,8 @@ function sortDocumentLayout(rects: Rect[], isRTL: boolean): Rect[] {
 export function buildProcessedLine(items: ProcessedTextItem[]): ProcessedTextLine {
   if (items.length === 1) {
     const item = items[0];
-    const fullText = item.isArabic ? reorderVisualToLogicalArabic(item.str) : item.str;
+    const rawStr = item.str || '';
+    const fullText = (item.isArabic ? reorderVisualToLogicalArabic(rawStr) : rawStr).trim();
     return {
       items,
       fullText,
@@ -977,8 +978,12 @@ export function buildProcessedLine(items: ProcessedTextItem[]): ProcessedTextLin
   }
   const maxHeightAllowed = medianHeight * 1.5;
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+  // Only consider items with non-empty text to define bounding box (prevents empty margin/trailing space bleed)
+  const contentItems = items.filter(i => i.str && i.str.trim().length > 0);
+  const boundingItems = contentItems.length > 0 ? contentItems : items;
+
+  for (let i = 0; i < boundingItems.length; i++) {
+    const item = boundingItems[i];
     if (item.left < minLeft) minLeft = item.left;
     if (item.top < minTop) minTop = item.top;
     const itemRight = item.left + item.width;
@@ -992,14 +997,19 @@ export function buildProcessedLine(items: ProcessedTextItem[]): ProcessedTextLin
     if (item.isArabic) {
       hasArabic = true;
     }
+  }
 
-    textParts.push(item.str);
+  for (let i = 0; i < items.length; i++) {
+    const s = items[i].str;
+    if (s && s.trim()) {
+      textParts.push(s.trim());
+    }
   }
 
   const rawJoined = textParts.join(' ').replace(/\s+/g, ' ').trim();
   const fullText = hasArabic ? reorderVisualToLogicalArabic(rawJoined) : rawJoined;
   const dir: 'rtl' | 'ltr' = hasArabic ? 'rtl' : 'ltr';
-  const rawHeight = maxBottom - minTop;
+  const rawHeight = maxBottom > minTop ? maxBottom - minTop : medianHeight;
 
   return {
     items,
@@ -1007,7 +1017,7 @@ export function buildProcessedLine(items: ProcessedTextItem[]): ProcessedTextLin
     dir,
     left: Math.round(minLeft * 100) / 100,
     top: Math.round(minTop * 100) / 100,
-    width: Math.round((maxRight - minLeft) * 100) / 100,
+    width: Math.round(Math.max(0, maxRight - minLeft) * 100) / 100,
     height: Math.round(rawHeight * 100) / 100,
   };
 }

@@ -130,7 +130,7 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
           display: inline-block !important;
           white-space: pre !important;
           transform-origin: 0% 0% !important;
-          line-height: 1 !important;
+          line-height: inherit !important;
           vertical-align: baseline !important;
           color: transparent !important;
           cursor: text;
@@ -153,20 +153,13 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
           pointer-events: none !important;
           display: none !important;
         }
-        /* Newline pseudo-element to guarantee natural line breaking on multiline text selections */
-        .arabic-text-layer span.arabic-text-line::after {
-          content: "\\A";
-          white-space: pre;
-          width: 0;
-          height: 0;
-          position: absolute;
-          pointer-events: none;
-        }
       `}</style>
       {activeLines.map((line, index) => {
         const isArabicText = /[\u0600-\u06FF]/.test(line.fullText);
         const effectiveDir = isArabicText ? 'rtl' : (line.dir || 'ltr');
         const fontSize = line.items[0]?.fontSize || line.height;
+        const slimHeight = Math.max(12, Math.round(line.height * 0.48));
+        const snugTop = Math.round(line.top + line.height * 0.38);
 
         return (
           <span
@@ -179,11 +172,13 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
             style={{
               position: 'absolute',
               left: `${line.left}px`,
-              top: `${line.top}px`,
+              top: `${snugTop}px`,
               width: `${line.width}px`,
-              height: `${line.height}px`,
+              maxWidth: `${line.width}px`,
+              height: `${slimHeight}px`,
               fontSize: `${fontSize}px`,
-              lineHeight: 1,
+              lineHeight: `${slimHeight}px`,
+              textAlign: effectiveDir === 'rtl' ? 'right' : 'left',
               display: 'inline-block',
               whiteSpace: 'pre',
               transformOrigin: '0% 0%',
@@ -192,6 +187,7 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
               userSelect: 'text',
               pointerEvents: 'auto',
               color: 'transparent',
+              overflow: 'hidden',
               fontFamily: isArabicText ? 'var(--font-lemonada), sans-serif' : 'sans-serif',
             }}
           >

@@ -619,12 +619,13 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
               });
             }
 
-            // Extract trimmed non-whitespace character sub-ranges and clamp to span boundaries
+            // Extract exact word-level sub-ranges (strictly non-whitespace)
             for (const textNode of textNodes) {
               const parentSpan = textNode.parentElement?.closest('span');
               const spanBounding = parentSpan ? parentSpan.getBoundingClientRect() : null;
 
-              const nodeLength = textNode.textContent?.length || 0;
+              const fullContent = textNode.textContent || '';
+              const nodeLength = fullContent.length;
               let startOffset = 0;
               let endOffset = nodeLength;
 
@@ -637,53 +638,48 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
 
               if (startOffset >= endOffset) continue;
 
-              const fullContent = textNode.textContent || '';
               const slice = fullContent.substring(startOffset, endOffset);
+              const wordRegex = /\S+/g;
+              let match: RegExpExecArray | null;
 
-              // Strip leading and trailing whitespace
-              const leadingMatch = slice.match(/^\s+/);
-              if (leadingMatch) startOffset += leadingMatch[0].length;
+              while ((match = wordRegex.exec(slice)) !== null) {
+                const wStart = startOffset + match.index;
+                const wEnd = wStart + match[0].length;
 
-              const trailingMatch = slice.match(/\s+$/);
-              if (trailingMatch) endOffset -= trailingMatch[0].length;
+                try {
+                  const wordRange = document.createRange();
+                  wordRange.setStart(textNode, wStart);
+                  wordRange.setEnd(textNode, wEnd);
 
-              if (startOffset >= endOffset) continue;
+                  const wordRects = Array.from(wordRange.getClientRects());
+                  for (const r of wordRects) {
+                    if (r.width < 1.5 || r.height < 1.5) continue;
 
-              try {
-                const subRange = document.createRange();
-                subRange.setStart(textNode, startOffset);
-                subRange.setEnd(textNode, endOffset);
+                    let clampedLeft = r.left;
+                    let clampedRight = r.right;
+                    if (spanBounding) {
+                      clampedLeft = Math.max(spanBounding.left, clampedLeft);
+                      clampedRight = Math.min(spanBounding.right, clampedRight);
+                    }
+                    const clampedWidth = clampedRight - clampedLeft;
+                    if (clampedWidth < 1.5) continue;
 
-                const subRects = Array.from(subRange.getClientRects());
-                for (const r of subRects) {
-                  if (r.width < 2 || r.height < 2) continue;
-
-                  // Clamp horizontally to parent span bounding box
-                  let clampedLeft = r.left;
-                  let clampedRight = r.right;
-                  if (spanBounding) {
-                    clampedLeft = Math.max(spanBounding.left, clampedLeft);
-                    clampedRight = Math.min(spanBounding.right, clampedRight);
+                    rawRects.push({
+                      left: clampedLeft,
+                      top: r.top,
+                      width: clampedWidth,
+                      height: r.height,
+                      right: clampedRight,
+                      bottom: r.bottom
+                    });
                   }
-
-                  const clampedWidth = clampedRight - clampedLeft;
-                  if (clampedWidth < 2) continue;
-
-                  rawRects.push({
-                    left: clampedLeft,
-                    top: r.top,
-                    width: clampedWidth,
-                    height: r.height,
-                    right: clampedRight,
-                    bottom: r.bottom
-                  });
+                } catch (e) {
+                  // Ignore DOM range boundary exceptions
                 }
-              } catch (e) {
-                // Ignore DOM range boundary exceptions
               }
             }
 
-            // Fallback to direct client rects if no sub-ranges found
+            // Fallback to direct client rects if no word sub-ranges found
             if (rawRects.length === 0) {
               const fallbackRects = Array.from(range.getClientRects()).filter(r => r.width >= 2 && r.height >= 2);
               for (const r of fallbackRects) {
@@ -700,11 +696,10 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
 
             if (rawRects.length === 0) return;
 
-            // 2. Mathematically compress vertical height (0.58) and snug down baseline
-            const HEIGHT_SCALE = 0.58;
+            // 2. Mathematically compress vertical height (45% of raw font bounding box, capped at 16px at 1.0 zoom)
             const processedRects = rawRects.map(rect => {
-              const compHeight = rect.height * HEIGHT_SCALE;
-              const compTop = rect.top + (rect.height - compHeight) * 0.68;
+              const compHeight = Math.min(rect.height * 0.45, 16 * zoomLevel);
+              const compTop = rect.top + (rect.height - compHeight) * 0.65;
 
               return {
                 left: (rect.left - containerRect.left) / zoomLevel,
@@ -718,7 +713,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
 
             // 3. Sort by line (top), then horizontal (left)
             processedRects.sort((a, b) => {
-              if (Math.abs(a.top - b.top) < (a.height * 0.5)) {
+              if (Math.abs(a.top - b.top) < (a.height * 0.6)) {
                 return a.left - b.left;
               }
               return a.top - b.top;
@@ -728,9 +723,9 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
             const mergedRects: typeof processedRects = [];
             for (const r of processedRects) {
               const prev = mergedRects[mergedRects.length - 1];
-              if (prev && Math.abs(prev.top - r.top) < (prev.height * 0.5)) {
+              if (prev && Math.abs(prev.top - r.top) < (prev.height * 0.6)) {
                 const gap = Math.max(0, r.left - prev.right);
-                const maxAllowedGap = Math.max(prev.height, r.height) * 1.2;
+                const maxAllowedGap = Math.max(prev.height, r.height) * 1.5;
 
                 if (gap <= maxAllowedGap) {
                   const newLeft = Math.min(prev.left, r.left);
@@ -1091,9 +1086,14 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
                 {(annotations[pageNumber] || []).map(ann => {
                   if (ann.type === 'highlight') {
                     const w = Math.abs(ann.w) * zoomLevel;
-                    const h = Math.abs(ann.h) * zoomLevel;
+                    const rawH = Math.abs(ann.h);
+                    // Slim height normalization:
+                    // Compresses bloated font boxes (>18px unscaled) down to ~45% and shifts down to text baseline
+                    const slimH = rawH > 18 ? Math.max(13, rawH * 0.45) : rawH;
+                    const shiftY = (rawH - slimH) * 0.65;
+                    const h = slimH * zoomLevel;
                     const left = ann.startX * zoomLevel;
-                    const top = ann.startY * zoomLevel;
+                    const top = (ann.startY + shiftY) * zoomLevel;
                     return (
                       <div 
                         key={ann.id} 
