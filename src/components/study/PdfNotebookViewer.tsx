@@ -572,32 +572,167 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
           const selection = window.getSelection();
           if (selection && selection.rangeCount > 0 && selection.toString().trim().length > 0) {
             const range = selection.getRangeAt(0);
-            const clientRects = Array.from(range.getClientRects());
-            if (clientRects.length > 0 && overlayRef.current) {
-              const containerRect = overlayRef.current.getBoundingClientRect();
-              
-              // 1. Filter out invalid, tiny, zero-width, zero-height, or pure whitespace rects
-              const validRects = clientRects
-                .filter(rect => rect.width >= 2 && rect.height >= 2)
-                .map(rect => ({
-                  left: (rect.left - containerRect.left) / zoomLevel,
-                  top: (rect.top - containerRect.top) / zoomLevel,
-                  width: rect.width / zoomLevel,
-                  height: rect.height / zoomLevel,
-                  right: (rect.right - containerRect.left) / zoomLevel,
-                  bottom: (rect.bottom - containerRect.top) / zoomLevel,
-                }));
+            if (!overlayRef.current) return;
+            const containerRect = overlayRef.current.getBoundingClientRect();
 
-              if (validRects.length === 0) return;
+            // 1. Collect only valid trimmed text sub-ranges inside actual textLayer spans
+            const rawRects: { left: number; top: number; width: number; height: number; right: number; bottom: number }[] = [];
+            const textNodes: Text[] = [];
+            const root = range.commonAncestorContainer;
 
-              // 2. Sort by vertical line position, then horizontal
-              validRects.sort((a, b) => Math.abs(a.top - b.top) < (4 / zoomLevel) ? a.left - b.left : a.top - b.top);
+            if (root.nodeType === Node.TEXT_NODE) {
+              if (root.textContent && root.textContent.trim()) {
+                textNodes.push(root as Text);
+              }
+            } else {
+              const walker = document.createTreeWalker(
+                root,
+                NodeFilter.SHOW_TEXT,
+                {
+                  acceptNode(node) {
+                    if (!range.intersectsNode(node)) return NodeFilter.FILTER_REJECT;
+                    const parentSpan = node.parentElement?.closest('.textLayer span, .arabic-text-layer span, .react-pdf__Page__textContent span');
+                    if (!parentSpan) return NodeFilter.FILTER_REJECT;
+                    if (!node.textContent || !node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+                    return NodeFilter.FILTER_ACCEPT;
+                  }
+                }
+              );
+              let curr = walker.nextNode();
+              while (curr) {
+                textNodes.push(curr as Text);
+                curr = walker.nextNode();
+              }
+            }
 
-              // 3. Merge adjacent rects on the same line (Math.abs(r1.top - r2.top) < 4)
-              const mergedRects: typeof validRects = [];
-              for (const r of validRects) {
-                const prev = mergedRects[mergedRects.length - 1];
-                if (prev && Math.abs(prev.top - r.top) < (4 / zoomLevel) && Math.abs(prev.height - r.height) < (6 / zoomLevel)) {
+            // Fallback: If no text nodes caught via walker, find intersecting text spans directly
+            if (textNodes.length === 0) {
+              const candidateSpans = overlayRef.current.parentElement?.querySelectorAll('.textLayer span, .arabic-text-layer span, .react-pdf__Page__textContent span') || [];
+              candidateSpans.forEach(span => {
+                if (range.intersectsNode(span)) {
+                  span.childNodes.forEach(child => {
+                    if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim() && range.intersectsNode(child)) {
+                      textNodes.push(child as Text);
+                    }
+                  });
+                }
+              });
+            }
+
+            // Extract trimmed non-whitespace character sub-ranges and clamp to span boundaries
+            for (const textNode of textNodes) {
+              const parentSpan = textNode.parentElement?.closest('span');
+              const spanBounding = parentSpan ? parentSpan.getBoundingClientRect() : null;
+
+              const nodeLength = textNode.textContent?.length || 0;
+              let startOffset = 0;
+              let endOffset = nodeLength;
+
+              if (textNode === range.startContainer) {
+                startOffset = Math.max(0, range.startOffset);
+              }
+              if (textNode === range.endContainer) {
+                endOffset = Math.min(nodeLength, range.endOffset);
+              }
+
+              if (startOffset >= endOffset) continue;
+
+              const fullContent = textNode.textContent || '';
+              const slice = fullContent.substring(startOffset, endOffset);
+
+              // Strip leading and trailing whitespace
+              const leadingMatch = slice.match(/^\s+/);
+              if (leadingMatch) startOffset += leadingMatch[0].length;
+
+              const trailingMatch = slice.match(/\s+$/);
+              if (trailingMatch) endOffset -= trailingMatch[0].length;
+
+              if (startOffset >= endOffset) continue;
+
+              try {
+                const subRange = document.createRange();
+                subRange.setStart(textNode, startOffset);
+                subRange.setEnd(textNode, endOffset);
+
+                const subRects = Array.from(subRange.getClientRects());
+                for (const r of subRects) {
+                  if (r.width < 2 || r.height < 2) continue;
+
+                  // Clamp horizontally to parent span bounding box
+                  let clampedLeft = r.left;
+                  let clampedRight = r.right;
+                  if (spanBounding) {
+                    clampedLeft = Math.max(spanBounding.left, clampedLeft);
+                    clampedRight = Math.min(spanBounding.right, clampedRight);
+                  }
+
+                  const clampedWidth = clampedRight - clampedLeft;
+                  if (clampedWidth < 2) continue;
+
+                  rawRects.push({
+                    left: clampedLeft,
+                    top: r.top,
+                    width: clampedWidth,
+                    height: r.height,
+                    right: clampedRight,
+                    bottom: r.bottom
+                  });
+                }
+              } catch (e) {
+                // Ignore DOM range boundary exceptions
+              }
+            }
+
+            // Fallback to direct client rects if no sub-ranges found
+            if (rawRects.length === 0) {
+              const fallbackRects = Array.from(range.getClientRects()).filter(r => r.width >= 2 && r.height >= 2);
+              for (const r of fallbackRects) {
+                rawRects.push({
+                  left: r.left,
+                  top: r.top,
+                  width: r.width,
+                  height: r.height,
+                  right: r.right,
+                  bottom: r.bottom
+                });
+              }
+            }
+
+            if (rawRects.length === 0) return;
+
+            // 2. Mathematically compress vertical height (0.58) and snug down baseline
+            const HEIGHT_SCALE = 0.58;
+            const processedRects = rawRects.map(rect => {
+              const compHeight = rect.height * HEIGHT_SCALE;
+              const compTop = rect.top + (rect.height - compHeight) * 0.68;
+
+              return {
+                left: (rect.left - containerRect.left) / zoomLevel,
+                top: (compTop - containerRect.top) / zoomLevel,
+                width: rect.width / zoomLevel,
+                height: compHeight / zoomLevel,
+                right: (rect.right - containerRect.left) / zoomLevel,
+                bottom: (compTop + compHeight - containerRect.top) / zoomLevel,
+              };
+            });
+
+            // 3. Sort by line (top), then horizontal (left)
+            processedRects.sort((a, b) => {
+              if (Math.abs(a.top - b.top) < (a.height * 0.5)) {
+                return a.left - b.left;
+              }
+              return a.top - b.top;
+            });
+
+            // 4. Merge adjacent word fragments on the same line if gap is small
+            const mergedRects: typeof processedRects = [];
+            for (const r of processedRects) {
+              const prev = mergedRects[mergedRects.length - 1];
+              if (prev && Math.abs(prev.top - r.top) < (prev.height * 0.5)) {
+                const gap = Math.max(0, r.left - prev.right);
+                const maxAllowedGap = Math.max(prev.height, r.height) * 1.2;
+
+                if (gap <= maxAllowedGap) {
                   const newLeft = Math.min(prev.left, r.left);
                   const newRight = Math.max(prev.right, r.right);
                   const newTop = Math.min(prev.top, r.top);
@@ -608,32 +743,32 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
                   prev.bottom = newBottom;
                   prev.width = newRight - newLeft;
                   prev.height = newBottom - newTop;
-                } else {
-                  mergedRects.push({ ...r });
+                  continue;
                 }
               }
-
-              let saveAnnotations = { ...annotationsRef.current };
-              const newAnns = mergedRects.map((r, i) => ({
-                id: Date.now() + i,
-                type: 'highlight',
-                startX: r.left,
-                startY: r.top,
-                w: r.width,
-                h: r.height,
-                color: highlightColor,
-                text: selection.toString()
-              }));
-
-              saveAnnotations = {
-                ...saveAnnotations,
-                [pageNumber]: [...(saveAnnotations[pageNumber] || []), ...newAnns]
-              };
-
-              isDirtyRef.current = true;
-              setAnnotations(saveAnnotations);
-              selection.removeAllRanges();
+              mergedRects.push({ ...r });
             }
+
+            let saveAnnotations = { ...annotationsRef.current };
+            const newAnns = mergedRects.map((r, i) => ({
+              id: Date.now() + i,
+              type: 'highlight',
+              startX: r.left,
+              startY: r.top,
+              w: r.width,
+              h: r.height,
+              color: highlightColor,
+              text: selection.toString()
+            }));
+
+            saveAnnotations = {
+              ...saveAnnotations,
+              [pageNumber]: [...(saveAnnotations[pageNumber] || []), ...newAnns]
+            };
+
+            isDirtyRef.current = true;
+            setAnnotations(saveAnnotations);
+            selection.removeAllRanges();
           }
         }, 50);
       }
@@ -652,11 +787,26 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
   return (
     <div ref={containerRef} className={`flex w-full flex-1 h-full min-h-[500px] border rounded-2xl overflow-hidden shadow-inner ${isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface)]' : 'border-gray-200 bg-gray-100'}`}>
       <style>{`
-        .react-pdf__Page__textContent {
+        .react-pdf__Page__textContent, .textLayer {
           line-height: 1 !important;
+          pointer-events: none !important;
+          user-select: none !important;
+          -webkit-user-select: none !important;
         }
-        .react-pdf__Page__textContent > span {
+        .react-pdf__Page__textContent > span, .textLayer span {
           line-height: 1 !important;
+          vertical-align: baseline !important;
+          display: inline-block !important;
+          pointer-events: auto !important;
+          user-select: text !important;
+          -webkit-user-select: text !important;
+        }
+        .react-pdf__Page__textContent br, .textLayer br,
+        .react-pdf__Page__textContent .endOfContent, .textLayer .endOfContent {
+          user-select: none !important;
+          -webkit-user-select: none !important;
+          pointer-events: none !important;
+          display: none !important;
         }
       `}</style>
        
@@ -950,7 +1100,15 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
                         onMouseDown={(e) => { if (pdfTool === 'eraser') { e.stopPropagation(); isDirtyRef.current = true; setAnnotations(p => ({ ...p, [pageNumber]: (p[pageNumber] || []).filter(a => a.id !== ann.id) })); } }} 
                         onTouchStart={(e) => { if (pdfTool === 'eraser') { e.stopPropagation(); isDirtyRef.current = true; setAnnotations(p => ({ ...p, [pageNumber]: (p[pageNumber] || []).filter(a => a.id !== ann.id) })); } }} 
                         className={`absolute ${pdfTool === 'eraser' ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'}`} 
-                        style={{ backgroundColor: (ann.color && ann.color.length === 7) ? ann.color + '80' : (ann.color || '#facc1580'), left, top, width: w, height: h }}
+                        style={{ 
+                          backgroundColor: (ann.color && ann.color.length === 7) ? ann.color + '80' : (ann.color || '#facc1580'), 
+                          left, 
+                          top, 
+                          width: w, 
+                          height: h,
+                          borderRadius: '3px',
+                          mixBlendMode: 'multiply'
+                        }} 
                         title={ann.text} 
                       />
                     );

@@ -117,19 +117,21 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
       }}
     >
       <style>{`
-        .arabic-text-layer {
+        .arabic-text-layer, .textLayer, .react-pdf__Page__textContent {
           pointer-events: none !important;
-          user-select: text !important;
-          -webkit-user-select: text !important;
+          user-select: none !important;
+          -webkit-user-select: none !important;
         }
-        .arabic-text-layer::selection {
+        .arabic-text-layer::selection, .textLayer::selection, .react-pdf__Page__textContent::selection {
           background: transparent !important;
         }
+        .arabic-text-layer span, .textLayer span, .react-pdf__Page__textContent span,
         .arabic-text-layer span.arabic-text-line {
           display: inline-block !important;
           white-space: pre !important;
           transform-origin: 0% 0% !important;
           line-height: 1 !important;
+          vertical-align: baseline !important;
           color: transparent !important;
           cursor: text;
           user-select: text !important;
@@ -139,9 +141,17 @@ export const ArabicTextLayer = React.memo(function ArabicTextLayer({
           margin: 0 !important;
           box-sizing: border-box !important;
         }
+        .arabic-text-layer span::selection, .textLayer span::selection, .react-pdf__Page__textContent span::selection,
         .arabic-text-layer span.arabic-text-line::selection {
           background: rgba(59, 130, 246, 0.35) !important;
           color: transparent !important;
+        }
+        .arabic-text-layer br, .textLayer br, .react-pdf__Page__textContent br,
+        .arabic-text-layer .endOfContent, .textLayer .endOfContent, .react-pdf__Page__textContent .endOfContent {
+          user-select: none !important;
+          -webkit-user-select: none !important;
+          pointer-events: none !important;
+          display: none !important;
         }
         /* Newline pseudo-element to guarantee natural line breaking on multiline text selections */
         .arabic-text-layer span.arabic-text-line::after {
