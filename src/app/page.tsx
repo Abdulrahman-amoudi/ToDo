@@ -471,6 +471,16 @@ export default function Home() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // 0. Synchronous guest / general localStorage write
+    try {
+      localStorage.setItem('vibe_mascotExpression', mascotExpression);
+      localStorage.setItem('vibe_mascotShape', mascotShape);
+      localStorage.setItem('vibe_mascotColor', mascotColor);
+      localStorage.setItem('vibe_mascotGaze', mascotGaze);
+      localStorage.setItem('vibe_bgTheme', bgTheme);
+      localStorage.setItem('vibe_catSettings', JSON.stringify(catSettings));
+    } catch (e) {}
+
     if (!session || !hasHydratedRemoteSettingsRef.current) return;
     const uid = session.user?.id;
     if (!uid) return;
@@ -507,15 +517,6 @@ export default function Home() {
   }, [mascotExpression, mascotShape, mascotColor, mascotGaze, bgTheme, catSettings, geminiApiKey, session]);
 
   useEffect(() => {
-    // Keep unauthenticated/login page in cohesive dark mode
-    if (!session) {
-      document.documentElement.classList.add('dark');
-      document.body.style.backgroundColor = '#0B0A0E';
-      let meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', '#0B0A0E');
-      return;
-    }
-
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) {
       meta = document.createElement('meta');
@@ -1238,6 +1239,9 @@ export default function Home() {
   };
 
   const updateTargetExpr = (expr: string) => {
+    if (autoMoodEnabled) {
+      updateAutoMood(false);
+    }
     if (isGlobalTarget) {
       setMascotExpression(expr as any);
     } else {
@@ -1254,10 +1258,39 @@ export default function Home() {
     triggerMascot('idle', expr as any, true);
   };
 
+  const applyTheme = useCallback((themeId: string) => {
+    setBgTheme(themeId);
+    try {
+      localStorage.setItem('vibe_bgTheme', themeId);
+      if (session?.user?.id) {
+        localStorage.setItem(`bloub_prefs_${session.user.id}_bgTheme`, themeId);
+      }
+      const vars = getThemeVariables(themeId);
+      if (vars) {
+        Object.entries(vars).forEach(([prop, val]) => {
+          document.documentElement.style.setProperty(prop, val);
+        });
+      }
+      const activeTheme = THEMES.find(t => t.id === themeId);
+      if (activeTheme?.bgColor) {
+        document.body.style.backgroundColor = activeTheme.bgColor;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', activeTheme.bgColor);
+      }
+      document.documentElement.setAttribute('data-theme', themeId);
+    } catch (e) {
+      console.warn('Failed to apply theme immediately:', e);
+    }
+  }, [session]);
+
+  const filteredThemes = useMemo(() => {
+    return THEMES.filter(t => themeCategory === 'All' || t.category === themeCategory);
+  }, [themeCategory]);
+
   // Theme Logic
-    // User requested ONLY dark themes. bgTheme is a hex color (e.g. bg-[#1e1e2e]), 
-    // so we use generic dark glassy translucent styles that overlay nicely on ANY hex color.
-    const isDark = true; 
+  // User requested ONLY dark themes. bgTheme is a hex color (e.g. bg-[#1e1e2e]), 
+  // so we use generic dark glassy translucent styles that overlay nicely on ANY hex color.
+  const isDark = true; 
     
     const tc = {
       card: 'bg-zinc-950/40 border border-white/10 hover:border-white/20 active:scale-[0.99] transition-all text-zinc-100',
@@ -1297,8 +1330,8 @@ export default function Home() {
           animate={{ y: 0, opacity: 1 }} 
           className="max-w-sm w-full p-8 rounded-3xl shadow-2xl bg-zinc-950/70 border border-white/10 backdrop-blur-xl relative z-10 text-center flex flex-col items-center"
         >
-          <div className="mb-6 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]">
-            <BloubMascot size={110} state="idle" expression="heureux" shape="squircle" color="bleu" />
+          <div className="mb-6 drop-shadow-[0_10px_25px_rgba(240,180,41,0.25)]">
+            <BloubMascot size={110} state="idle" expression="hilare" shape="soleil" color="ambre" />
           </div>
           <h1 className="text-2xl font-bold mb-2 tracking-tight text-white font-display">Vibe Todos</h1>
           <p className="text-sm mb-8 leading-relaxed text-zinc-400">Sign in to sync your tasks and personal vibes across all your devices.</p>
@@ -1723,7 +1756,7 @@ export default function Home() {
             {/* Left side: HUGE MASCOT */}
             <div className="hidden md:flex md:w-1/2 lg:w-3/5 flex-1 items-center justify-center bg-slate-900/40 relative overflow-visible">
                 <div className="cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('orbit', targetExpr)}>
-                  <BloubMascot size={320} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
+                  <BloubMascot size={220} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
             </div>
 
@@ -1801,7 +1834,7 @@ export default function Home() {
                       }`}
                       title={s}
                     >
-                      <BloubMascot size={48} state="idle" expression="neutre" shape={s} color={targetColor} isStatic={true} />
+                      <BloubMascot size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
                       <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{s}</span>
                     </button>
                   ))}
@@ -1869,7 +1902,7 @@ export default function Home() {
                       }`}
                       title={expr}
                     >
-                      <BloubMascot size={48} state="idle" expression={expr as any} shape="squircle" color={targetColor} isStatic={true} />
+                      <BloubMascot size={36} state="idle" expression={expr as any} shape={targetShape} color={targetColor} isStatic={true} />
                       <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{expr}</span>
                     </button>
                   ))}
@@ -1935,13 +1968,13 @@ export default function Home() {
 
                 {/* Theme Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {THEMES.filter(t => themeCategory === 'All' || t.category === themeCategory).map(theme => {
+                  {filteredThemes.map(theme => {
                     const isSelected = bgTheme === theme.id;
                     return (
                       <button
                         key={theme.id}
                         type="button"
-                        onClick={() => setBgTheme(theme.id)}
+                        onClick={() => applyTheme(theme.id)}
                         className={`group relative flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-150 text-left active:scale-[0.98] ${
                           isSelected
                             ? 'bg-[var(--theme-surface-elevated)] border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/15 ring-1 ring-[var(--theme-primary,#3b82f6)]/40 text-white'

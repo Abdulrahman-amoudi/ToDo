@@ -489,8 +489,17 @@ export function getThemeToken(identifier: string): StitchThemeToken {
 /**
  * Returns CSS variable key-value pairs for a specific theme ID.
  */
-export function getThemeVariables(identifier: string): ThemeCssVariables {
-  return getThemeToken(identifier).cssVariables;
+export function getThemeVariables(identifier: string): Record<string, string> {
+  const token = getThemeToken(identifier);
+  return {
+    ...token.cssVariables,
+    '--bg-base': token.neutralColor,
+    '--bg-surface': token.surfaceColor,
+    '--bg-card': token.cssVariables['--theme-surface-elevated'] || token.surfaceColor,
+    '--border-subtle': token.cssVariables['--theme-border-subtle'] || 'rgba(255, 255, 255, 0.08)',
+    '--accent-primary': token.customColor,
+    '--accent-glow': `${token.customColor}40`,
+  };
 }
 
 /**
