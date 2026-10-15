@@ -324,7 +324,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           ? isSun
             ? 'sun-tap-bounce'
             : isHexagon
-            ? 'hexagon-tap-bounce'
+            ? 'hexagon-tap-roll'
             : 'mascot-squish-active'
           : ''
       } ${
@@ -332,7 +332,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           ? isSun
             ? 'sun-typing-glow'
             : isHexagon
-            ? 'hexagon-typing-glow'
+            ? 'hexagon-typing-rock'
             : ''
           : ''
       } ${
@@ -430,86 +430,68 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: sunTypingGlow 1.2s ease-in-out infinite;
         }
 
-        /* 6. Unique Hexagon Tactile Spring Bounce (Extended 1.25s with floaty apex) */
-        @keyframes hexagonTapBounce {
-          0% { transform: scale(1) translateY(0); }
-          14% { transform: scale(1.14, 0.86) translateY(2.5px); }
-          38% { transform: scale(0.92, 1.12) translateY(-10px); }
-          56% { transform: scale(1.01, 0.99) translateY(-7.5px); }
-          74% { transform: scale(1.06, 0.95) translateY(2px); }
-          88% { transform: scale(0.99, 1.01) translateY(-0.5px); }
-          100% { transform: scale(1) translateY(0); }
-        }
-        .hexagon-tap-bounce {
-          animation: hexagonTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        /* 7. Unique Hexagon 60-degree Prism Twirl with Theme Glow Shimmer */
-        @keyframes hexagonPrismTwirl {
+        /* 6. Unique Hexagon Tumble Roll (Physical 360-degree roll across ground and back) */
+        @keyframes hexagonTapRoll {
           0% {
-            transform: rotate(0deg) scale(1);
+            transform: translateX(0px) translateY(0px) rotate(0deg);
           }
-          15% {
-            transform: rotate(8deg) scale(1.04);
-            filter: drop-shadow(0 0 8px var(--mascot-glow-soft, rgba(59, 130, 246, 0.45)));
+          8% {
+            transform: translateX(-4px) translateY(1.5px) rotate(-14deg);
           }
-          45% {
-            transform: rotate(50deg) scale(1.14);
-            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(59, 130, 246, 0.75)));
+          22% {
+            transform: translateX(12px) translateY(-5px) rotate(90deg);
           }
-          65% {
-            transform: rotate(66deg) scale(1.08);
-            filter: drop-shadow(0 0 14px var(--mascot-glow-mid, rgba(59, 130, 246, 0.6)));
+          36% {
+            transform: translateX(24px) translateY(0px) rotate(195deg);
           }
-          82% {
-            transform: rotate(59deg) scale(0.98);
-            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(59, 130, 246, 0.3)));
+          50% {
+            transform: translateX(34px) translateY(-6px) rotate(295deg);
+          }
+          58% {
+            transform: translateX(38px) translateY(1px) rotate(360deg) scale(0.92, 1.08);
+            filter: drop-shadow(0 0 16px var(--mascot-glow-intense, rgba(59, 130, 246, 0.8)));
+          }
+          68% {
+            transform: translateX(26px) translateY(-5px) rotate(260deg);
+          }
+          80% {
+            transform: translateX(10px) translateY(0px) rotate(125deg);
+          }
+          90% {
+            transform: translateX(-5px) translateY(-1.5px) rotate(-18deg);
+          }
+          96% {
+            transform: translateX(1.5px) translateY(0px) rotate(6deg);
           }
           100% {
-            transform: rotate(60deg) scale(1);
-            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18));
+            transform: translateX(0px) translateY(0px) rotate(0deg);
           }
         }
-        .hexagon-prism-twirl {
-          animation: hexagonPrismTwirl 1.25s cubic-bezier(0.25, 1.35, 0.35, 1) forwards;
+        .hexagon-tap-roll {
+          animation: hexagonTapRoll 1.25s cubic-bezier(0.25, 1, 0.35, 1) forwards;
         }
 
-        /* 8. Hexagon Joyful Face Hop (Synchronized and upright) */
-        @keyframes hexagonFacePop {
-          0% { transform: scale(1) translateY(0); }
-          38% { transform: scale(1.10) translateY(-3.5px); }
-          60% { transform: scale(1.04) translateY(-2px); }
-          80% { transform: scale(0.98) translateY(0.5px); }
-          100% { transform: scale(1) translateY(0); }
-        }
-        .hexagon-face-pop {
-          animation: hexagonFacePop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        /* 9. Hexagon Crystalline Typing Energy Glow */
-        @keyframes hexagonTypingGlow {
+        /* 7. Unique Hexagon Rocking Roll while typing */
+        @keyframes hexagonTypingRock {
           0%, 100% {
+            transform: translateX(0px) translateY(0px) rotate(0deg);
             filter: drop-shadow(0 0 5px var(--mascot-glow-soft, rgba(59, 130, 246, 0.4)));
           }
-          50% {
-            filter: drop-shadow(0 0 16px var(--mascot-glow-mid, rgba(59, 130, 246, 0.75)));
-          }
-        }
-        .hexagon-typing-glow {
-          animation: hexagonTypingGlow 1.1s ease-in-out infinite;
-        }
-
-        /* 10. Hexagon Rhythmic Facet Pulse while typing */
-        @keyframes hexagonFacetPulse {
-          0%, 100% {
-            transform: scale(1);
+          25% {
+            transform: translateX(4px) translateY(-1px) rotate(10deg);
+            filter: drop-shadow(0 0 10px var(--mascot-glow-mid, rgba(59, 130, 246, 0.6)));
           }
           50% {
-            transform: scale(1.035);
+            transform: translateX(0px) translateY(0px) rotate(0deg);
+            filter: drop-shadow(0 0 15px var(--mascot-glow-intense, rgba(59, 130, 246, 0.75)));
+          }
+          75% {
+            transform: translateX(-4px) translateY(-1px) rotate(-10deg);
+            filter: drop-shadow(0 0 10px var(--mascot-glow-mid, rgba(59, 130, 246, 0.6)));
           }
         }
-        .hexagon-facet-pulse {
-          animation: hexagonFacetPulse 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        .hexagon-typing-rock {
+          animation: hexagonTypingRock 0.85s ease-in-out infinite;
         }
       `}</style>
 
@@ -520,11 +502,7 @@ export const BloubMascot = React.memo(function BloubMascot({
             isBouncing
               ? isSun
                 ? 'sun-rays-twirl'
-                : isHexagon
-                ? 'hexagon-prism-twirl'
                 : ''
-              : activeTyping && isHexagon
-              ? 'hexagon-facet-pulse'
               : ''
           }
           style={{ transformOrigin: '50% 50%' }}
@@ -567,8 +545,6 @@ export const BloubMascot = React.memo(function BloubMascot({
           isBouncing
             ? isSun
               ? 'sun-face-pop'
-              : isHexagon
-              ? 'hexagon-face-pop'
               : ''
             : ''
         }`}
