@@ -139,17 +139,17 @@ export interface FaceConfig {
 }
 
 export const FACE_CONFIGS: Record<string, FaceConfig> = {
-  squircle: { dx: 0, dy: 1, scale: 1.0 },
-  cercle:   { dx: 0, dy: 1, scale: 1.0 },
-  galet:    { dx: 0, dy: 4, scale: 0.98 },
-  capsule:  { dx: 0, dy: 1, scale: 0.80 },
-  triangle: { dx: 0, dy: 12, scale: 0.78 },
+  squircle: { dx: 0, dy: 0, scale: 1.0 },
+  cercle:   { dx: 0, dy: 0, scale: 1.0 },
+  galet:    { dx: 0, dy: 1, scale: 0.98 },
+  capsule:  { dx: 0, dy: 0, scale: 0.80 },
+  triangle: { dx: 0, dy: 8, scale: 0.78 },
   hexagone: { dx: 0, dy: 0, scale: 0.90 },
-  nuage:    { dx: 0, dy: 5, scale: 0.88 },
-  goutte:   { dx: 0, dy: 11, scale: 0.80 },
-  oeuf:     { dx: 0, dy: 6, scale: 0.86 },
+  nuage:    { dx: 0, dy: 2, scale: 0.88 },
+  goutte:   { dx: 0, dy: 7, scale: 0.80 },
+  oeuf:     { dx: 0, dy: 2, scale: 0.86 },
   soleil:   { dx: 0, dy: 0, scale: 0.85 },
-  fromage:  { dx: 0, dy: 7, scale: 0.80 },
+  fromage:  { dx: 0, dy: 3, scale: 0.80 },
   livre:    { dx: 0, dy: 0, scale: 0.88 },
 };
 
