@@ -159,8 +159,19 @@ export default function Home() {
     }
     return process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
   });
-    // Email OTP / 2FA Login State
-  const [authEmail, setAuthEmail] = useState('');
+  // Email OTP / 2FA Login State & Remember Device
+  const [authEmail, setAuthEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vibe_remembered_email') || '';
+    }
+    return '';
+  });
+  const [rememberDevice, setRememberDevice] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vibe_remember_device') !== 'false';
+    }
+    return true;
+  });
   const [authOtpCode, setAuthOtpCode] = useState('');
   const [authStep, setAuthStep] = useState<'email' | 'otp'>('email');
   const [authLoading, setAuthLoading] = useState(false);
@@ -195,7 +206,16 @@ export default function Home() {
       if (error) throw error;
       setAuthStep('otp');
       setAuthCooldown(30);
-      setAuthSuccessMsg(`A 6-digit login code was sent to ${cleanEmail}.`);
+      setAuthSuccessMsg(`A login code was sent to ${cleanEmail}.`);
+      if (typeof window !== 'undefined') {
+        if (rememberDevice) {
+          localStorage.setItem('vibe_remembered_email', cleanEmail);
+          localStorage.setItem('vibe_remember_device', 'true');
+        } else {
+          localStorage.removeItem('vibe_remembered_email');
+          localStorage.setItem('vibe_remember_device', 'false');
+        }
+      }
     } catch (err: any) {
       const msg = String(err?.message || '');
       if (
@@ -230,6 +250,24 @@ export default function Home() {
       if (error) throw error;
       if (data.session) {
         setSession(data.session);
+        if (typeof window !== 'undefined') {
+          if (rememberDevice) {
+            localStorage.setItem('vibe_remembered_email', authEmail.trim());
+            localStorage.setItem('vibe_remember_device', 'true');
+            try {
+              localStorage.setItem('vibe_persisted_session', JSON.stringify({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+                user_id: data.session.user?.id,
+                savedAt: Date.now(),
+              }));
+            } catch {}
+          } else {
+            localStorage.removeItem('vibe_remembered_email');
+            localStorage.removeItem('vibe_persisted_session');
+            localStorage.setItem('vibe_remember_device', 'false');
+          }
+        }
       }
     } catch (err: any) {
       setAuthError(err.message || 'Invalid or expired code. Please enter the full code or tap "Sign In Instantly" in your email.');
@@ -269,14 +307,51 @@ export default function Home() {
     };
   }, []);
 
-  // Auth Effect
+  // Auth Effect with bulletproof Remember This Device persistence
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data }: any) => {
+      const session = data?.session;
+      if (!session && typeof window !== 'undefined' && localStorage.getItem('vibe_remember_device') !== 'false') {
+        const cached = localStorage.getItem('vibe_persisted_session');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed.refresh_token) {
+              const { data: refreshedData } = await supabase.auth.setSession({
+                access_token: parsed.access_token,
+                refresh_token: parsed.refresh_token,
+              });
+              if (refreshedData?.session) {
+                setSession(refreshedData.session);
+                setLoadingAuth(false);
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Persisted session restore error:', e);
+          }
+        }
+      }
       setSession(session);
       setLoadingAuth(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       setSession(session);
+      if (typeof window !== 'undefined') {
+        if (session && localStorage.getItem('vibe_remember_device') !== 'false') {
+          try {
+            localStorage.setItem('vibe_persisted_session', JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              user_id: session.user?.id,
+              savedAt: Date.now(),
+            }));
+          } catch {}
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('vibe_persisted_session');
+        }
+      }
     });
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
@@ -1534,48 +1609,63 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#0B0A0E] text-zinc-100 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
-        {/* Ambient Top Aura Glow */}
+      <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans select-none">
+        {/* Soft Ambient Radial Halo */}
         <div 
-          className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] max-w-[100vw] h-[350px] rounded-full blur-[130px] pointer-events-none opacity-25 -z-0"
-          style={{ background: 'radial-gradient(circle, var(--theme-primary,#3b82f6) 0%, transparent 70%)' }}
+          className="fixed top-0 left-1/2 -translate-x-1/2 w-[650px] max-w-[100vw] h-[360px] rounded-full blur-[140px] pointer-events-none opacity-20 -z-0"
+          style={{ background: 'radial-gradient(ellipse at center, #f59e0b 0%, #d97706 40%, transparent 75%)' }}
         />
 
         <motion.div 
-          initial={{ y: 20, opacity: 0 }} 
+          initial={{ y: 16, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
-          className="max-w-sm w-full p-8 rounded-3xl shadow-2xl bg-zinc-950/70 border border-white/10 backdrop-blur-xl relative z-10 text-center flex flex-col items-center"
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-[390px] w-full p-7 sm:p-8 rounded-[28px] shadow-2xl shadow-black/80 bg-zinc-950/85 border border-white/[0.08] backdrop-blur-2xl relative z-10 text-center flex flex-col items-center before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:rounded-t-[28px]"
         >
-          <div className="mb-6 drop-shadow-[0_10px_25px_rgba(240,180,41,0.25)]">
-            <BloubMascot size={110} state="idle" expression="hilare" shape="soleil" color="ambre" />
+          {/* Framed Mascot Hero */}
+          <div className="relative mb-5 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-xl pointer-events-none" />
+            <div className="relative w-24 h-24 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-center shadow-inner">
+              <BloubMascot size={82} state="idle" expression="heureux" shape="soleil" color="ambre" />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold mb-2 tracking-tight text-white font-display">Vibe Todos</h1>
-          <p className="text-sm mb-6 leading-relaxed text-zinc-400">
-            {authStep === 'email' 
-              ? 'Sign in with your email inbox or Google account to sync your study notes and vibes.'
-              : `Enter the 6-digit code or tap the sign-in link sent to ${authEmail}`}
-          </p>
 
-          {/* Feedback alerts */}
-          {authError && (
-            <div className="w-full mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs flex items-center gap-2 text-left">
-              <AlertCircle size={15} className="shrink-0" />
-              <span>{authError}</span>
+          <h1 className="text-2xl font-bold tracking-tight text-white font-display">Vibe Todos</h1>
+          
+          {authStep === 'email' ? (
+            <p className="text-xs text-zinc-400 mt-1.5 mb-6 text-center leading-relaxed">
+              Sign in to sync your study notes, tasks, and customized mascot across devices.
+            </p>
+          ) : (
+            <div className="text-center mt-1.5 mb-5 space-y-1.5">
+              <p className="text-xs text-zinc-400">Enter the verification code sent to</p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.05] border border-white/10 text-xs text-zinc-200">
+                <span className="font-mono text-[11px]">{authEmail}</span>
+                <button 
+                  type="button" 
+                  onClick={() => { setAuthStep('email'); setAuthOtpCode(''); setAuthError(null); }} 
+                  className="text-zinc-400 hover:text-white transition-colors ml-0.5"
+                  title="Change email"
+                >
+                  <Edit2 size={11} />
+                </button>
+              </div>
             </div>
           )}
 
-          {authSuccessMsg && (
-            <div className="w-full mb-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs flex items-center gap-2 text-left">
-              <CheckCircle2 size={15} className="shrink-0" />
-              <span>{authSuccessMsg}</span>
+          {/* Feedback Error Alert */}
+          {authError && (
+            <div className="w-full mb-4 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 text-left animate-in fade-in duration-150">
+              <AlertCircle size={15} className="shrink-0" />
+              <span className="leading-snug">{authError}</span>
             </div>
           )}
 
           {authStep === 'email' ? (
-            /* Step 1: Normal Email Input Form */
-            <form onSubmit={handleSendOtp} className="w-full space-y-3">
+            /* Step 1: Sleek Email Input Form */
+            <form onSubmit={handleSendOtp} className="w-full space-y-3.5">
               <div className="relative w-full">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                 <input
                   type="email"
                   value={authEmail}
@@ -1583,40 +1673,82 @@ export default function Home() {
                   placeholder="name@example.com"
                   required
                   disabled={authLoading}
-                  className="w-full py-3.5 pl-10 pr-4 rounded-2xl bg-white/5 border border-white/15 focus:border-[var(--theme-primary,#3b82f6)] focus:ring-1 focus:ring-[var(--theme-primary,#3b82f6)] outline-none text-sm text-white placeholder:text-zinc-500 transition-all font-sans"
+                  className="w-full py-3.5 pl-10 pr-4 rounded-xl bg-white/[0.04] border border-white/10 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/20 outline-none text-sm text-white placeholder:text-zinc-500 transition-all font-sans"
                 />
               </div>
+
+              {/* Remember this device toggle */}
+              <label className="flex items-center gap-2.5 px-1 py-0.5 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  checked={rememberDevice}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setRememberDevice(val);
+                    try {
+                      localStorage.setItem('vibe_remember_device', val ? 'true' : 'false');
+                      if (!val) localStorage.removeItem('vibe_remembered_email');
+                    } catch {}
+                  }}
+                  className="sr-only"
+                />
+                <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                  rememberDevice 
+                    ? 'bg-amber-400 border-amber-400 text-zinc-950' 
+                    : 'bg-white/[0.04] border-white/20 group-hover:border-white/30 text-transparent'
+                }`}>
+                  <Check size={12} strokeWidth={3} />
+                </div>
+                <span className="text-xs text-zinc-300 group-hover:text-zinc-200 transition-colors">
+                  Remember this device
+                </span>
+              </label>
 
               <button
                 type="submit"
                 disabled={authLoading || !authEmail.trim()}
-                className="w-full py-3.5 px-4 bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-[0.98] rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm text-white shadow-lg shadow-[var(--theme-primary,#3b82f6)]/25 transition-all duration-150 disabled:opacity-50"
+                className="w-full py-3.5 px-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] rounded-xl flex items-center justify-center gap-2 font-semibold text-sm text-zinc-950 shadow-lg shadow-amber-400/20 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <KeyRound size={16} />
-                <span>{authLoading ? 'Sending Login Code...' : 'Send Login Code (OTP)'}</span>
+                <span>{authLoading ? 'Sending Login Code...' : 'Send Login Code'}</span>
               </button>
 
-              <div className="flex items-center gap-3 my-4">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">or</span>
-                <div className="h-px flex-1 bg-white/10" />
+              <div className="flex items-center gap-3 my-3">
+                <div className="h-px flex-1 bg-white/[0.08]" />
+                <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">or</span>
+                <div className="h-px flex-1 bg-white/[0.08]" />
               </div>
 
               <button 
                 type="button"
-                onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/api/auth/callback`, queryParams: { prompt: 'select_account' } } })} 
-                className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:scale-[0.98] border border-white/15 rounded-2xl flex items-center justify-center gap-3 font-semibold text-sm text-white shadow-sm transition-all duration-150"
+                onClick={() => {
+                  try {
+                    localStorage.setItem('vibe_remember_device', rememberDevice ? 'true' : 'false');
+                  } catch {}
+                  supabase.auth.signInWithOAuth({ 
+                    provider: 'google', 
+                    options: { 
+                      redirectTo: `${window.location.origin}/api/auth/callback`, 
+                      queryParams: { prompt: 'select_account' } 
+                    } 
+                  });
+                }} 
+                className="w-full py-3 px-4 bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.98] border border-white/10 rounded-xl flex items-center justify-center gap-2.5 font-medium text-sm text-zinc-200 transition-all duration-150"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
                 Continue with Google
               </button>
             </form>
           ) : (
-            /* Step 2: 6-Digit OTP Verification Form */
+            /* Step 2: Segmented PIN Verification Form */
             <form onSubmit={handleVerifyOtp} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="space-y-1 text-center">
+              {/* Segmented PIN Code Display */}
+              <div className="relative flex justify-center py-1">
+                {/* Invisible native input over the pin boxes for keyboard, focus, and clipboard paste */}
                 <input
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                   maxLength={8}
                   autoFocus
                   value={authOtpCode}
@@ -1626,40 +1758,94 @@ export default function Home() {
                     if (clean.length === 8 || clean.length === 6) {
                       setTimeout(() => {
                         supabase.auth.verifyOtp({ email: authEmail.trim(), token: clean, type: 'email' })
-                          .then(({ data, error }) => {
-                            if (error && clean.length === 8) setAuthError(error.message);
-                            else if (data?.session) setSession(data.session);
+                          .then(({ data, error }: any) => {
+                            if (error && (clean.length === 8 || clean.length === 6)) {
+                              setAuthError(error.message);
+                            } else if (data?.session) {
+                              setSession(data.session);
+                              if (typeof window !== 'undefined' && rememberDevice) {
+                                try {
+                                  localStorage.setItem('vibe_remembered_email', authEmail.trim());
+                                  localStorage.setItem('vibe_remember_device', 'true');
+                                } catch {}
+                              }
+                            }
                           });
                       }, 120);
                     }
                   }}
-                  placeholder="Code from email"
-                  className="w-full py-4 text-center text-2xl font-mono font-bold tracking-[0.35em] rounded-2xl bg-white/5 border border-[var(--theme-primary,#3b82f6)]/50 focus:border-[var(--theme-primary,#3b82f6)] focus:ring-2 focus:ring-[var(--theme-primary,#3b82f6)]/30 outline-none text-white placeholder:text-zinc-600 transition-all"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+                  aria-label="Verification code"
                 />
-                <p className="text-[11px] text-zinc-400">Enter the code from your email or click the link in the email</p>
-              </div>
 
-              {/* Direct magic link helper card */}
-              <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-left space-y-1">
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
-                  <ExternalLink size={13} className="text-[var(--theme-primary,#3b82f6)] shrink-0" />
-                  <span>Received a sign-in link?</span>
+                {/* Individual Segmented Digit Cells */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {Array.from({ length: authOtpCode.length > 6 ? 8 : 6 }).map((_, idx) => {
+                    const digit = authOtpCode[idx];
+                    const isCurrent = idx === authOtpCode.length;
+                    return (
+                      <div
+                        key={idx}
+                        className={`w-10 h-13 sm:w-11 sm:h-14 rounded-xl border flex items-center justify-center font-mono text-xl sm:text-2xl font-bold transition-all ${
+                          digit 
+                            ? 'bg-white/[0.08] border-white/25 text-white' 
+                            : isCurrent 
+                            ? 'bg-amber-400/[0.08] border-amber-400 ring-2 ring-amber-400/25 text-amber-300' 
+                            : 'bg-white/[0.03] border-white/10 text-zinc-600'
+                        }`}
+                      >
+                        {digit || (isCurrent ? <span className="w-0.5 h-5 bg-amber-400 animate-pulse rounded-full" /> : '·')}
+                      </div>
+                    );
+                  })}
                 </div>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">
-                  If your email contains a &quot;Sign in&quot; link, simply tap it in your email to authenticate instantly without typing any numbers!
-                </p>
               </div>
 
+              {/* Direct Magic Link Helper Note */}
+              <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-400 pt-0.5">
+                <ExternalLink size={13} className="text-amber-400/80 shrink-0" />
+                <span>Or click the direct sign-in link inside your email</span>
+              </div>
+
+              {/* Remember this device toggle */}
+              <label className="flex items-center justify-center gap-2.5 py-0.5 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  checked={rememberDevice}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setRememberDevice(val);
+                    try {
+                      localStorage.setItem('vibe_remember_device', val ? 'true' : 'false');
+                      if (!val) localStorage.removeItem('vibe_remembered_email');
+                    } catch {}
+                  }}
+                  className="sr-only"
+                />
+                <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                  rememberDevice 
+                    ? 'bg-amber-400 border-amber-400 text-zinc-950' 
+                    : 'bg-white/[0.04] border-white/20 group-hover:border-white/30 text-transparent'
+                }`}>
+                  <Check size={12} strokeWidth={3} />
+                </div>
+                <span className="text-xs text-zinc-300 group-hover:text-zinc-200 transition-colors">
+                  Remember this device
+                </span>
+              </label>
+
+              {/* Primary Verify Button */}
               <button
                 type="submit"
                 disabled={authLoading || authOtpCode.length < 6}
-                className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm text-zinc-950 shadow-lg shadow-emerald-500/25 transition-all duration-150 disabled:opacity-50"
+                className="w-full py-3.5 px-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] rounded-xl flex items-center justify-center gap-2 font-semibold text-sm text-zinc-950 shadow-lg shadow-amber-400/20 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShieldCheck size={16} />
                 <span>{authLoading ? 'Verifying Code...' : 'Verify & Sign In'}</span>
               </button>
 
-              <div className="flex items-center justify-between text-xs pt-2">
+              {/* Footer Navigation */}
+              <div className="flex items-center justify-between text-xs pt-1 px-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -1667,16 +1853,17 @@ export default function Home() {
                     setAuthOtpCode('');
                     setAuthError(null);
                   }}
-                  className="text-zinc-400 hover:text-white transition-colors"
+                  className="text-zinc-400 hover:text-white transition-colors flex items-center gap-1"
                 >
-                  ← Use different email
+                  <ArrowLeft size={13} />
+                  <span>Different email</span>
                 </button>
 
                 <button
                   type="button"
                   disabled={authCooldown > 0 || authLoading}
                   onClick={() => handleSendOtp()}
-                  className="text-[var(--theme-primary,#3b82f6)] hover:underline disabled:opacity-40 transition-colors font-medium"
+                  className="text-amber-400 hover:text-amber-300 hover:underline disabled:opacity-40 disabled:no-underline transition-colors font-medium"
                 >
                   {authCooldown > 0 ? `Resend in ${authCooldown}s` : 'Resend code'}
                 </button>
@@ -1686,10 +1873,10 @@ export default function Home() {
 
           <button 
             onClick={() => setShowDownloadMenu(true)} 
-            className="mt-4 w-full py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 font-semibold text-xs transition-all duration-150 active:scale-[0.98] border bg-white/[0.03] hover:bg-white/[0.08] border-white/10 text-zinc-400 hover:text-zinc-200"
+            className="mt-5 w-full py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-medium text-xs text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/10 transition-all duration-150 active:scale-[0.98]"
           >
-            <Download size={14} />
-            Download App (APK / Windows)
+            <Download size={13} />
+            <span>Download App (APK / Windows)</span>
           </button>
         </motion.div>
 
@@ -2497,6 +2684,12 @@ export default function Home() {
                       document.body.style.backgroundColor = '#F8FAFC';
                       let meta = document.querySelector('meta[name="theme-color"]');
                       if (meta) meta.setAttribute('content', '#FFFFFF');
+                      try {
+                        localStorage.removeItem('vibe_persisted_session');
+                        if (localStorage.getItem('vibe_remember_device') === 'false') {
+                          localStorage.removeItem('vibe_remembered_email');
+                        }
+                      } catch {}
                       await supabase.auth.signOut();
                       setSession(null);
                       setTodos([]);

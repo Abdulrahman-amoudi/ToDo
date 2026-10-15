@@ -200,7 +200,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
       // 3. Coordinates for gaze, tilt, and head motion (strictly zero downward pitch)
       const faceX = currentLook.current.x * 3.6;
-      const faceY = activeTyping ? -0.8 : 0;
+      const faceY = 0;
       const headTilt = currentLook.current.x * 2.0;
       const bodyTilt = currentLook.current.x * 1.0;
 
@@ -662,12 +662,11 @@ export const BloubMascot = React.memo(function BloubMascot({
         className="grok-typing-dots-container"
         style={{
           pointerEvents: 'none',
-          transformOrigin: '50% 50%',
+          transformBox: 'view-box',
+          transformOrigin: '50px 50px',
           opacity: activeTyping ? 1 : 0,
-          transform: activeTyping ? 'scale(1)' : 'scale(0.78)',
-          transition: activeTyping
-            ? 'opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)'
-            : 'opacity 0.20s ease-in, transform 0.22s ease-in',
+          transform: activeTyping ? 'scale(1)' : 'scale(0.82)',
+          transition: 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         {/* Ambient subtle levitating dots */}
@@ -733,13 +732,12 @@ export const BloubMascot = React.memo(function BloubMascot({
       <g
         className="mascot-avatar-layer"
         style={{
-          transformOrigin: '50% 50%',
+          transformBox: 'view-box',
+          transformOrigin: '50px 50px',
           opacity: activeTyping ? 0 : 1,
-          transform: activeTyping ? 'scale(0.84)' : 'scale(1)',
+          transform: activeTyping ? 'scale(0.82)' : 'scale(1)',
           pointerEvents: activeTyping ? 'none' : 'auto',
-          transition: activeTyping
-            ? 'opacity 0.22s ease-out, transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)'
-            : 'opacity 0.30s cubic-bezier(0.16, 1, 0.3, 1), transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transition: 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
@@ -776,13 +774,7 @@ export const BloubMascot = React.memo(function BloubMascot({
             {isBook && (
               <g className="book-pages-layer" style={{ pointerEvents: 'none' }}>
                 <g
-                  className={
-                    isBouncing
-                      ? 'book-page-swipe-tap-1'
-                      : activeTyping
-                      ? 'book-page-swipe-type-1'
-                      : 'opacity-0'
-                  }
+                  className={isBouncing ? 'book-page-swipe-tap-1' : 'opacity-0'}
                   style={{ transformOrigin: '50px 50px' }}
                 >
                   <path
@@ -794,13 +786,7 @@ export const BloubMascot = React.memo(function BloubMascot({
                 </g>
 
                 <g
-                  className={
-                    isBouncing
-                      ? 'book-page-swipe-tap-2'
-                      : activeTyping
-                      ? 'book-page-swipe-type-2'
-                      : 'opacity-0'
-                  }
+                  className={isBouncing ? 'book-page-swipe-tap-2' : 'opacity-0'}
                   style={{ transformOrigin: '50px 50px' }}
                 >
                   <path
@@ -812,13 +798,7 @@ export const BloubMascot = React.memo(function BloubMascot({
                 </g>
 
                 <g
-                  className={
-                    isBouncing
-                      ? 'book-page-swipe-tap-3'
-                      : activeTyping
-                      ? 'book-page-swipe-type-3'
-                      : 'opacity-0'
-                  }
+                  className={isBouncing ? 'book-page-swipe-tap-3' : 'opacity-0'}
                   style={{ transformOrigin: '50px 50px' }}
                 >
                   <path

@@ -149,7 +149,7 @@ export async function pickAndSyncObsidianVault(
       .select('path, updated_at, content')
       .eq('user_id', effectiveUserId);
       
-    const cloudMap = new Map((cloudNotes || []).map(n => [n.path, n]));
+    const cloudMap = new Map(((cloudNotes as any[]) || []).map((n: any) => [n.path, n]));
     const payloadToUpload: any[] = [];
 
     // 2. Iterate discovered local notes and perform 2-Way Merge
