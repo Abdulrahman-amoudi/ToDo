@@ -69,6 +69,14 @@ export async function scanVaultDirectory(
 
     if (userId) {
       query = query.eq('user_id', userId);
+    } else {
+      return {
+        success: true,
+        vaultPath: vaultRoot,
+        totalNotes: 0,
+        folders: [],
+        notes: []
+      };
     }
 
     if (filterFolder && filterFolder !== 'ALL') {

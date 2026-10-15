@@ -17,7 +17,12 @@ import {
   Plus,
   CheckCircle2,
   AlertCircle,
-  FileText
+  FileText,
+  Zap,
+  Lightbulb,
+  Search,
+  Award,
+  ArrowRight
 } from 'lucide-react';
 import type { QuizResponse } from '@/types/quiz';
 import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
@@ -312,7 +317,7 @@ export const NotesPanel = React.memo(function NotesPanel({
 
       if (actionType === 'summarize') {
         const s = data.data;
-        responseText = `### 📌 ${s.title || 'Summary'}\n\n${s.summary}\n\n#### Key Takeaways:\n` +
+        responseText = `### ${s.title || 'Summary'}\n\n${s.summary}\n\n#### Key Takeaways:\n` +
           (s.keyPoints || []).map((kp: string) => `- ${kp}`).join('\n');
         if (s.concepts && s.concepts.length > 0) {
           responseText += '\n\n#### Core Concepts:\n' + s.concepts.map((c: any) => `- **${c.term}**: ${c.definition}`).join('\n');
@@ -605,16 +610,29 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   // TAB 1: GEMINI 3.8 AI CHAT
   const renderAiStudio = () => (
-    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden bg-zinc-950/20">
+    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden relative">
+      {/* Dynamic Theme-Reactive Background Ambient Glow */}
+      <div className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out z-0 overflow-hidden" aria-hidden="true">
+        <div 
+          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[380px] h-[320px] rounded-full blur-[100px] opacity-25 transition-all duration-700" 
+          style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }} 
+        />
+        <div 
+          className="absolute top-1/2 -right-16 w-[240px] h-[240px] rounded-full blur-[90px] opacity-15 transition-all duration-700" 
+          style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }} 
+        />
+      </div>
+
       {/* Quick Prompt Chips */}
-      <div className="p-2.5 border-b border-white/10 flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-zinc-950/40">
+      <div className="p-2.5 border-b border-white/10 flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-zinc-950/40 relative z-10">
         <button
           type="button"
           onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
         >
-          <span>⚡ Summarize Page</span>
+          <Zap size={12} className="text-amber-400" />
+          <span>Summarize Page</span>
         </button>
         <button
           type="button"
@@ -622,7 +640,8 @@ export const NotesPanel = React.memo(function NotesPanel({
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
         >
-          <span>💡 Key Takeaways</span>
+          <Lightbulb size={12} className="text-yellow-400" />
+          <span>Key Takeaways</span>
         </button>
         <button
           type="button"
@@ -630,12 +649,13 @@ export const NotesPanel = React.memo(function NotesPanel({
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
         >
-          <span>🔍 Explain Concepts</span>
+          <Search size={12} className="text-sky-400" />
+          <span>Explain Concepts</span>
         </button>
       </div>
 
       {/* Messages Thread */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar relative z-10">
         {messages.map(msg => (
           <div
             key={msg.id}
@@ -748,7 +768,7 @@ export const NotesPanel = React.memo(function NotesPanel({
           e.preventDefault();
           handleAskAi();
         }}
-        className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-xl shrink-0"
+        className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-xl shrink-0 relative z-10"
       >
         <div className="relative flex items-center bg-white/[0.04] border border-white/10 focus-within:border-[var(--theme-primary,#6366f1)] focus-within:ring-2 focus-within:ring-[var(--theme-primary,#6366f1)]/20 rounded-2xl transition-all pl-3.5 pr-1.5 py-1.5 shadow-inner">
           <input
@@ -781,7 +801,7 @@ export const NotesPanel = React.memo(function NotesPanel({
           <FileText size={13} /> Notes for Page {pageNumber}
         </span>
         {saveStatus === 'saving' && <span className="text-amber-400 text-[10px] animate-pulse">saving...</span>}
-        {saveStatus === 'saved' && <span className="text-emerald-400 text-[10px]">saved ✓</span>}
+        {saveStatus === 'saved' && <span className="inline-flex items-center gap-1 text-emerald-400 text-[10px]"><Check size={11} /> saved</span>}
       </div>
 
       <textarea
@@ -930,7 +950,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             {currentAnswer && (
               <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1.5 animate-in fade-in">
                 <span className={`font-bold ${currentAnswer.isCorrect ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {currentAnswer.isCorrect ? 'Correct! ✓' : 'Incorrect'}
+                  {currentAnswer.isCorrect ? 'Correct!' : 'Incorrect'}
                 </span>
                 <p className="text-zinc-300 leading-relaxed">{currentAnswer.feedback}</p>
                 {currentQ.sourceCitation && (
@@ -943,15 +963,19 @@ export const NotesPanel = React.memo(function NotesPanel({
               <button
                 type="button"
                 onClick={() => setQuizCurrentIdx(i => i + 1)}
-                className="w-full py-2.5 rounded-xl bg-[var(--theme-primary,#3b82f6)] text-white font-bold text-xs shadow-md active:scale-95 transition-all"
+                className="w-full py-2.5 rounded-xl bg-[var(--theme-primary,#3b82f6)] text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
-                Next Question →
+                <span>Next Question</span>
+                <ArrowRight size={13} />
               </button>
             )}
 
             {currentAnswer && quizCurrentIdx === questions.length - 1 && (
               <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-center space-y-2">
-                <h5 className="text-xs font-bold text-emerald-400">Quiz Completed! 🎉</h5>
+                <h5 className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1.5">
+                  <Award size={14} />
+                  <span>Quiz Completed</span>
+                </h5>
                 <p className="text-xs text-zinc-300">
                   You scored {Object.values(quizAnswers).filter(a => a.isCorrect).length} / {questions.length}
                 </p>

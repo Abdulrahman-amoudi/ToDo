@@ -1213,17 +1213,26 @@ export default function Home() {
 
   // Fetch Vault Notes for Bento Stats & Study Breakdown
   useEffect(() => {
+    if (!session?.user?.id) {
+      setVaultNotes([]);
+      return;
+    }
     if (activeTab === 'stats' || (activeTab === 'lists' && !isListView && activeCatObj?.type === 'study')) {
       const params = new URLSearchParams();
-      if (session?.user?.id) params.set('userId', session.user.id);
+      params.set('userId', session.user.id);
       fetch(`/api/obsidian/notes?${params.toString()}`)
         .then(res => res.json())
         .then(data => {
           if (data?.notes && Array.isArray(data.notes)) {
             setVaultNotes(data.notes);
+          } else {
+            setVaultNotes([]);
           }
         })
-        .catch(err => console.warn('Vault notes fetch for stats/study:', err));
+        .catch(err => {
+          console.warn('Vault notes fetch for stats/study:', err);
+          setVaultNotes([]);
+        });
     }
   }, [activeTab, isListView, activeCatObj?.type, session?.user?.id]);
 
@@ -1252,7 +1261,7 @@ export default function Home() {
         break;
       }
     }
-    return Math.max(currentStreak, maxHabit, todos.filter(t => t.completed).length > 0 ? 5 : 1);
+    return Math.max(currentStreak, maxHabit);
   }, [todos]);
 
   // Focus Score (%)
@@ -1264,14 +1273,12 @@ export default function Home() {
 
   // Vault words indexed
   const totalVaultWords = useMemo(() => {
-    const calculated = vaultNotes.reduce((acc, n) => acc + (n.wordCount || 0), 0);
-    return calculated > 0 ? calculated : 28600;
+    return vaultNotes.reduce((acc, n) => acc + (n.wordCount || 0), 0);
   }, [vaultNotes]);
 
   // Vault PDFs indexed
   const totalVaultPdfs = useMemo(() => {
-    const count = vaultNotes.filter(n => n.title.toLowerCase().endsWith('.pdf') || n.relativePath?.toLowerCase().endsWith('.pdf')).length;
-    return Math.max(count, vaultNotes.length > 0 ? vaultNotes.length : 4);
+    return vaultNotes.filter(n => n.title.toLowerCase().endsWith('.pdf') || n.relativePath?.toLowerCase().endsWith('.pdf')).length;
   }, [vaultNotes]);
 
   // 90-Day (12-Week) Activity Heatmap
@@ -1303,13 +1310,7 @@ export default function Home() {
       d.setDate(today.getDate() - i);
       const dateKey = d.toISOString().split('T')[0];
       
-      let count = actMap.get(dateKey) || 0;
-      if (count === 0 && (todos.filter(t => t.completed).length > 0 || vaultNotes.length > 0)) {
-        const pseudo = Math.abs(Math.sin(d.getTime() * 0.0000001)) * 10;
-        if (pseudo > 7.4 && i < 35) count = 2;
-        else if (pseudo > 6.0 && i < 65) count = 1;
-        else if (pseudo > 8.7) count = 3;
-      }
+      const count = actMap.get(dateKey) || 0;
 
       days.push({
         date: dateKey,
@@ -1343,10 +1344,10 @@ export default function Home() {
   // Real Vault Documents Progress mapping
   const studyDocs = useMemo(() => {
     if (vaultNotes.length > 0) {
-      return vaultNotes.slice(0, 4).map((n, i) => {
+      return vaultNotes.slice(0, 4).map((n) => {
         const words = n.wordCount || 0;
         const wordStr = words >= 1000 ? `${(words / 1000).toFixed(1)}k words` : `${words} words`;
-        const pct = Math.min(100, Math.max(35, 95 - (i * 12)));
+        const pct = Math.min(100, Math.max(10, Math.round((Math.min(words, 2500) / 2500) * 100)));
         return {
           name: n.title.replace(/\.[^/.]+$/, ''),
           words: wordStr,
@@ -1354,12 +1355,7 @@ export default function Home() {
         };
       });
     }
-    return [
-      { name: 'Tarikh Al-Urdun (Jordan History)', words: '15.1k words', pct: 78 },
-      { name: 'AI & Neural Architectures', words: '13.5k words', pct: 92 },
-      { name: 'English & Critical Reading', words: '8.2k words', pct: 64 },
-      { name: 'Islamic Studies & Culture', words: '11.4k words', pct: 85 },
-    ];
+    return [];
   }, [vaultNotes]);
 
   // XP, Level & Rank
@@ -2955,25 +2951,35 @@ export default function Home() {
                   </p>
 
                   {/* Real Study Document Progress Bars */}
-                  <div className="space-y-3">
-                    {studyDocs.map((item, idx) => (
-                      <div key={idx} className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className={`font-semibold truncate max-w-[220px] ${t.textPrimary}`}>{item.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono text-zinc-400">{item.words}</span>
-                            <span className="text-[11px] font-bold text-[var(--theme-primary,#3b82f6)]">{item.pct}%</span>
+                  {studyDocs.length > 0 ? (
+                    <div className="space-y-3">
+                      {studyDocs.map((item, idx) => (
+                        <div key={idx} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className={`font-semibold truncate max-w-[220px] ${t.textPrimary}`}>{item.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono text-zinc-400">{item.words}</span>
+                              <span className="text-[11px] font-bold text-[var(--theme-primary,#3b82f6)]">{item.pct}%</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-[var(--theme-primary,#3b82f6)] rounded-full transition-all duration-500" 
+                              style={{ width: `${item.pct}%` }} 
+                            />
                           </div>
                         </div>
-                        <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-[var(--theme-primary,#3b82f6)] rounded-full transition-all duration-500" 
-                            style={{ width: `${item.pct}%` }} 
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-6 px-4 text-center rounded-xl bg-white/[0.02] border border-white/[0.05] space-y-2">
+                      <BookOpen size={22} className="mx-auto text-zinc-500 opacity-60" />
+                      <p className="text-xs text-zinc-300 font-medium">No Vault Documents Yet</p>
+                      <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
+                        Add PDFs or notes in your Study lists to track learning metrics here.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-400">

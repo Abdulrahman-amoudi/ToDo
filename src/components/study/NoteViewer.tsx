@@ -24,7 +24,8 @@ import {
   Maximize2, 
   Minimize2,
   Image as ImageIcon, 
-  Loader2 
+  Loader2,
+  X 
 } from 'lucide-react';
 import type { ParsedObsidianNote } from '@/types/obsidian';
 import dynamic from 'next/dynamic';
@@ -983,7 +984,7 @@ export default function NoteViewer({
                   onClick={() => setShowOutline(false)}
                   className="p-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
 

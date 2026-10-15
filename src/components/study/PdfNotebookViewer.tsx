@@ -875,7 +875,7 @@ export default function PdfNotebookViewer({
        
        {/* PDF Viewer Side or Minimized Rail */}
        {isBookMinimized ? (
-         <div className="w-12 flex-shrink-0 h-full border-r border-white/10 flex flex-col items-center py-4 justify-between bg-zinc-950/80 backdrop-blur-xl z-20 transition-all select-none">
+         <div className="w-12 flex-shrink-0 h-full border-r border-[var(--theme-border)] flex flex-col items-center py-4 justify-between bg-[var(--theme-surface)]/90 backdrop-blur-xl z-20 transition-all select-none">
            <div className="flex flex-col items-center gap-3">
              <button
                type="button"
@@ -1356,19 +1356,19 @@ export default function PdfNotebookViewer({
       )}
            
       {viewerEngine === 'pdfjs' && numPages && !isMobileOrTabletVertical && (
-        <div className="sticky bottom-6 mt-6 left-1/2 -translate-x-1/2 w-max flex items-center gap-2 bg-zinc-950/90 backdrop-blur-xl px-3.5 py-2 rounded-2xl border border-white/15 shadow-2xl z-50 text-white animate-in fade-in select-none">
+        <div className="sticky bottom-6 mt-6 left-1/2 -translate-x-1/2 w-max flex items-center gap-2.5 bg-[var(--theme-surface-elevated)]/90 backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--theme-border)] shadow-2xl z-50 text-[var(--theme-text-primary)] animate-in fade-in select-none">
           <button 
             onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
             disabled={pageNumber <= 1} 
-            className="p-1.5 rounded-xl hover:bg-white/10 disabled:opacity-30 active:scale-95 text-white transition-all"
+            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)] transition-all"
             aria-label="Previous page"
             title="Previous page"
           >
             <ChevronLeft size={16}/>
           </button>
           
-          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-zinc-300">
-            <span>Pg</span>
+          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[var(--theme-text-primary)]">
+            <span className="text-[var(--theme-text-muted)]">Pg</span>
             <input 
               type="number" 
               min={1} 
@@ -1378,28 +1378,28 @@ export default function PdfNotebookViewer({
                 const val = parseInt(e.target.value);
                 if (!isNaN(val)) setPageNumber(Math.min(Math.max(1, val), numPages || 1));
               }}
-              className="w-11 text-center bg-white/10 border border-white/15 text-white rounded-lg py-0.5 outline-none focus:border-[var(--theme-primary,#3b82f6)] font-mono text-xs"
+              className="w-11 text-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-primary)] rounded-lg py-0.5 outline-none focus:border-[var(--theme-primary)] font-mono text-xs transition-colors"
             />
-            <span className="text-zinc-500">/ {numPages}</span>
+            <span className="text-[var(--theme-text-muted)]">/ {numPages}</span>
           </div>
 
           <button 
             onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} 
             disabled={pageNumber >= (numPages||1)} 
-            className="p-1.5 rounded-xl hover:bg-white/10 disabled:opacity-30 active:scale-95 text-white transition-all"
+            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)] transition-all"
             aria-label="Next page"
             title="Next page"
           >
             <ChevronRight size={16}/>
           </button>
 
-          <div className="w-px h-4 bg-white/15 mx-1" />
+          <div className="w-px h-4 bg-[var(--theme-border)] mx-1" />
 
           {/* Fit to width */}
           <button
             type="button"
             onClick={fitToWidth}
-            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-xs font-semibold text-zinc-300 hover:text-white flex items-center gap-1 transition-all"
+            className="px-3 py-1.5 rounded-full bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] active:scale-95 text-xs font-semibold text-[var(--theme-text-primary)] flex items-center gap-1.5 transition-all border border-[var(--theme-border)]/50"
             title="Fit Page to Width"
           >
             <Maximize2 size={13} />
@@ -1410,33 +1410,33 @@ export default function PdfNotebookViewer({
           <button
             type="button"
             onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
-            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300 hover:text-white transition-all"
+            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)] transition-all"
             title="Zoom Out"
           >
             <ZoomOut size={14} />
           </button>
-          <span className="text-[11px] font-mono font-bold text-zinc-400 min-w-[32px] text-center">
+          <span className="text-[11px] font-mono font-bold text-[var(--theme-text-muted)] min-w-[34px] text-center">
             {Math.round(zoomLevel * 100)}%
           </span>
           <button
             type="button"
             onClick={() => setZoomLevel(z => Math.min(3.0, Number((z + 0.15).toFixed(2))))}
-            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300 hover:text-white transition-all"
+            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)] transition-all"
             title="Zoom In"
           >
             <ZoomIn size={14} />
           </button>
 
-          <div className="w-px h-4 bg-white/15 mx-1" />
+          <div className="w-px h-4 bg-[var(--theme-border)] mx-1" />
 
           {/* Minimize / Expand Book */}
           <button
             type="button"
             onClick={() => setIsBookMinimized(m => !m)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border ${
               isBookMinimized
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                : 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-primary)] border-[var(--theme-border)]/50'
             }`}
             title={isBookMinimized ? "Restore book side" : "Minimize book to focus on Notes & AI"}
           >
@@ -1448,10 +1448,10 @@ export default function PdfNotebookViewer({
           <button
             type="button"
             onClick={() => setShowNotes(s => !s)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
               showNotes
-                ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md'
-                : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white'
+                ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md shadow-[var(--theme-primary)]/25'
+                : 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-primary)] border border-[var(--theme-border)]/50'
             }`}
             title={showNotes ? "Minimize Notes & AI pane" : "Expand Notes & AI pane"}
           >
@@ -1463,32 +1463,32 @@ export default function PdfNotebookViewer({
 
       {/* Mobile & Vertical Tablet Ergonomic Floating Navigation Pill */}
       {viewerEngine === 'pdfjs' && numPages && isMobileOrTabletVertical && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-2xl bg-zinc-950/90 border border-white/15 backdrop-blur-xl shadow-2xl text-xs max-w-[94vw] animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-full bg-[var(--theme-surface-elevated)]/95 border border-[var(--theme-border)] backdrop-blur-xl shadow-2xl text-xs max-w-[94vw] animate-in fade-in slide-in-from-bottom-2 text-[var(--theme-text-primary)]">
           <button 
             onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
             disabled={pageNumber <= 1} 
-            className="p-2 rounded-xl bg-white/5 disabled:opacity-30 active:scale-95 text-white"
+            className="p-2 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)]"
             title="Previous Page"
           >
             <ChevronLeft size={16}/>
           </button>
-          <span className="px-2 font-mono font-bold text-zinc-300">
+          <span className="px-2 font-mono font-bold text-[var(--theme-text-primary)]">
             {pageNumber} / {numPages || 1}
           </span>
           <button 
             onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} 
             disabled={pageNumber >= (numPages||1)} 
-            className="p-2 rounded-xl bg-white/5 disabled:opacity-30 active:scale-95 text-white"
+            className="p-2 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)]"
             title="Next Page"
           >
             <ChevronRight size={16}/>
           </button>
 
-          <div className="w-px h-4 bg-white/10 mx-0.5" />
+          <div className="w-px h-4 bg-[var(--theme-border)] mx-0.5" />
 
           <button 
             onClick={fitToWidth} 
-            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 font-semibold text-zinc-300 flex items-center gap-1"
+            className="px-2.5 py-1.5 rounded-full bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] active:scale-95 font-semibold text-[var(--theme-text-primary)] flex items-center gap-1"
             title="Fit Page to Width"
           >
             <Maximize2 size={13}/>
@@ -1497,28 +1497,28 @@ export default function PdfNotebookViewer({
 
           <button 
             onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
-            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300"
+            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)]"
             title="Zoom Out"
           >
             <ZoomOut size={15}/>
           </button>
-          <span className="text-[11px] font-mono text-zinc-400 font-bold min-w-[32px] text-center">
+          <span className="text-[11px] font-mono text-[var(--theme-text-muted)] font-bold min-w-[32px] text-center">
             {Math.round(zoomLevel * 100)}%
           </span>
           <button 
             onClick={() => setZoomLevel(z => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
-            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300"
+            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)]"
             title="Zoom In"
           >
             <ZoomIn size={15}/>
           </button>
 
-          <div className="w-px h-4 bg-white/10 mx-0.5" />
+          <div className="w-px h-4 bg-[var(--theme-border)] mx-0.5" />
 
           <button 
             onClick={() => setShowNotes(s => !s)} 
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all active:scale-95 ${
-              showNotes ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md' : 'bg-white/10 text-zinc-200 hover:bg-white/15'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all active:scale-95 ${
+              showNotes ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md' : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
             }`}
           >
             <Sparkles size={14}/>
@@ -1531,7 +1531,7 @@ export default function PdfNotebookViewer({
 
     {/* Right Rail when Notes are minimized */}
     {!showNotes && !isMobileOrTabletVertical && (
-      <div className="w-12 flex-shrink-0 h-full border-l border-white/10 flex flex-col items-center py-4 justify-between bg-zinc-950/80 backdrop-blur-xl z-20 transition-all select-none">
+      <div className="w-12 flex-shrink-0 h-full border-l border-[var(--theme-border)] flex flex-col items-center py-4 justify-between bg-[var(--theme-surface)]/90 backdrop-blur-xl z-20 transition-all select-none">
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
