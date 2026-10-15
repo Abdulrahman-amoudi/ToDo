@@ -125,7 +125,7 @@ export const SHAPE_PATHS: Record<string, string> = {
   oeuf:
     'M50 12 C68 12 80 38 80 60 C80 78 67 90 50 90 C33 90 20 78 20 60 C20 38 32 12 50 12 Z',
   soleil:
-    'M50 8 C53 8 55 14 58 17 C61 20 66 20 70 18 C74 16 78 20 79 24 C80 28 85 31 88 34 C91 37 91 42 89 46 C87 50 90 55 88 59 C86 63 83 66 80 70 C77 74 73 76 69 78 C65 80 63 85 59 88 C55 91 50 91 46 88 C42 85 40 80 36 78 C32 76 28 74 25 70 C22 66 19 63 17 59 C15 55 18 50 16 46 C14 42 14 37 17 34 C20 31 25 28 26 24 C27 20 31 16 35 18 C39 20 44 20 47 17 C50 14 52 8 50 8 Z',
+    'M 50 10 C 53 10 56 16 59 18 C 65 15 70 17 73 22 C 77 26 77 32 82 36 C 87 39 88 45 88 50 C 88 55 87 61 82 64 C 77 68 77 74 73 78 C 70 83 65 85 59 82 C 56 84 53 90 50 90 C 47 90 44 84 41 82 C 35 85 30 83 27 78 C 23 74 23 68 18 64 C 13 61 12 55 12 50 C 12 45 13 39 18 36 C 23 32 23 26 27 22 C 30 17 35 15 41 18 C 44 16 47 10 50 10 Z',
   fromage:
     'M18 78 C14 78 12 74 14 70 L26 32 C28 26 34 22 42 22 L76 34 C84 37 88 44 86 52 L82 72 C80 76 76 78 72 78 Z',
   livre:
@@ -148,7 +148,7 @@ export const FACE_CONFIGS: Record<string, FaceConfig> = {
   nuage:    { dx: 0, dy: 5, scale: 0.88 },
   goutte:   { dx: 0, dy: 11, scale: 0.80 },
   oeuf:     { dx: 0, dy: 6, scale: 0.86 },
-  soleil:   { dx: 0, dy: 3, scale: 0.80 },
+  soleil:   { dx: 0, dy: 1, scale: 0.88 },
   fromage:  { dx: 0, dy: 7, scale: 0.80 },
   livre:    { dx: 0, dy: 0, scale: 0.88 },
 };
@@ -188,14 +188,6 @@ export const FACE_TRANSFORMS: Record<string, string> = {
  * Shape underlays rendered BEHIND the primary body path (back cover rim, bookmark tails).
  */
 export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNode> = {
-  soleil: (bodyHex: string) => (
-    <path 
-      d="M50 10 C53 10 55 16 58 19 C61 22 66 22 70 20 C74 18 78 22 79 26 C80 30 85 33 88 36 C91 39 91 44 89 48 C87 52 90 57 88 61 C86 65 83 68 80 72 C77 76 73 78 69 80 C65 82 63 87 59 90 C55 93 50 93 46 90 C42 87 40 82 36 80 C32 78 28 76 25 72 C22 68 19 65 17 61 C15 57 18 52 16 48 C14 44 14 39 17 36 C20 33 25 30 26 26 C27 22 31 18 35 20 C39 22 44 22 47 19 C50 16 52 10 50 10 Z" 
-      fill={bodyHex} 
-      filter="brightness(0.80)" 
-      style={{ pointerEvents: 'none' }}
-    />
-  ),
   livre: (bodyHex: string) => (
     <g style={{ pointerEvents: 'none' }}>
       {/* Layer 1 — Soft Rounded Back Cover Rim (Depth Layer) */}
@@ -219,17 +211,6 @@ export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNod
  * Relocated away from the center face area (x: 30..70, y: 35..65).
  */
 export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
-  soleil: () => (
-    <circle 
-      cx="50" 
-      cy="53" 
-      r="24" 
-      stroke="rgba(255,255,255,0.22)" 
-      strokeWidth="2.5" 
-      fill="none" 
-      style={{ pointerEvents: 'none' }}
-    />
-  ),
   fromage: () => (
     <g style={{ pointerEvents: 'none' }}>
       {/* 3 subtle cutout cheese holes placed in the outer corners */}
