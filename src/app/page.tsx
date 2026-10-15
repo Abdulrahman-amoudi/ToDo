@@ -1983,7 +1983,7 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {['neutre', 'attentif', 'surpris', 'excite', 'heureux', 'hilare', 'colere', 'triste', 'effraye', 'mefiant', 'curieux', 'fier', 'timide', 'blase'].map(expr => (
+                  {['neutre', 'attentif', 'surpris', 'excite', 'heureux', 'hilare', 'colere', 'triste', 'effraye', 'mefiant', 'curieux', 'fier', 'timide', 'blase', 'somnolent'].map(expr => (
                     <button
                       key={expr}
                       type="button"

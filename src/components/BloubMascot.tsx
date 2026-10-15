@@ -8,6 +8,7 @@ import {
   SHAPE_EXTRAS,
   SHAPE_UNDERLAYS,
   FACE_TRANSFORMS,
+  getFaceTransform,
   EXPRESSION_RENDERERS,
   resolveColor,
   isLightColor,
@@ -338,7 +339,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         <g
-          transform={FACE_TRANSFORMS[normShape] || 'translate(0, 1) scale(1)'}
+          transform={FACE_TRANSFORMS[normShape] || getFaceTransform(normShape)}
           style={{ transformOrigin: '50% 50%' }}
         >
           {renderExpression(eyeColor, isLight)}

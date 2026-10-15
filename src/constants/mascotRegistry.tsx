@@ -80,6 +80,8 @@ export const EXPRESSION_ALIASES: Record<string, string> = {
   suspicious: 'mefiant',
   curieux: 'curieux',
   curious: 'curieux',
+  confus: 'curieux',
+  confused: 'curieux',
   fier: 'fier',
   proud: 'fier',
   timide: 'timide',
@@ -87,8 +89,10 @@ export const EXPRESSION_ALIASES: Record<string, string> = {
   blase: 'blase',
   bored: 'blase',
   unamused: 'blase',
-  somnolent: 'blase',
-  sleep: 'blase',
+  somnolent: 'somnolent',
+  sleep: 'somnolent',
+  sleepy: 'somnolent',
+  drowsy: 'somnolent',
   vroum: 'excite',
   klaxon: 'excite',
 };
@@ -128,22 +132,56 @@ export const SHAPE_PATHS: Record<string, string> = {
     'M14 24 C14 19 18 15 24 15 C35 15 45 18 50 23 C55 18 65 15 76 15 C82 15 86 19 86 24 L86 70 C86 75 82 78 76 78 C65 78 55 76 50 81 C45 76 35 78 24 78 C18 78 14 75 14 70 Z',
 };
 
+export interface FaceConfig {
+  dx: number;
+  dy: number;
+  scale: number;
+}
+
+export const FACE_CONFIGS: Record<string, FaceConfig> = {
+  squircle: { dx: 0, dy: 1, scale: 1.0 },
+  cercle:   { dx: 0, dy: 1, scale: 1.0 },
+  galet:    { dx: 0, dy: 4, scale: 0.98 },
+  capsule:  { dx: 0, dy: 1, scale: 0.80 },
+  triangle: { dx: 0, dy: 12, scale: 0.78 },
+  hexagone: { dx: 0, dy: 1, scale: 0.92 },
+  nuage:    { dx: 0, dy: 5, scale: 0.88 },
+  goutte:   { dx: 0, dy: 11, scale: 0.80 },
+  oeuf:     { dx: 0, dy: 6, scale: 0.86 },
+  soleil:   { dx: 0, dy: 1, scale: 0.82 },
+  fromage:  { dx: 0, dy: 7, scale: 0.80 },
+  livre:    { dx: 0, dy: 0, scale: 0.88 },
+};
+
 /**
- * Precise Face Transforms per Shape to prevent eye and blush clipping.
+ * Returns an SVG transform string that scales around center (50, 50) and shifts by (dx, dy).
+ * Math: translate(50 + dx, 50 + dy) scale(s) translate(-50, -50)
+ * Guarantees that scaling never shifts the center X away from 50!
+ */
+export function getFaceTransform(shape: string | undefined | null): string {
+  const norm = normalizeShape(shape);
+  const cfg = FACE_CONFIGS[norm] || { dx: 0, dy: 1, scale: 1.0 };
+  const tx = 50 + cfg.dx;
+  const ty = 50 + cfg.dy;
+  return `translate(${tx}, ${ty}) scale(${cfg.scale}) translate(-50, -50)`;
+}
+
+/**
+ * Precise Face Transforms per Shape using true center scaling.
  */
 export const FACE_TRANSFORMS: Record<string, string> = {
-  squircle: 'translate(0, 1) scale(1)',
-  cercle:   'translate(0, 1) scale(1)',
-  galet:    'translate(0, 5) scale(1.02)',
-  capsule:  'translate(0, 1) scale(0.84)',
-  triangle: 'translate(0, 13) scale(0.85)',
-  hexagone: 'translate(0, 1) scale(0.95)',
-  nuage:    'translate(0, 6) scale(0.92)',
-  goutte:   'translate(0, 12) scale(0.84)',
-  oeuf:     'translate(0, 7) scale(0.86)',
-  soleil:   'translate(0, 1) scale(0.86)',
-  fromage:  'translate(-2, 6) scale(0.88)',
-  livre:    'translate(0, -2) scale(0.95)',
+  squircle: getFaceTransform('squircle'),
+  cercle:   getFaceTransform('cercle'),
+  galet:    getFaceTransform('galet'),
+  capsule:  getFaceTransform('capsule'),
+  triangle: getFaceTransform('triangle'),
+  hexagone: getFaceTransform('hexagone'),
+  nuage:    getFaceTransform('nuage'),
+  goutte:   getFaceTransform('goutte'),
+  oeuf:     getFaceTransform('oeuf'),
+  soleil:   getFaceTransform('soleil'),
+  fromage:  getFaceTransform('fromage'),
+  livre:    getFaceTransform('livre'),
 };
 
 /**
@@ -170,14 +208,15 @@ export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNod
 
 /**
  * Shape decorative overlays (holes, toppers, bookmark ribbons).
+ * Relocated away from the center face area (x: 30..70, y: 35..65).
  */
 export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
   fromage: () => (
     <g style={{ pointerEvents: 'none' }}>
-      {/* 3 subtle cutout cheese holes */}
-      <circle cx="36" cy="62" r="5" fill="#000" opacity="0.16" />
-      <circle cx="62" cy="56" r="6" fill="#000" opacity="0.16" />
-      <circle cx="48" cy="42" r="3.5" fill="#000" opacity="0.16" />
+      {/* 3 subtle cutout cheese holes placed in the outer corners */}
+      <circle cx="72" cy="40" r="4" fill="#000" opacity="0.16" />
+      <circle cx="25" cy="69" r="4.5" fill="#000" opacity="0.16" />
+      <circle cx="73" cy="71" r="3.5" fill="#000" opacity="0.16" />
       {/* Top green leaf/stem accent */}
       <path d="M42 22 Q40 12 46 6" stroke="#8b5e3c" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       <path d="M46 6 C40 2 40 -2 50 0 C54 6 50 8 46 6 Z" fill="#22c55e" />
@@ -185,16 +224,18 @@ export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
   ),
   livre: () => (
     <g style={{ pointerEvents: 'none' }}>
-      {/* Layer 4 — Subtle Center Spine Crease & Bottom Page Thickness (Behind the Face) */}
-      <path d="M50 23 L50 79" stroke="rgba(0,0,0,0.12)" strokeWidth="3" strokeLinecap="round" />
+      {/* Layer 4 — Subtle Spine Crease Split into top and bottom notches so mouths & glasses are never sliced */}
+      <path d="M50 23 L50 33" stroke="rgba(0,0,0,0.12)" strokeWidth="3" strokeLinecap="round" />
+      <path d="M50 67 L50 78" stroke="rgba(0,0,0,0.12)" strokeWidth="3" strokeLinecap="round" />
       <path d="M18 73 C30 73 44 71 50 76 C56 71 70 73 82 73" stroke="rgba(0,0,0,0.14)" strokeWidth="3.5" strokeLinecap="round" fill="none" />
     </g>
   ),
 };
 
 /**
- * 14 Distinct SVG Eye/Brow/Mouth Expressions inside 0 0 100 100 space.
+ * 15 Distinct SVG Eye/Brow/Mouth Expressions inside 0 0 100 100 space.
  * Soft, chubby kawaii aesthetic matching "timide" (rounded pills, strokeWidth 4-5.5, blush ovals).
+ * Standardized cheek positions (cx=29, cx=71, rx=5) and safe face bounds (max width 38px).
  */
 export const EXPRESSION_RENDERERS: Record<
   string,
@@ -213,8 +254,8 @@ export const EXPRESSION_RENDERERS: Record<
     <g>
       <rect x="37" y="45" width="6.5" height="12" rx="3.25" fill={eyeColor} />
       <rect x="56.5" y="45" width="6.5" height="12" rx="3.25" fill={eyeColor} />
-      <ellipse cx="28" cy="55" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="72" cy="55" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="29" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="71" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
     </g>
   ),
 
@@ -244,8 +285,8 @@ export const EXPRESSION_RENDERERS: Record<
     <g>
       <path d="M34 52 Q39.5 41 45 52" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
       <path d="M55 52 Q60.5 41 66 52" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <ellipse cx="27" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="73" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
     </g>
   ),
 
@@ -254,8 +295,8 @@ export const EXPRESSION_RENDERERS: Record<
     <g>
       <rect x="36" y="42" width="7" height="15" rx="3.5" fill={eyeColor} />
       <rect x="57" y="42" width="7" height="15" rx="3.5" fill={eyeColor} />
-      <ellipse cx="27" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="73" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
       <path d="M46 55 Q50 59 54 55" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
     </g>
   ),
@@ -265,8 +306,8 @@ export const EXPRESSION_RENDERERS: Record<
     <g>
       <path d="M34 44 L43 49 L34 54" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M66 44 L57 49 L66 54" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
-      <ellipse cx="27" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="73" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
       <path d="M44 56 Q50 64 56 56 Z" fill="#FF6B8B" stroke={eyeColor} strokeWidth="3.5" strokeLinejoin="round" />
     </g>
   ),
@@ -319,7 +360,7 @@ export const EXPRESSION_RENDERERS: Record<
     <g>
       <rect x="36" y="43" width="7" height="13" rx="3.5" fill={eyeColor} />
       <rect x="57" y="40" width="8" height="16" rx="4" fill={eyeColor} />
-      <path d="M55 33 Q61 29 67 33" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <path d="M55 35 Q61 30.5 67 35" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
     </g>
   ),
 
@@ -328,19 +369,31 @@ export const EXPRESSION_RENDERERS: Record<
     <g>
       <path d="M34 48 Q39.5 42 45 48" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
       <path d="M55 48 Q60.5 42 66 48" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <ellipse cx="27" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="73" cy="56" rx="5.5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
       <path d="M46 56 Q51 58 55 54" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 14. blase: Smooth rounded kawaii sunglasses with rx=4
+  // 14. blase: Smooth rounded kawaii sunglasses centered (x: 31..69, width 38px)
   blase: (eyeColor) => (
     <g>
-      <rect x="30" y="42" width="17" height="11" rx="4" fill={eyeColor} />
-      <rect x="53" y="42" width="17" height="11" rx="4" fill={eyeColor} />
-      <line x1="47" y1="46" x2="53" y2="46" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" />
+      <rect x="31" y="42" width="16" height="11" rx="4" fill={eyeColor} />
+      <rect x="53" y="42" width="16" height="11" rx="4" fill={eyeColor} />
+      <line x1="47" y1="46" x2="53" y2="46" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
       <line x1="46" y1="59" x2="54" y2="59" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" />
+    </g>
+  ),
+
+  // 15. somnolent: Sleepy / drowsy with curved closed drooping eyes, soft blush, and gentle 'z'
+  somnolent: (eyeColor) => (
+    <g>
+      <path d="M35 48 Q40 54 45 48" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M55 48 Q60 54 65 48" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
+      <ellipse cx="29" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.5" />
+      <ellipse cx="71" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.5" />
+      <ellipse cx="50" cy="59" rx="2.5" ry="2" fill={eyeColor} opacity="0.75" />
+      <text x="67" y="39" fill={eyeColor} fontSize="8" fontWeight="bold" opacity="0.75" style={{ userSelect: 'none' }}>z</text>
     </g>
   ),
 };
