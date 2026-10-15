@@ -69,8 +69,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
   const svgRef = useRef<SVGSVGElement>(null);
   const faceGroupRef = useRef<SVGGElement>(null);
-  const bodyPathRef = useRef<SVGPathElement>(null);
-  const extrasGroupRef = useRef<SVGGElement>(null);
+  const bodyGroupRef = useRef<SVGGElement>(null);
 
   // Normalize shape and expression through the single source-of-truth registry
   const normShape = normalizeShape(shape);
@@ -89,7 +88,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   useEffect(() => {
     if (state === 'orbit' || state === 'wide') {
       setIsBouncingState(true);
-      const timer = setTimeout(() => setIsBouncingState(false), 950);
+      const timer = setTimeout(() => setIsBouncingState(false), 850);
       return () => clearTimeout(timer);
     }
   }, [state]);
@@ -145,66 +144,60 @@ export const BloubMascot = React.memo(function BloubMascot({
 
     const tick = (time: number) => {
       if (lastTimeRef.current === 0) lastTimeRef.current = time;
-      const dt = Math.min((time - lastTimeRef.current) / 1000, 0.1);
+      const dt = Math.min((time - lastTimeRef.current) / 1000, 0.08);
       lastTimeRef.current = time;
       clockRef.current += dt;
 
       const t = clockRef.current;
 
-      // 1. Spring-damped lerp toward mouse target
-      const lerpFactor = Math.min(1, dt * 9.5);
+      // 1. Spring-damped smooth lerp toward target look
+      const lerpFactor = Math.min(1, dt * 8.5);
       currentLook.current.x += (targetLook.current.x - currentLook.current.x) * lerpFactor;
       currentLook.current.y += (targetLook.current.y - currentLook.current.y) * lerpFactor;
 
-      // 2. Idle floating & soft breathing bob
-      const floatY = Math.sin(t * 2.2) * 2.4;
-      const breathScaleX = 1 + Math.sin(t * 2.2) * 0.016;
-      const breathScaleY = 1 - Math.sin(t * 2.2) * 0.016;
+      // 2. Organic breathing bob & idle float
+      const floatY = Math.sin(t * 2.2) * 2.2;
+      const breathScaleX = 1 + Math.sin(t * 2.2) * 0.015;
+      const breathScaleY = 1 - Math.sin(t * 2.2) * 0.015;
 
-      // 3. Natural cute eye blink (every ~4 seconds)
+      // 3. Natural eye blink (every ~4.2 seconds)
       blinkTimerRef.current += dt;
-      if (blinkTimerRef.current > 3.8) {
+      if (blinkTimerRef.current > 4.2) {
         isBlinkingRef.current = true;
         blinkProgressRef.current = 0;
-        blinkTimerRef.current = Math.random() * 0.6;
+        blinkTimerRef.current = Math.random() * 0.8;
       }
 
       let eyeScaleY = 1;
       if (isBlinkingRef.current) {
-        blinkProgressRef.current += dt * 9;
+        blinkProgressRef.current += dt * 10;
         if (blinkProgressRef.current >= Math.PI) {
           isBlinkingRef.current = false;
           eyeScaleY = 1;
         } else {
-          eyeScaleY = Math.max(0.08, 1 - Math.sin(blinkProgressRef.current) * 0.92);
+          eyeScaleY = Math.max(0.06, 1 - Math.sin(blinkProgressRef.current) * 0.94);
         }
       }
 
-      // 4. Calculate coordinates for face group
-      const faceX = currentLook.current.x * 7.2;
-      const faceY = currentLook.current.y * 5.2 + floatY * 0.4;
-      const headTilt = currentLook.current.x * 3.4;
+      // 4. Coordinates for gaze, tilt, and head motion
+      const faceX = currentLook.current.x * 6.5;
+      const faceY = currentLook.current.y * 4.8;
+      const headTilt = currentLook.current.x * 3.2;
+      const bodyTilt = currentLook.current.x * 1.8;
 
-      // Update DOM directly for zero React reconciliation cost
+      // Update Body Group (Cushion depth + Silhouette body + Extras move as ONE cohesive unit)
+      if (bodyGroupRef.current) {
+        bodyGroupRef.current.setAttribute(
+          'transform',
+          `translate(0, ${floatY}) translate(50, 50) rotate(${bodyTilt}) scale(${breathScaleX}, ${breathScaleY}) translate(-50, -50)`
+        );
+      }
+
+      // Update Face Group (moves with body float, tracks gaze, blinks in place around 50 50)
       if (faceGroupRef.current) {
         faceGroupRef.current.setAttribute(
           'transform',
-          `translate(${faceX}, ${faceY}) rotate(${headTilt} 50 50) scale(1, ${eyeScaleY})`
-        );
-      }
-
-      if (extrasGroupRef.current) {
-        extrasGroupRef.current.setAttribute(
-          'transform',
-          `translate(${faceX * 0.4}, ${faceY * 0.4}) rotate(${headTilt * 0.5} 50 50)`
-        );
-      }
-
-      if (bodyPathRef.current) {
-        const bodyTilt = currentLook.current.x * 1.8;
-        bodyPathRef.current.setAttribute(
-          'transform',
-          `translate(0, ${floatY}) rotate(${bodyTilt} 50 50) scale(${breathScaleX}, ${breathScaleY})`
+          `translate(${faceX}, ${faceY + floatY * 0.7}) translate(50, 50) rotate(${headTilt}) scale(1, ${eyeScaleY}) translate(-50, -50)`
         );
       }
 
@@ -236,7 +229,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         setTimeout(() => {
           setIsInteracting(false);
           setIsBouncingState(false);
-        }, 950);
+        }, 850);
       }
     },
     [onInteract, isStatic, animated]
@@ -266,70 +259,51 @@ export const BloubMascot = React.memo(function BloubMascot({
     >
       <style>{`
         @keyframes mascotSquishPop {
-          0% { transform: scale(1) translateY(0) rotate(0deg); }
-          16% { transform: scale(1.22, 0.78) translateY(5px) rotate(0deg); }
-          38% { transform: scale(0.86, 1.25) translateY(-20px) rotate(-6deg); }
-          55% { transform: scale(1.12, 0.92) translateY(-10px) rotate(4deg); }
-          72% { transform: scale(0.96, 1.05) translateY(-2px) rotate(-2deg); }
-          86% { transform: scale(1.03, 0.98) translateY(1px) rotate(1deg); }
-          100% { transform: scale(1) translateY(0) rotate(0deg); }
+          0% { transform: scale(1) translateY(0); }
+          20% { transform: scale(1.14, 0.86) translateY(3px); }
+          45% { transform: scale(0.92, 1.10) translateY(-6px); }
+          70% { transform: scale(1.04, 0.97) translateY(1.5px); }
+          85% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          100% { transform: scale(1) translateY(0); }
         }
         .mascot-squish-active {
-          animation: mascotSquishPop 0.95s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: mascotSquishPop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
 
-      {/* Layer 1: Shape underlay OR bottom cushion depth (brightness 0.82) */}
-      {renderUnderlay ? (
-        <g style={{ transformOrigin: '50% 50%' }}>
-          {renderUnderlay(bodyHex)}
-        </g>
-      ) : (
+      {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
+      <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
+        {renderUnderlay ? (
+          renderUnderlay(bodyHex)
+        ) : (
+          <path
+            key={`underlay-${normShape}`}
+            d={shapeD}
+            fill={bodyHex}
+            transform="translate(0, 3)"
+            filter="brightness(0.82)"
+            style={{
+              pointerEvents: 'none',
+              transition: 'fill 0.2s ease',
+            }}
+          />
+        )}
+
         <path
+          key={`body-${normShape}`}
           d={shapeD}
           fill={bodyHex}
-          transform="translate(0, 3.2)"
-          filter="brightness(0.82)"
+          className="mascot-body-path"
           style={{
-            pointerEvents: 'none',
-            transformOrigin: '50% 50%',
-            transition: 'd 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s ease',
+            transition: 'fill 0.2s ease',
+            filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
           }}
         />
-      )}
 
-      {/* Layer 2: Main Silhouette Body Path with Morphs */}
-      <path
-        ref={bodyPathRef}
-        d={shapeD}
-        fill={bodyHex}
-        className="mascot-body-path"
-        style={{
-          transition:
-            'd 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s ease',
-          transformOrigin: '50% 50%',
-          filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.18))',
-        }}
-      />
+        {renderExtra && renderExtra()}
+      </g>
 
-      {/* Layer 3: Glossy Highlight Overlay */}
-      {normShape !== 'livre' && (
-        <path
-          d="M26 24 C34 17 50 16 62 19 C52 21 36 23 26 24 Z"
-          fill="#FFFFFF"
-          opacity="0.22"
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
-
-      {/* Layer 4: Shape-specific decorative accessories (cheese holes, sprout, book spine crease) */}
-      {renderExtra && (
-        <g ref={extrasGroupRef} style={{ transformOrigin: '50% 50%' }}>
-          {renderExtra()}
-        </g>
-      )}
-
-      {/* Layer 5: Mascot Expression / Face Group with 120fps Mouse Tracking & Per-Shape Transform */}
+      {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
       <g
         ref={faceGroupRef}
         className="mascot-face-group"

@@ -9,7 +9,7 @@ import {
   PaintBucket, LogOut, Download, Smartphone, Repeat, Bell, Monitor, Flame, 
   Cpu, AlertCircle, Mic, Camera, GraduationCap, BookOpen, Sparkles, Brain, 
   CheckSquare, Layers, FileText, Smile, ArrowLeft, Database, Target, Zap, 
-  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal 
+  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown 
 } from 'lucide-react';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
@@ -1291,15 +1291,15 @@ export default function Home() {
     const completed = todos.filter(t => t.completed).length;
     const pending = todos.filter(t => !t.completed).length;
     if (todos.length > 0 && pending === 0) {
-      return "All systems clear! You've conquered every objective today. Bloub is thrilled! 🏆";
+      return "All systems clear! You've conquered every objective today. Bloub is thrilled!";
     }
     if (completed > 0 && pending > 0) {
-      return "Fantastic rhythm! Keep riding this momentum—your streak is on fire! 🔥";
+      return "Fantastic rhythm! Keep riding this momentum—your streak is strong!";
     }
     if (completed === 0 && pending > 0) {
-      return "One micro-win sets the whole day in motion. Pick a task and let's roll! 🚀";
+      return "One micro-win sets the whole day in motion. Pick a task and let's roll!";
     }
-    return "Ready to learn something new? Open your Cloud Vault and start your next session! 📚";
+    return "Ready to learn something new? Open your Cloud Vault and start your next session!";
   }, [todos]);
   
   const showListHero = !isListView && activeTab === 'lists';
@@ -1315,6 +1315,9 @@ export default function Home() {
   const updateTargetShape = (s: string) => {
     isPrefsDirtyRef.current = true;
     lastLocalPrefsUpdateRef.current = Date.now();
+    if (autoMoodEnabled) {
+      updateAutoMood(false);
+    }
     if (isGlobalTarget) {
       setMascotShape(s);
     } else {
@@ -1328,11 +1331,15 @@ export default function Home() {
         }
       }));
     }
+    triggerMascot('idle', targetExpr, true);
   };
 
   const updateTargetColor = (c: string) => {
     isPrefsDirtyRef.current = true;
     lastLocalPrefsUpdateRef.current = Date.now();
+    if (autoMoodEnabled) {
+      updateAutoMood(false);
+    }
     if (isGlobalTarget) {
       setMascotColor(c);
     } else {
@@ -1346,6 +1353,7 @@ export default function Home() {
         }
       }));
     }
+    triggerMascot('idle', targetExpr, true);
   };
 
   const updateTargetExpr = (expr: string) => {
@@ -1881,7 +1889,7 @@ export default function Home() {
                     <span className="text-[10px] font-bold mt-1 tracking-wide uppercase">Global</span>
                   </button>
                   {categories.map(cat => {
-                    const { shape: cShape, color: cColor } = getListMascot(cat, catSettings);
+                    const { shape: cShape, color: cColor } = getListMascot(cat, catSettings, mascotShape, mascotColor);
                     const cExpr = (catSettings[cat.id]?.expression as ExpressionId) || 'neutre';
                     return (
                       <button
@@ -2537,8 +2545,8 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2.5 self-start sm:self-auto bg-white/[0.03] border border-white/[0.08] rounded-full px-3.5 py-1.5 text-xs text-zinc-300">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <span className="select-none text-xs">🔥</span>
-                  <span>{studyStreak} Day Streak 🔥</span>
+                  <Flame size={13} className="text-amber-400 shrink-0 fill-amber-400/20" />
+                  <span>{studyStreak} Day Streak</span>
                 </span>
                 <span className="text-zinc-600">•</span>
                 <span className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
@@ -2590,8 +2598,8 @@ export default function Home() {
               <div className={`p-5 rounded-2xl ${t.card} flex flex-col justify-between relative overflow-hidden group border`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Study Streak</span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-sm">
-                    <span className="select-none">🔥</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+                    <Flame size={16} className="text-amber-400 fill-amber-400/20" />
                   </div>
                 </div>
                 <div>
@@ -2600,7 +2608,7 @@ export default function Home() {
                       {studyStreak}
                     </span>
                     <span className="text-sm font-bold text-amber-400/80">Days</span>
-                    <span className="text-base select-none">🔥</span>
+                    <Flame size={16} className="text-amber-400 fill-amber-400/20 shrink-0 ml-0.5" />
                   </div>
                   <p className={`text-[11px] ${t.textSecondary}`}>
                     Daily momentum active
@@ -2695,10 +2703,10 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Heatmap Legend with Fire Emoji */}
+              {/* Heatmap Legend with Fire Icon */}
               <div className="flex items-center justify-between pt-3 mt-1 border-t border-white/[0.06] text-[11px] text-zinc-400">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <span className="select-none text-sm">🔥</span>
+                  <Flame size={14} className="text-amber-400 shrink-0 fill-amber-400/20" />
                   <span>Consistency Score: {Math.min(100, Math.round((heatmapData.totalContributions / 84) * 100))}%</span>
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -2806,8 +2814,16 @@ export default function Home() {
                         <span className={`text-xs font-bold uppercase tracking-wider ${t.textPrimary}`}>
                           Mood: {autoMoodEnabled ? computeReactiveMood() : mascotExpression}
                         </span>
-                        <span className="text-xs">
-                          {computeReactiveMood() === 'fier' ? '👑' : computeReactiveMood() === 'attentif' ? '🎯' : computeReactiveMood() === 'heureux' ? '✨' : '👀'}
+                        <span className="text-xs flex items-center">
+                          {computeReactiveMood() === 'fier' ? (
+                            <Crown size={14} className="text-amber-400" />
+                          ) : computeReactiveMood() === 'attentif' ? (
+                            <Target size={14} className="text-[var(--theme-primary,#3b82f6)]" />
+                          ) : computeReactiveMood() === 'heureux' ? (
+                            <Sparkles size={14} className="text-emerald-400" />
+                          ) : (
+                            <Smile size={14} className="text-[var(--theme-primary,#3b82f6)]" />
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-[11px] mb-1">

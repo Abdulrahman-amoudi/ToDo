@@ -334,7 +334,7 @@ DO NOT reveal the answer, correct option index, or exact option text. Guide the 
 
     const text = await this.callGenerateContent(apiKey, model, prompt, systemPrompt, false);
     return {
-      hint: text.trim().startsWith('💡') ? text.trim() : `💡 Bloub's Hint: ${text.trim()}`
+      hint: text.trim().startsWith("Bloub's Hint:") ? text.trim() : `Bloub's Hint: ${text.trim()}`
     };
   }
 
