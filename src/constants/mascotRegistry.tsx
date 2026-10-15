@@ -23,8 +23,8 @@ export const SHAPE_ALIASES: Record<string, string> = {
   round: 'cercle',
   galet: 'galet',
   pebble: 'galet',
-  capsule: 'capsule',
-  pill: 'capsule',
+  capsule: 'nuage',
+  pill: 'nuage',
   triangle: 'triangle',
   hexagone: 'hexagone',
   hexagon: 'hexagone',
@@ -113,13 +113,13 @@ export const SHAPE_PATHS: Record<string, string> = {
   galet:
     'M50 12 C78 14 88 32 86 60 C84 82 72 88 50 88 C26 88 14 78 14 54 C14 30 26 10 50 12 Z',
   capsule:
-    'M50 12 C68 12 76 22 76 38 L76 62 C76 78 68 88 50 88 C32 88 24 78 24 62 L24 38 C24 22 32 12 50 12 Z',
+    'M 50 78 C 38 78 30 75 24 68 C 14 68 12 56 16 48 C 14 38 24 32 34 35 C 40 22 60 22 66 35 C 76 32 86 38 84 48 C 88 56 86 68 76 68 C 70 75 62 78 50 78 Z',
   triangle:
     'M50 12 C56 12 60 16 63 22 L86 68 C90 76 85 86 75 86 L25 86 C15 86 10 76 14 68 L37 22 C40 16 44 12 50 12 Z',
   hexagone:
     'M 41.34 13 C 46.10 10.25 53.90 10.25 58.66 13 L 77.71 24 C 82.48 26.75 86.37 33.50 86.37 39 L 86.37 61 C 86.37 66.50 82.48 73.25 77.71 76 L 58.66 87 C 53.90 89.75 46.10 89.75 41.34 87 L 22.29 76 C 17.52 73.25 13.63 66.50 13.63 61 L 13.63 39 C 13.63 33.50 17.52 26.75 22.29 24 Z',
   nuage:
-    'M28 78 C16 78 10 69 12 58 C13 50 19 44 26 43 C29 29 42 20 56 23 C67 25 75 34 76 45 C84 47 90 55 89 64 C88 73 80 78 70 78 Z',
+    'M 50 78 C 38 78 30 75 24 68 C 14 68 12 56 16 48 C 14 38 24 32 34 35 C 40 22 60 22 66 35 C 76 32 86 38 84 48 C 88 56 86 68 76 68 C 70 75 62 78 50 78 Z',
   goutte:
     'M50 12 C50 12 82 46 82 66 C82 82 68 90 50 90 C32 90 18 82 18 66 C18 46 50 12 50 12 Z',
   oeuf:
@@ -142,10 +142,10 @@ export const FACE_CONFIGS: Record<string, FaceConfig> = {
   squircle: { dx: 0, dy: 0, scale: 1.0 },
   cercle:   { dx: 0, dy: 0, scale: 1.0 },
   galet:    { dx: 0, dy: 1, scale: 0.98 },
-  capsule:  { dx: 0, dy: 0, scale: 0.80 },
+  capsule:  { dx: 0, dy: 0, scale: 0.88 },
   triangle: { dx: 0, dy: 8, scale: 0.78 },
   hexagone: { dx: 0, dy: 0, scale: 0.90 },
-  nuage:    { dx: 0, dy: 2, scale: 0.88 },
+  nuage:    { dx: 0, dy: 0, scale: 0.88 },
   goutte:   { dx: 0, dy: 7, scale: 0.80 },
   oeuf:     { dx: 0, dy: 2, scale: 0.86 },
   soleil:   { dx: 0, dy: 0, scale: 0.85 },

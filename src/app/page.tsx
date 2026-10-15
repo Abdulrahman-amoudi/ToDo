@@ -89,6 +89,21 @@ const getDynamicMascotProps = (shape: string, baseColor: string, pendingCount: n
 
 const SHAPE_IDS = ['squircle', 'cercle', 'galet', 'capsule', 'triangle', 'hexagone', 'nuage', 'goutte', 'oeuf', 'soleil', 'fromage', 'livre'];
 
+const SHAPE_LABELS: Record<string, string> = {
+  squircle: 'Squircle',
+  cercle: 'Circle',
+  galet: 'Pebble',
+  capsule: 'Cloud',
+  triangle: 'Triangle',
+  hexagone: 'Hexagon',
+  nuage: 'Cloud',
+  goutte: 'Droplet',
+  oeuf: 'Egg',
+  soleil: 'Sun',
+  fromage: 'Cheese',
+  livre: 'Book',
+};
+
 export default function Home() {
   const supabase = createClient();
   const [session, setSession] = useState<any>(null);
@@ -1926,7 +1941,7 @@ export default function Home() {
                     <Shapes size={14} /> Shape
                   </span>
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
-                    {targetShape}
+                    {SHAPE_LABELS[targetShape] || targetShape}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
@@ -1942,10 +1957,10 @@ export default function Home() {
                             ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
                             : 'bg-white border-gray-200 hover:border-gray-300'
                       }`}
-                      title={s}
+                      title={SHAPE_LABELS[s] || s}
                     >
                       <BloubMascot size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
-                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{s}</span>
+                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{SHAPE_LABELS[s] || s}</span>
                     </button>
                   ))}
                 </div>

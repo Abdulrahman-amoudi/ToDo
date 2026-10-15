@@ -92,6 +92,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   const isHexagon = normShape === 'hexagone';
   const isCircle = normShape === 'cercle';
   const isBook = normShape === 'livre';
+  const isCloud = normShape === 'nuage' || normShape === 'capsule';
 
   // Look coordinates (normalized -1 to 1, strictly horizontal)
   const targetLook = useRef({ x: 0, y: 0 });
@@ -291,6 +292,8 @@ export const BloubMascot = React.memo(function BloubMascot({
             ? 'circle-tap-bounce'
             : isBook
             ? 'book-tap-bounce'
+            : isCloud
+            ? 'cloud-tap-puff'
             : 'mascot-squish-active'
           : ''
       } ${
@@ -303,6 +306,8 @@ export const BloubMascot = React.memo(function BloubMascot({
             ? 'circle-typing-levitate'
             : isBook
             ? 'book-typing-glow'
+            : isCloud
+            ? 'cloud-typing-drift'
             : ''
           : ''
       } ${
@@ -612,6 +617,67 @@ export const BloubMascot = React.memo(function BloubMascot({
         .book-typing-glow {
           animation: bookTypingGlow 0.8s ease-in-out infinite;
         }
+
+        /* 13. Cloud Tap Puff & Buoyant Pop Keyframes */
+        @keyframes cloudTapPuff {
+          0% { transform: scale(1, 1) translateY(0); }
+          14% { transform: scale(1.22, 0.80) translateY(3.5px); }
+          36% {
+            transform: scale(0.88, 1.16) translateY(-16px);
+            filter: drop-shadow(0 0 20px var(--mascot-glow-intense, rgba(147, 197, 253, 0.85)));
+          }
+          58% { transform: scale(1.08, 0.94) translateY(-10px); }
+          74% { transform: scale(0.96, 1.04) translateY(2px); }
+          88% { transform: scale(1.02, 0.98) translateY(-1px); }
+          100% { transform: scale(1, 1) translateY(0); }
+        }
+        .cloud-tap-puff {
+          animation: cloudTapPuff 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 14. Cloud Typing Atmospheric Drift */
+        @keyframes cloudTypingDrift {
+          0%, 100% {
+            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(147, 197, 253, 0.4)));
+            transform: translateY(0px) scale(1, 1);
+          }
+          50% {
+            filter: drop-shadow(0 0 16px var(--mascot-glow-intense, rgba(147, 197, 253, 0.8)));
+            transform: translateY(-4px) scale(1.04, 0.96);
+          }
+        }
+        .cloud-typing-drift {
+          animation: cloudTypingDrift 0.95s ease-in-out infinite;
+        }
+
+        /* 15. Cloud Raindrop Shower */
+        @keyframes cloudRainDrop {
+          0% {
+            transform: translateY(0px) scale(0.2);
+            opacity: 0;
+          }
+          20% {
+            transform: translateY(2px) scale(1);
+            opacity: 0.95;
+          }
+          60% {
+            transform: translateY(12px) scale(0.95);
+            opacity: 0.85;
+          }
+          100% {
+            transform: translateY(22px) scale(0.3);
+            opacity: 0;
+          }
+        }
+        .cloud-raindrop-1 {
+          animation: cloudRainDrop 0.6s ease-out 0.12s 1 forwards;
+        }
+        .cloud-raindrop-2 {
+          animation: cloudRainDrop 0.6s ease-out 0.22s 1 forwards;
+        }
+        .cloud-raindrop-3 {
+          animation: cloudRainDrop 0.6s ease-out 0.32s 1 forwards;
+        }
       `}</style>
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
@@ -723,6 +789,30 @@ export const BloubMascot = React.memo(function BloubMascot({
                   fill="rgba(255, 255, 255, 0.35)"
                   stroke="rgba(255, 255, 255, 0.65)"
                   strokeWidth="1.2"
+                />
+              </g>
+            </g>
+          )}
+
+          {/* Cute Raindrop Drops for Cloud on Tap */}
+          {isCloud && (
+            <g className="cloud-rain-layer" style={{ pointerEvents: 'none' }}>
+              <g className={isBouncing ? 'cloud-raindrop-1' : 'opacity-0'}>
+                <path
+                  d="M 32 76 C 30 79 29 81 29 83 C 29 85.5 30.5 87 32 87 C 33.5 87 35 85.5 35 83 C 35 81 34 79 32 76 Z"
+                  fill="var(--mascot-glow-intense, #60a5fa)"
+                />
+              </g>
+              <g className={isBouncing ? 'cloud-raindrop-2' : 'opacity-0'}>
+                <path
+                  d="M 50 78 C 48 81 47 83 47 85 C 47 87.5 48.5 89 50 89 C 51.5 89 53 87.5 53 85 C 53 83 52 81 50 78 Z"
+                  fill="var(--mascot-glow-intense, #60a5fa)"
+                />
+              </g>
+              <g className={isBouncing ? 'cloud-raindrop-3' : 'opacity-0'}>
+                <path
+                  d="M 68 76 C 66 79 65 81 65 83 C 65 85.5 66.5 87 68 87 C 69.5 87 71 85.5 71 83 C 71 81 70 79 68 76 Z"
+                  fill="var(--mascot-glow-intense, #60a5fa)"
                 />
               </g>
             </g>

@@ -180,10 +180,18 @@ export async function pickAndSyncObsidianVault(
       }
 
       if (shouldUpload) {
+        const cleanUnicode = (str: string | undefined | null) => {
+          if (!str) return '';
+          return str
+            .replace(/[\0\u0000]/g, '')
+            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+            .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '');
+        };
+
         payloadToUpload.push({
           user_id: effectiveUserId,
-          title: localNote.title,
-          content: localNote.content,
+          title: cleanUnicode(localNote.title),
+          content: cleanUnicode(localNote.content),
           path: cleanPath,
           folder: localNote.folder || 'Root',
           tags: localNote.tags || [],

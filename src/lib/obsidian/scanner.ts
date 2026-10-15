@@ -404,12 +404,20 @@ export async function batchUpsertVaultNotes(
   }
 
   try {
+    const cleanUnicode = (str: string | undefined | null) => {
+      if (!str) return '';
+      return str
+        .replace(/[\0\u0000]/g, '')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '');
+    };
+
     const payload = notes.map(n => {
       const cleanPath = sanitizeRelativePath(n.path) || n.path.replace(/\\/g, '/');
       return {
         user_id: n.user_id,
-        title: n.title,
-        content: n.content,
+        title: cleanUnicode(n.title),
+        content: cleanUnicode(n.content),
         path: cleanPath,
         folder: n.folder || 'Root',
         tags: n.tags || [],

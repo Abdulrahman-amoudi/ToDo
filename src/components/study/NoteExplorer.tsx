@@ -137,7 +137,11 @@ export default function NoteExplorer({
         for (let i = 1; i <= maxPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          const strings = content.items.map((item: any) => item.str);
+          const strings = content.items.map((item: any) => {
+            const raw = item.str || '';
+            // Strip null bytes and control chars immediately
+            return raw.replace(/[\0\u0000\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+          });
           extractedText += strings.join(' ') + '\n';
         }
 
@@ -146,20 +150,35 @@ export default function NoteExplorer({
         }
       }
 
+      // Helper to strip null bytes and malformed surrogates that PostgreSQL text columns reject
+      const sanitizeForPostgres = (str: string): string => {
+        if (!str) return '';
+        return str
+          .replace(/[\0\u0000]/g, '')
+          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+          .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '');
+      };
+
       // 4. Construct clean Markdown note with lightweight public URL in frontmatter
-      const title = file.name.replace(/\.[^/.]+$/, '');
+      const rawTitle = file.name.replace(/\.[^/.]+$/, '');
+      const cleanTitle = sanitizeForPostgres(rawTitle).replace(/"/g, "'").trim() || 'Untitled Document';
+      const cleanFileName = sanitizeForPostgres(file.name).replace(/"/g, "'").trim() || 'document.pdf';
+      const cleanExtractedText = sanitizeForPostgres(extractedText);
+
       const noteContent = pdfPublicUrl
-        ? `---\ntitle: "${title}"\ntype: "pdf"\npdf_url: "${pdfPublicUrl}"\nfile_name: "${file.name}"\nuploaded_at: "${new Date().toISOString()}"\n---\n\n${extractedText}`
-        : extractedText;
+        ? `---\ntitle: "${cleanTitle}"\ntype: "pdf"\npdf_url: "${pdfPublicUrl}"\nfile_name: "${cleanFileName}"\nuploaded_at: "${new Date().toISOString()}"\n---\n\n${cleanExtractedText}`
+        : cleanExtractedText;
+
+      const safeContent = sanitizeForPostgres(noteContent);
 
       const newNote = {
         user_id: currentUserId,
-        title: title,
-        content: noteContent,
-        path: `Documents/${file.name}.md`,
+        title: cleanTitle,
+        content: safeContent,
+        path: `Documents/${cleanFileName}.md`,
         folder: 'Documents',
         tags: ['document', 'pdf'],
-        word_count: extractedText.split(/\s+/).filter(Boolean).length,
+        word_count: cleanExtractedText.split(/\s+/).filter(Boolean).length,
         updated_at: new Date().toISOString()
       };
 
