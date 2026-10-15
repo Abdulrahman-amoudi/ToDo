@@ -6,6 +6,7 @@ import {
   normalizeExpression,
   SHAPE_PATHS,
   SHAPE_EXTRAS,
+  SHAPE_UNDERLAYS,
   EXPRESSION_RENDERERS,
   resolveColor,
   isLightColor,
@@ -51,8 +52,8 @@ export function resolveGaze(
 export const BloubMascot = React.memo(function BloubMascot({
   size = 120,
   state = 'idle',
-  color = 'bleu',
-  shape = 'squircle',
+  color = 'ambre',
+  shape = 'soleil',
   expression = 'neutre',
   gaze,
   onInteract,
@@ -62,12 +63,16 @@ export const BloubMascot = React.memo(function BloubMascot({
   style = {},
 }: BloubMascotProps) {
   const [isInteracting, setIsInteracting] = useState(false);
-  const [isOrbiting, setIsOrbiting] = useState(state === 'orbit');
+  const [isBouncingState, setIsBouncingState] = useState(state === 'orbit');
 
   const svgRef = useRef<SVGSVGElement>(null);
   const faceGroupRef = useRef<SVGGElement>(null);
   const bodyPathRef = useRef<SVGPathElement>(null);
   const extrasGroupRef = useRef<SVGGElement>(null);
+
+  // Normalize shape and expression through the single source-of-truth registry
+  const normShape = normalizeShape(shape);
+  const normExpr = normalizeExpression(expression);
 
   // Look coordinates (normalized -1 to 1)
   const targetLook = useRef({ x: 0, y: 0 });
@@ -78,11 +83,11 @@ export const BloubMascot = React.memo(function BloubMascot({
   const isBlinkingRef = useRef(false);
   const blinkProgressRef = useRef(0);
 
-  // Sync state prop with orbit animation
+  // Sync state prop with squish-pop animation
   useEffect(() => {
-    if (state === 'orbit') {
-      setIsOrbiting(true);
-      const timer = setTimeout(() => setIsOrbiting(false), 2400);
+    if (state === 'orbit' || state === 'wide') {
+      setIsBouncingState(true);
+      const timer = setTimeout(() => setIsBouncingState(false), 950);
       return () => clearTimeout(timer);
     }
   }, [state]);
@@ -173,9 +178,10 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
       }
 
-      // 4. Calculate coordinates for face group and accessories
+      // 4. Calculate coordinates for face group (livre has a -2px vertical center offset)
+      const baseOffsetY = normShape === 'livre' ? -2 : 0;
       const faceX = currentLook.current.x * 7.2;
-      const faceY = currentLook.current.y * 5.2 + floatY * 0.4;
+      const faceY = currentLook.current.y * 5.2 + floatY * 0.4 + baseOffsetY;
       const headTilt = currentLook.current.x * 3.4;
 
       // Update DOM directly for zero React reconciliation cost
@@ -206,18 +212,15 @@ export const BloubMascot = React.memo(function BloubMascot({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [isStatic, animated]);
-
-  // Normalize shape and expression through the single source-of-truth registry
-  const normShape = normalizeShape(shape);
-  const normExpr = normalizeExpression(expression);
+  }, [isStatic, animated, normShape]);
 
   // Resolve body and high-contrast eye colors
   const bodyHex = resolveColor(color);
   const isLight = isLightColor(bodyHex);
   const eyeColor = getEyeColor(bodyHex);
 
-  const shapeD = SHAPE_PATHS[normShape] || SHAPE_PATHS.squircle;
+  const shapeD = SHAPE_PATHS[normShape] || SHAPE_PATHS.soleil;
+  const renderUnderlay = SHAPE_UNDERLAYS[normShape];
   const renderExpression =
     EXPRESSION_RENDERERS[normExpr] || EXPRESSION_RENDERERS.neutre;
   const renderExtra = SHAPE_EXTRAS[normShape];
@@ -228,17 +231,17 @@ export const BloubMascot = React.memo(function BloubMascot({
       onInteract?.();
       if (!isStatic && animated) {
         setIsInteracting(true);
-        setIsOrbiting(true);
+        setIsBouncingState(true);
         setTimeout(() => {
           setIsInteracting(false);
-          setIsOrbiting(false);
-        }, 1200);
+          setIsBouncingState(false);
+        }, 950);
       }
     },
     [onInteract, isStatic, animated]
   );
 
-  const isBouncing = isInteracting || state === 'wide';
+  const isBouncing = isInteracting || isBouncingState;
   const isThinking = state === 'thinking';
   const isSleeping = state === 'sleep';
 
@@ -252,10 +255,8 @@ export const BloubMascot = React.memo(function BloubMascot({
       role="img"
       aria-label={`Mascot ${normShape} with ${normExpr} expression`}
       className={`select-none overflow-visible transition-transform duration-200 ${
-        isOrbiting ? 'mascot-orbit-active' : ''
-      } ${isBouncing ? 'scale-110 -rotate-3' : ''} ${
-        isThinking ? '-rotate-6 scale-105' : ''
-      } ${className}`}
+        isBouncing ? 'mascot-squish-active' : ''
+      } ${isThinking ? '-rotate-6 scale-105' : ''} ${className}`}
       style={{
         cursor: onInteract || (!isStatic && animated) ? 'pointer' : 'default',
         transformOrigin: '50% 50%',
@@ -263,19 +264,28 @@ export const BloubMascot = React.memo(function BloubMascot({
       }}
     >
       <style>{`
-        @keyframes mascotOrbitSpin {
-          0% { transform: scale(1) rotate(0deg) translateY(0); }
-          25% { transform: scale(1.18) rotate(90deg) translateY(-14px); }
-          50% { transform: scale(0.92) rotate(180deg) translateY(4px); }
-          75% { transform: scale(1.14) rotate(270deg) translateY(-8px); }
-          100% { transform: scale(1) rotate(360deg) translateY(0); }
+        @keyframes mascotSquishPop {
+          0% { transform: scale(1) translateY(0) rotate(0deg); }
+          16% { transform: scale(1.22, 0.78) translateY(5px) rotate(0deg); }
+          38% { transform: scale(0.86, 1.25) translateY(-20px) rotate(-6deg); }
+          55% { transform: scale(1.12, 0.92) translateY(-10px) rotate(4deg); }
+          72% { transform: scale(0.96, 1.05) translateY(-2px) rotate(-2deg); }
+          86% { transform: scale(1.03, 0.98) translateY(1px) rotate(1deg); }
+          100% { transform: scale(1) translateY(0) rotate(0deg); }
         }
-        .mascot-orbit-active {
-          animation: mascotOrbitSpin 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        .mascot-squish-active {
+          animation: mascotSquishPop 0.95s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
 
-      {/* Mascot Silhouette Body Path with Morphs */}
+      {/* Layer 1 & 2: Shape-specific underlays (e.g. livre back cover rim & bottom ribbon) */}
+      {renderUnderlay && (
+        <g style={{ transformOrigin: '50% 50%' }}>
+          {renderUnderlay(bodyHex)}
+        </g>
+      )}
+
+      {/* Layer 3: Mascot Silhouette Body Path with Morphs */}
       <path
         ref={bodyPathRef}
         d={shapeD}
@@ -289,7 +299,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       />
 
-      {/* Shape-specific decorative accessories (cheese holes, sprout, book ribbon) */}
+      {/* Layer 4: Shape-specific decorative accessories (cheese holes, sprout, book spine crease) */}
       {renderExtra && (
         <g ref={extrasGroupRef} style={{ transformOrigin: '50% 50%' }}>
           {renderExtra()}
