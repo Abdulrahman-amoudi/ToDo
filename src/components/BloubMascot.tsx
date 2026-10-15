@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   normalizeShape,
   normalizeExpression,
@@ -62,6 +62,151 @@ export const BloubMascot = React.memo(function BloubMascot({
   style = {},
 }: BloubMascotProps) {
   const [isInteracting, setIsInteracting] = useState(false);
+  const [isOrbiting, setIsOrbiting] = useState(state === 'orbit');
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const faceGroupRef = useRef<SVGGElement>(null);
+  const bodyPathRef = useRef<SVGPathElement>(null);
+  const extrasGroupRef = useRef<SVGGElement>(null);
+
+  // Look coordinates (normalized -1 to 1)
+  const targetLook = useRef({ x: 0, y: 0 });
+  const currentLook = useRef({ x: 0, y: 0 });
+  const clockRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const blinkTimerRef = useRef(0);
+  const isBlinkingRef = useRef(false);
+  const blinkProgressRef = useRef(0);
+
+  // Sync state prop with orbit animation
+  useEffect(() => {
+    if (state === 'orbit') {
+      setIsOrbiting(true);
+      const timer = setTimeout(() => setIsOrbiting(false), 2400);
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
+
+  // Handle explicit gaze prop
+  useEffect(() => {
+    const resolved = resolveGaze(gaze);
+    if (resolved) {
+      targetLook.current = {
+        x: Math.max(-1, Math.min(1, resolved.yaw / 35)),
+        y: Math.max(-1, Math.min(1, -resolved.pitch / 25)),
+      };
+    }
+  }, [gaze]);
+
+  // Window-wide pointer follow
+  useEffect(() => {
+    if (isStatic || !animated) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const mascotCenterX = rect.left + rect.width / 2;
+      const mascotCenterY = rect.top + rect.height / 2;
+
+      // Distance from mascot center normalized with max range
+      const maxDistanceX = Math.max(window.innerWidth / 2, 280);
+      const maxDistanceY = Math.max(window.innerHeight / 2, 280);
+
+      const dx = Math.max(-1, Math.min(1, (e.clientX - mascotCenterX) / maxDistanceX));
+      const dy = Math.max(-1, Math.min(1, (e.clientY - mascotCenterY) / maxDistanceY));
+
+      targetLook.current = { x: dx, y: dy };
+    };
+
+    const handlePointerLeave = () => {
+      targetLook.current = { x: 0, y: 0 };
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerleave', handlePointerLeave);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerleave', handlePointerLeave);
+    };
+  }, [isStatic, animated]);
+
+  // 120fps requestAnimationFrame Physics & Animation Loop
+  useEffect(() => {
+    if (isStatic || !animated) return;
+
+    let rafId: number;
+
+    const tick = (time: number) => {
+      if (lastTimeRef.current === 0) lastTimeRef.current = time;
+      const dt = Math.min((time - lastTimeRef.current) / 1000, 0.1);
+      lastTimeRef.current = time;
+      clockRef.current += dt;
+
+      const t = clockRef.current;
+
+      // 1. Spring-damped lerp toward mouse target
+      const lerpFactor = Math.min(1, dt * 9.5);
+      currentLook.current.x += (targetLook.current.x - currentLook.current.x) * lerpFactor;
+      currentLook.current.y += (targetLook.current.y - currentLook.current.y) * lerpFactor;
+
+      // 2. Idle floating & soft breathing bob
+      const floatY = Math.sin(t * 2.2) * 2.4;
+      const breathScaleX = 1 + Math.sin(t * 2.2) * 0.016;
+      const breathScaleY = 1 - Math.sin(t * 2.2) * 0.016;
+
+      // 3. Natural cute eye blink (every ~4 seconds)
+      blinkTimerRef.current += dt;
+      if (blinkTimerRef.current > 3.8) {
+        isBlinkingRef.current = true;
+        blinkProgressRef.current = 0;
+        blinkTimerRef.current = Math.random() * 0.6;
+      }
+
+      let eyeScaleY = 1;
+      if (isBlinkingRef.current) {
+        blinkProgressRef.current += dt * 9;
+        if (blinkProgressRef.current >= Math.PI) {
+          isBlinkingRef.current = false;
+          eyeScaleY = 1;
+        } else {
+          eyeScaleY = Math.max(0.08, 1 - Math.sin(blinkProgressRef.current) * 0.92);
+        }
+      }
+
+      // 4. Calculate coordinates for face group and accessories
+      const faceX = currentLook.current.x * 7.2;
+      const faceY = currentLook.current.y * 5.2 + floatY * 0.4;
+      const headTilt = currentLook.current.x * 3.4;
+
+      // Update DOM directly for zero React reconciliation cost
+      if (faceGroupRef.current) {
+        faceGroupRef.current.setAttribute(
+          'transform',
+          `translate(${faceX}, ${faceY}) rotate(${headTilt} 50 50) scale(1, ${eyeScaleY})`
+        );
+      }
+
+      if (extrasGroupRef.current) {
+        extrasGroupRef.current.setAttribute(
+          'transform',
+          `translate(${faceX * 0.4}, ${faceY * 0.4}) rotate(${headTilt * 0.5} 50 50)`
+        );
+      }
+
+      if (bodyPathRef.current) {
+        const bodyTilt = currentLook.current.x * 1.8;
+        bodyPathRef.current.setAttribute(
+          'transform',
+          `translate(0, ${floatY}) rotate(${bodyTilt} 50 50) scale(${breathScaleX}, ${breathScaleY})`
+        );
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [isStatic, animated]);
 
   // Normalize shape and expression through the single source-of-truth registry
   const normShape = normalizeShape(shape);
@@ -83,17 +228,23 @@ export const BloubMascot = React.memo(function BloubMascot({
       onInteract?.();
       if (!isStatic && animated) {
         setIsInteracting(true);
-        setTimeout(() => setIsInteracting(false), 600);
+        setIsOrbiting(true);
+        setTimeout(() => {
+          setIsInteracting(false);
+          setIsOrbiting(false);
+        }, 1200);
       }
     },
     [onInteract, isStatic, animated]
   );
 
-  const isBouncing = isInteracting || state === 'orbit';
+  const isBouncing = isInteracting || state === 'wide';
+  const isThinking = state === 'thinking';
   const isSleeping = state === 'sleep';
 
   return (
     <svg
+      ref={svgRef}
       width={size}
       height={size}
       viewBox="0 0 100 100"
@@ -101,34 +252,55 @@ export const BloubMascot = React.memo(function BloubMascot({
       role="img"
       aria-label={`Mascot ${normShape} with ${normExpr} expression`}
       className={`select-none overflow-visible transition-transform duration-200 ${
-        isBouncing ? 'scale-110 -rotate-3' : ''
+        isOrbiting ? 'mascot-orbit-active' : ''
+      } ${isBouncing ? 'scale-110 -rotate-3' : ''} ${
+        isThinking ? '-rotate-6 scale-105' : ''
       } ${className}`}
       style={{
         cursor: onInteract || (!isStatic && animated) ? 'pointer' : 'default',
+        transformOrigin: '50% 50%',
         ...style,
       }}
     >
+      <style>{`
+        @keyframes mascotOrbitSpin {
+          0% { transform: scale(1) rotate(0deg) translateY(0); }
+          25% { transform: scale(1.18) rotate(90deg) translateY(-14px); }
+          50% { transform: scale(0.92) rotate(180deg) translateY(4px); }
+          75% { transform: scale(1.14) rotate(270deg) translateY(-8px); }
+          100% { transform: scale(1) rotate(360deg) translateY(0); }
+        }
+        .mascot-orbit-active {
+          animation: mascotOrbitSpin 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
+
       {/* Mascot Silhouette Body Path with Morphs */}
       <path
+        ref={bodyPathRef}
         d={shapeD}
         fill={bodyHex}
         className="mascot-body-path"
         style={{
           transition:
-            'd 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s ease, transform 0.25s ease',
+            'd 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s ease',
           transformOrigin: '50% 50%',
-          filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.14))',
+          filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.18))',
         }}
       />
 
       {/* Shape-specific decorative accessories (cheese holes, sprout, book ribbon) */}
-      {renderExtra && renderExtra()}
+      {renderExtra && (
+        <g ref={extrasGroupRef} style={{ transformOrigin: '50% 50%' }}>
+          {renderExtra()}
+        </g>
+      )}
 
-      {/* Mascot Expression / Face Group */}
+      {/* Mascot Expression / Face Group with 120fps Mouse Tracking */}
       <g
+        ref={faceGroupRef}
         className="mascot-face-group"
         style={{
-          transition: 'transform 0.25s ease, opacity 0.2s ease',
           transformOrigin: '50% 50%',
           opacity: isSleeping ? 0.45 : 1,
         }}

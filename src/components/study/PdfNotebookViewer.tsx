@@ -1302,6 +1302,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
 
         {/* Handwriting / Markdown Notes Panel */}
         <NotesPanel
+          docId={noteId || notePath || 'current'}
           pageNumber={pageNumber}
           notesWidth={notesWidth}
           isDark={isDark}

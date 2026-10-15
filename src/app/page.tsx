@@ -98,7 +98,12 @@ export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState('default');
   const [activeTab, setActiveTab] = useState<'lists' | 'today' | 'stats' | 'settings'>('lists');
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('todo_input_draft') || '';
+    }
+    return '';
+  });
   const [pendingAttachments, setPendingAttachments] = useState<{file: File, type: 'image'|'video'|'audio', previewUrl?: string}[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -388,14 +393,24 @@ export default function Home() {
     }
   };
 
-  // User-Scoped Preferences & Cloud Sync (remote Supabase metadata takes precedence to avoid race condition)
+  // User-Scoped Preferences & Cloud Sync (0ms Optimistic UI + Write-Behind Sync)
   const hasHydratedRemoteSettingsRef = useRef(false);
+  const isPrefsDirtyRef = useRef(false);
+  const lastLocalPrefsUpdateRef = useRef(0);
+  const pendingPrefsSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!session) {
       hasHydratedRemoteSettingsRef.current = false;
       return;
     }
+    // Prevent Stale Overwrites:
+    // While isPrefsDirtyRef.current === true or within 2000ms of any local click,
+    // ignore incoming Supabase session fetches so slow network never reverts user's fresh choice!
+    if (isPrefsDirtyRef.current || (Date.now() - lastLocalPrefsUpdateRef.current < 2000)) {
+      return;
+    }
+
     const uid = session.user?.id;
     if (!uid) return;
     const prefKey = (key: string) => `bloub_prefs_${uid}_${key}`;
@@ -439,6 +454,15 @@ export default function Home() {
       localStorage.setItem(prefKey('mascotGaze'), effectiveGaze);
       localStorage.setItem(prefKey('catSettings'), JSON.stringify(effectiveCat));
       if (effectiveApiKey) localStorage.setItem(prefKey('geminiApiKey'), effectiveApiKey);
+      localStorage.setItem(`bloub_prefs_${uid}`, JSON.stringify({
+        bgTheme: effectiveTheme,
+        mascotShape: effectiveShape,
+        mascotColor: effectiveColor,
+        mascotExpression: effectiveExpr,
+        mascotGaze: effectiveGaze,
+        catSettings: effectiveCat,
+        updatedAt: Date.now()
+      }));
     } catch {}
 
     // Mark hydrated so we don't accidentally overwrite remote preferences with blank defaults!
@@ -449,6 +473,9 @@ export default function Home() {
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && session?.user?.id) {
+        if (isPrefsDirtyRef.current || (Date.now() - lastLocalPrefsUpdateRef.current < 2000)) {
+          return;
+        }
         try {
           const uid = session.user.id;
           const prefKey = (key: string) => `bloub_prefs_${uid}_${key}`;
@@ -467,11 +494,9 @@ export default function Home() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [bgTheme, mascotShape, mascotColor, mascotGaze, session]);
 
-  // Save persistent customization settings (immediate user-scoped localStorage + debounced Supabase sync)
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // Save persistent customization settings (0ms user-scoped localStorage + 400ms debounced Supabase sync)
   useEffect(() => {
-    // 0. Synchronous guest / general localStorage write
+    // 0. Synchronous guest / general localStorage write (0ms)
     try {
       localStorage.setItem('vibe_mascotExpression', mascotExpression);
       localStorage.setItem('vibe_mascotShape', mascotShape);
@@ -486,7 +511,7 @@ export default function Home() {
     if (!uid) return;
     const prefKey = (key: string) => `bloub_prefs_${uid}_${key}`;
 
-    // 1. Immediate synchronous user-scoped localStorage write
+    // 1. Immediate synchronous user-scoped localStorage write (0ms)
     try {
       localStorage.setItem(prefKey('mascotExpression'), mascotExpression);
       localStorage.setItem(prefKey('mascotShape'), mascotShape);
@@ -495,25 +520,41 @@ export default function Home() {
       localStorage.setItem(prefKey('bgTheme'), bgTheme);
       localStorage.setItem(prefKey('catSettings'), JSON.stringify(catSettings));
       if (geminiApiKey) localStorage.setItem(prefKey('geminiApiKey'), geminiApiKey);
+      localStorage.setItem(`bloub_prefs_${uid}`, JSON.stringify({
+        mascotExpression,
+        mascotShape,
+        mascotColor,
+        mascotGaze,
+        bgTheme,
+        catSettings,
+        geminiApiKey,
+        updatedAt: Date.now()
+      }));
     } catch (e) {
       console.warn('[Settings] localStorage write warning:', e);
     }
     
-    // 2. Debounced background Supabase sync only after hydration
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      supabase.auth.updateUser({
-        data: {
-          mascotExpression,
-          mascotShape,
-          mascotColor,
-          mascotGaze,
-          bgTheme,
-          catSettings,
-          geminiApiKey
-        }
-      }).catch(err => console.warn('[Settings] Supabase sync error:', err));
-    }, 600);
+    // 2. Debounced background Supabase sync (400ms delay)
+    if (pendingPrefsSyncRef.current) clearTimeout(pendingPrefsSyncRef.current);
+    pendingPrefsSyncRef.current = setTimeout(async () => {
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            mascotExpression,
+            mascotShape,
+            mascotColor,
+            mascotGaze,
+            bgTheme,
+            catSettings,
+            geminiApiKey,
+            prefsUpdatedAt: Date.now()
+          }
+        });
+        isPrefsDirtyRef.current = false;
+      } catch (err) {
+        console.warn('[Settings] Supabase sync error:', err);
+      }
+    }, 400);
   }, [mascotExpression, mascotShape, mascotColor, mascotGaze, bgTheme, catSettings, geminiApiKey, session]);
 
   useEffect(() => {
@@ -828,6 +869,9 @@ export default function Home() {
       attachments: uploadedAttachments
     });
     setInputText('');
+    try {
+      localStorage.removeItem('todo_input_draft');
+    } catch {}
     setPendingAttachments([]);
     setIsHabit(false);
     setHabitDays([]);
@@ -1207,6 +1251,8 @@ export default function Home() {
   const targetExpr: ExpressionId = (isGlobalTarget ? mascotExpression : (catSettings[settingsTarget]?.expression as ExpressionId)) || 'neutre';
 
   const updateTargetShape = (s: string) => {
+    isPrefsDirtyRef.current = true;
+    lastLocalPrefsUpdateRef.current = Date.now();
     if (isGlobalTarget) {
       setMascotShape(s);
     } else {
@@ -1223,6 +1269,8 @@ export default function Home() {
   };
 
   const updateTargetColor = (c: string) => {
+    isPrefsDirtyRef.current = true;
+    lastLocalPrefsUpdateRef.current = Date.now();
     if (isGlobalTarget) {
       setMascotColor(c);
     } else {
@@ -1239,6 +1287,8 @@ export default function Home() {
   };
 
   const updateTargetExpr = (expr: string) => {
+    isPrefsDirtyRef.current = true;
+    lastLocalPrefsUpdateRef.current = Date.now();
     if (autoMoodEnabled) {
       updateAutoMood(false);
     }
@@ -1259,11 +1309,17 @@ export default function Home() {
   };
 
   const applyTheme = useCallback((themeId: string) => {
+    isPrefsDirtyRef.current = true;
+    lastLocalPrefsUpdateRef.current = Date.now();
     setBgTheme(themeId);
     try {
       localStorage.setItem('vibe_bgTheme', themeId);
       if (session?.user?.id) {
         localStorage.setItem(`bloub_prefs_${session.user.id}_bgTheme`, themeId);
+        const bundleKey = `bloub_prefs_${session.user.id}`;
+        const existing = localStorage.getItem(bundleKey);
+        const parsed = existing ? JSON.parse(existing) : {};
+        localStorage.setItem(bundleKey, JSON.stringify({ ...parsed, bgTheme: themeId, updatedAt: Date.now() }));
       }
       const vars = getThemeVariables(themeId);
       if (vars) {
@@ -1610,7 +1666,11 @@ export default function Home() {
                 autoFocus
                 value={inputText}
                 onChange={e => {
-                  setInputText(e.target.value);
+                  const val = e.target.value;
+                  setInputText(val);
+                  try {
+                    localStorage.setItem('todo_input_draft', val);
+                  } catch {}
                 }}
                 onFocus={(e) => {
                   triggerMascot('thinking', 'curieux', true);
@@ -1825,7 +1885,7 @@ export default function Home() {
                       key={s}
                       type="button"
                       onClick={() => updateTargetShape(s)}
-                      className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 transition-all cursor-pointer p-1 ${
+                      className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
                         targetShape === s
                           ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
                           : isDark
@@ -1864,7 +1924,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => updateAutoMood(!autoMoodEnabled)}
-                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer ${
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer select-none active:scale-95 duration-75 ${
                     autoMoodEnabled ? 'bg-[var(--theme-primary,#3b82f6)]' : 'bg-zinc-700'
                   }`}
                   aria-label="Toggle Auto-Mood Engine"
@@ -1893,7 +1953,7 @@ export default function Home() {
                       key={expr}
                       type="button"
                       onClick={() => updateTargetExpr(expr)}
-                      className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 transition-all cursor-pointer p-1 ${
+                      className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
                         targetExpr === expr
                           ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
                           : isDark
@@ -1920,7 +1980,7 @@ export default function Home() {
                       key={c.id}
                       type="button"
                       onClick={() => updateTargetColor(c.id)}
-                      className={`flex aspect-square items-center justify-center rounded-full transition-all cursor-pointer ${
+                      className={`flex aspect-square items-center justify-center rounded-full cursor-pointer select-none transition-transform duration-75 active:scale-95 ${
                         targetColor === c.id
                           ? 'ring-2 ring-blue-500 ring-offset-[3px] ring-offset-[#0f172a] scale-110 shadow-md'
                           : 'hover:scale-110 hover:ring-2 hover:ring-slate-500 hover:ring-offset-[2px] hover:ring-offset-[#0f172a]'
@@ -1955,7 +2015,7 @@ export default function Home() {
                       key={cat}
                       type="button"
                       onClick={() => setThemeCategory(cat)}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all duration-150 flex-shrink-0 active:scale-95 ${
+                      className={`px-3 py-1 rounded-xl text-xs font-semibold cursor-pointer select-none flex-shrink-0 transition-transform duration-75 active:scale-95 ${
                         themeCategory === cat
                           ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm'
                           : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
@@ -1975,7 +2035,7 @@ export default function Home() {
                         key={theme.id}
                         type="button"
                         onClick={() => applyTheme(theme.id)}
-                        className={`group relative flex items-center justify-between p-2.5 rounded-2xl border transition-all duration-150 text-left active:scale-[0.98] ${
+                        className={`group relative flex items-center justify-between p-2.5 rounded-2xl border cursor-pointer select-none text-left transition-transform duration-75 active:scale-95 ${
                           isSelected
                             ? 'bg-[var(--theme-surface-elevated)] border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/15 ring-1 ring-[var(--theme-primary,#3b82f6)]/40 text-white'
                             : 'bg-slate-800/40 border-white/5 hover:bg-slate-800/70 hover:border-white/15 text-zinc-300'

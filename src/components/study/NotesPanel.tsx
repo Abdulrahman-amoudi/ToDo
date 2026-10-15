@@ -6,13 +6,8 @@ import {
   BookOpen, 
   Highlighter, 
   Sparkles, 
-  ChevronLeft, 
-  ChevronRight, 
-  X, 
   PanelRightClose,
   PanelRightOpen,
-  Maximize2,
-  Minimize2
 } from 'lucide-react';
 
 export interface NoteData {
@@ -25,6 +20,7 @@ export type NotesPanelState = 'expanded' | 'rail' | 'drawer';
 export interface NotesPanelProps {
   pageNumber: number;
   notesWidth: number;
+  docId?: string;
   isDark?: boolean;
   initialNote?: NoteData;
   onChange: (pageNumber: number, note: NoteData) => void;
@@ -41,6 +37,7 @@ export interface NotesPanelProps {
 export const NotesPanel = React.memo(function NotesPanel({
   pageNumber,
   notesWidth,
+  docId = 'doc',
   isDark = true,
   initialNote,
   onChange,
@@ -53,11 +50,29 @@ export const NotesPanel = React.memo(function NotesPanel({
   onOpenAiSummary,
   onClose
 }: NotesPanelProps) {
-  const [localNote, setLocalNote] = useState<NoteData>(() => initialNote || { text: '', lang: 'en' });
+  const getDraftKey = useCallback((pg: number) => `note_draft_${docId}_${pg}`, [docId]);
+
+  const [localNote, setLocalNote] = useState<NoteData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(`note_draft_${docId}_${pageNumber}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.text === 'string' && parsed.text.length > 0) {
+            return { text: parsed.text, lang: parsed.lang || 'en' };
+          }
+        }
+      } catch {}
+    }
+    return initialNote || { text: '', lang: 'en' };
+  });
+
   const [panelState, setPanelState] = useState<NotesPanelState>(panelMode);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveStatusTimerRef = useRef<NodeJS.Timeout | null>(null);
   const localNoteRef = useRef<NoteData>(localNote);
   localNoteRef.current = localNote;
   const currentPageRef = useRef<number>(pageNumber);
@@ -92,21 +107,61 @@ export const NotesPanel = React.memo(function NotesPanel({
     onToggleMode?.(newState);
   };
 
+  // Immediate synchronous flush helper
+  const flushSave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+      onChangeRef.current(currentPageRef.current, localNoteRef.current);
+      setSaveStatus('saved');
+      if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+      saveStatusTimerRef.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
+    }
+  }, []);
+
+  // Flush on visibility change (tab hidden) and window unload
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flushSave();
+      }
+    };
+    const handleBeforeUnload = () => {
+      flushSave();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      flushSave();
+    };
+  }, [flushSave]);
+
   // Sync external initialNote when pageNumber changes or when external note text resets
   useEffect(() => {
-    // If switching page, immediately flush pending changes for previous page
     if (currentPageRef.current !== pageNumber) {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-        onChangeRef.current(currentPageRef.current, localNoteRef.current);
-      }
+      flushSave();
       currentPageRef.current = pageNumber;
-      const nextNote = initialNote || { text: '', lang: 'en' };
+
+      let nextNote = initialNote || { text: '', lang: 'en' };
+      try {
+        const raw = localStorage.getItem(getDraftKey(pageNumber));
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.text === 'string' && parsed.text.length > (nextNote.text?.length || 0)) {
+            nextNote = { text: parsed.text, lang: parsed.lang || nextNote.lang || 'en' };
+          }
+        }
+      } catch {}
+
       setLocalNote(nextNote);
       localNoteRef.current = nextNote;
     } else {
-      // Same page: only update if remote differs and we don't have an active local debounce timer
       if (!debounceTimerRef.current && initialNote) {
         if (initialNote.text !== localNoteRef.current.text || initialNote.lang !== localNoteRef.current.lang) {
           setLocalNote(initialNote);
@@ -114,18 +169,7 @@ export const NotesPanel = React.memo(function NotesPanel({
         }
       }
     }
-  }, [pageNumber, initialNote]);
-
-  // Flush on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-        onChangeRef.current(currentPageRef.current, localNoteRef.current);
-      }
-    };
-  }, []);
+  }, [pageNumber, initialNote, flushSave, getDraftKey]);
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -133,22 +177,46 @@ export const NotesPanel = React.memo(function NotesPanel({
     setLocalNote(updated);
     localNoteRef.current = updated;
 
-    onDirtyRef.current?.();
+    // 1. Synchronously save draft to localStorage on every keystroke
+    try {
+      localStorage.setItem(getDraftKey(currentPageRef.current), JSON.stringify({
+        text: newText,
+        lang: updated.lang,
+        timestamp: Date.now()
+      }));
+    } catch {}
 
+    onDirtyRef.current?.();
+    setSaveStatus('saving');
+
+    // 2. Debounced save (500ms delay) to push to parent / Supabase in background
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     debounceTimerRef.current = setTimeout(() => {
       debounceTimerRef.current = null;
       onChangeRef.current(currentPageRef.current, localNoteRef.current);
-    }, 600);
-  }, []);
+      setSaveStatus('saved');
+      if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+      saveStatusTimerRef.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
+    }, 500);
+  }, [getDraftKey]);
 
   const handleLangChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLang = e.target.value as 'en' | 'ar';
     const updated: NoteData = { ...localNoteRef.current, lang: newLang };
     setLocalNote(updated);
     localNoteRef.current = updated;
+
+    try {
+      localStorage.setItem(getDraftKey(currentPageRef.current), JSON.stringify({
+        text: updated.text,
+        lang: newLang,
+        timestamp: Date.now()
+      }));
+    } catch {}
 
     onDirtyRef.current?.();
 
@@ -157,7 +225,7 @@ export const NotesPanel = React.memo(function NotesPanel({
       debounceTimerRef.current = null;
     }
     onChangeRef.current(currentPageRef.current, updated);
-  }, []);
+  }, [getDraftKey]);
 
   // Safe clamped width between 240px and 650px
   const clampedWidth = Math.max(240, Math.min(notesWidth || 450, 650));
@@ -207,7 +275,6 @@ export const NotesPanel = React.memo(function NotesPanel({
 
         {/* Middle: Quick-Access Action Icons */}
         <div className="flex flex-col items-center gap-2">
-          {/* Quick Chapters / Outline */}
           <button
             type="button"
             onClick={() => {
@@ -225,7 +292,6 @@ export const NotesPanel = React.memo(function NotesPanel({
             <BookOpen size={16} />
           </button>
 
-          {/* Quick Annotations */}
           <button
             type="button"
             onClick={() => {
@@ -243,7 +309,6 @@ export const NotesPanel = React.memo(function NotesPanel({
             <Highlighter size={16} />
           </button>
 
-          {/* Quick AI Summary */}
           <button
             type="button"
             onClick={() => {
@@ -301,6 +366,16 @@ export const NotesPanel = React.memo(function NotesPanel({
           >
             Pg. {pageNumber} Notes
           </span>
+          {saveStatus === 'saving' && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse lowercase font-normal">
+              saving...
+            </span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 lowercase font-normal">
+              saved ✓
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
