@@ -657,203 +657,218 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
       `}</style>
 
-      {/* Grok Typing Dots: Rendered for ALL shapes ONLY when typing */}
-      {activeTyping ? (
-        <g
-          className="grok-typing-dots-container"
-          style={{
-            pointerEvents: 'none',
-            transformOrigin: '50% 50%',
-          }}
-        >
-          {/* Ambient subtle levitating dots */}
-          <circle
-            cx="18"
-            cy="24"
-            r="2.5"
-            className="typing-dot-ambient-1"
-            fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
-          />
-          <circle
-            cx="82"
-            cy="22"
-            r="2.5"
-            className="typing-dot-ambient-2"
-            fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
-          />
-          <circle
-            cx="14"
-            cy="60"
-            r="2"
-            className="typing-dot-ambient-3"
-            fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
-          />
-          <circle
-            cx="86"
-            cy="62"
-            r="2"
-            className="typing-dot-ambient-4"
-            fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
-          />
-
-          {/* Iconic Grok 3-dot typing rhythm wave */}
-          <g className="grok-dots-cluster">
-            <circle
-              cx="26"
-              cy="50"
-              r="8"
-              className="grok-dot-1"
-              fill={bodyHex}
-              style={{ transformOrigin: '26px 50px' }}
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="8"
-              className="grok-dot-2"
-              fill={bodyHex}
-              style={{ transformOrigin: '50px 50px' }}
-            />
-            <circle
-              cx="74"
-              cy="50"
-              r="8"
-              className="grok-dot-3"
-              fill={bodyHex}
-              style={{ transformOrigin: '74px 50px' }}
-            />
-          </g>
-        </g>
-      ) : (
-        <>
-          {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
-          <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
-        <g style={{ transformOrigin: '50% 50%' }}>
-          {renderUnderlay ? (
-            renderUnderlay(bodyHex)
-          ) : (
-            <path
-              key={`underlay-${normShape}`}
-              d={shapeD}
-              fill={bodyHex}
-              transform="translate(0, 3)"
-              filter="brightness(0.82)"
-              style={{
-                pointerEvents: 'none',
-                transition: 'fill 0.2s ease',
-              }}
-            />
-          )}
-
-          <path
-            key={`body-${normShape}`}
-            d={shapeD}
-            fill={bodyHex}
-            className="mascot-body-path"
-            style={{
-              transition: 'fill 0.2s ease',
-              filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
-            }}
-          />
-
-          {/* Rapid Page Swipe Flutter Layer for Book */}
-          {isBook && (
-            <g className="book-pages-layer" style={{ pointerEvents: 'none' }}>
-              <g
-                className={
-                  isBouncing
-                    ? 'book-page-swipe-tap-1'
-                    : activeTyping
-                    ? 'book-page-swipe-type-1'
-                    : 'opacity-0'
-                }
-                style={{ transformOrigin: '50px 50px' }}
-              >
-                <path
-                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                  fill="rgba(255, 255, 255, 0.40)"
-                  stroke="rgba(255, 255, 255, 0.70)"
-                  strokeWidth="1.2"
-                />
-              </g>
-
-              <g
-                className={
-                  isBouncing
-                    ? 'book-page-swipe-tap-2'
-                    : activeTyping
-                    ? 'book-page-swipe-type-2'
-                    : 'opacity-0'
-                }
-                style={{ transformOrigin: '50px 50px' }}
-              >
-                <path
-                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                  fill="rgba(255, 255, 255, 0.45)"
-                  stroke="rgba(255, 255, 255, 0.75)"
-                  strokeWidth="1.2"
-                />
-              </g>
-
-              <g
-                className={
-                  isBouncing
-                    ? 'book-page-swipe-tap-3'
-                    : activeTyping
-                    ? 'book-page-swipe-type-3'
-                    : 'opacity-0'
-                }
-                style={{ transformOrigin: '50px 50px' }}
-              >
-                <path
-                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                  fill="rgba(255, 255, 255, 0.40)"
-                  stroke="rgba(255, 255, 255, 0.70)"
-                  strokeWidth="1.2"
-                />
-              </g>
-
-              <g
-                className={
-                  isBouncing
-                    ? 'book-page-swipe-tap-4'
-                    : 'opacity-0'
-                }
-                style={{ transformOrigin: '50px 50px' }}
-              >
-                <path
-                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                  fill="rgba(255, 255, 255, 0.35)"
-                  stroke="rgba(255, 255, 255, 0.65)"
-                  strokeWidth="1.2"
-                />
-              </g>
-            </g>
-          )}
-
-          {renderExtra && renderExtra()}
-        </g>
-      </g>
-
-      {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
+      {/* Grok Typing Dots: Smooth Cross-fade and Spring Scale */}
       <g
-        ref={faceGroupRef}
-        className="mascot-face-group"
+        className="grok-typing-dots-container"
         style={{
+          pointerEvents: 'none',
           transformOrigin: '50% 50%',
-          opacity: isSleeping ? 0.45 : 1,
-          transition: 'opacity 0.2s ease-in-out',
+          opacity: activeTyping ? 1 : 0,
+          transform: activeTyping ? 'scale(1)' : 'scale(0.78)',
+          transition: activeTyping
+            ? 'opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            : 'opacity 0.20s ease-in, transform 0.22s ease-in',
         }}
       >
-        <g
-          transform={FACE_TRANSFORMS[normShape] || getFaceTransform(normShape)}
-          style={{ transformOrigin: '50% 50%' }}
-        >
-          {renderExpression(eyeColor, isLight)}
+        {/* Ambient subtle levitating dots */}
+        <circle
+          cx="18"
+          cy="24"
+          r="2.5"
+          className="typing-dot-ambient-1"
+          fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
+        />
+        <circle
+          cx="82"
+          cy="22"
+          r="2.5"
+          className="typing-dot-ambient-2"
+          fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
+        />
+        <circle
+          cx="14"
+          cy="60"
+          r="2"
+          className="typing-dot-ambient-3"
+          fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
+        />
+        <circle
+          cx="86"
+          cy="62"
+          r="2"
+          className="typing-dot-ambient-4"
+          fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
+        />
+
+        {/* Iconic Grok 3-dot typing rhythm wave */}
+        <g className="grok-dots-cluster">
+          <circle
+            cx="26"
+            cy="50"
+            r="8"
+            className="grok-dot-1"
+            fill={bodyHex}
+            style={{ transformOrigin: '26px 50px' }}
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r="8"
+            className="grok-dot-2"
+            fill={bodyHex}
+            style={{ transformOrigin: '50px 50px' }}
+          />
+          <circle
+            cx="74"
+            cy="50"
+            r="8"
+            className="grok-dot-3"
+            fill={bodyHex}
+            style={{ transformOrigin: '74px 50px' }}
+          />
         </g>
       </g>
-      </>
-      )}
+
+      {/* Mascot Avatar Layer: Smooth Cross-fade and Spring Settle */}
+      <g
+        className="mascot-avatar-layer"
+        style={{
+          transformOrigin: '50% 50%',
+          opacity: activeTyping ? 0 : 1,
+          transform: activeTyping ? 'scale(0.84)' : 'scale(1)',
+          pointerEvents: activeTyping ? 'none' : 'auto',
+          transition: activeTyping
+            ? 'opacity 0.22s ease-out, transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)'
+            : 'opacity 0.30s cubic-bezier(0.16, 1, 0.3, 1), transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}
+      >
+        {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
+        <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
+          <g style={{ transformOrigin: '50% 50%' }}>
+            {renderUnderlay ? (
+              renderUnderlay(bodyHex)
+            ) : (
+              <path
+                key={`underlay-${normShape}`}
+                d={shapeD}
+                fill={bodyHex}
+                transform="translate(0, 3)"
+                filter="brightness(0.82)"
+                style={{
+                  pointerEvents: 'none',
+                  transition: 'fill 0.2s ease',
+                }}
+              />
+            )}
+
+            <path
+              key={`body-${normShape}`}
+              d={shapeD}
+              fill={bodyHex}
+              className="mascot-body-path"
+              style={{
+                transition: 'fill 0.2s ease',
+                filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
+              }}
+            />
+
+            {/* Rapid Page Swipe Flutter Layer for Book */}
+            {isBook && (
+              <g className="book-pages-layer" style={{ pointerEvents: 'none' }}>
+                <g
+                  className={
+                    isBouncing
+                      ? 'book-page-swipe-tap-1'
+                      : activeTyping
+                      ? 'book-page-swipe-type-1'
+                      : 'opacity-0'
+                  }
+                  style={{ transformOrigin: '50px 50px' }}
+                >
+                  <path
+                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                    fill="rgba(255, 255, 255, 0.40)"
+                    stroke="rgba(255, 255, 255, 0.70)"
+                    strokeWidth="1.2"
+                  />
+                </g>
+
+                <g
+                  className={
+                    isBouncing
+                      ? 'book-page-swipe-tap-2'
+                      : activeTyping
+                      ? 'book-page-swipe-type-2'
+                      : 'opacity-0'
+                  }
+                  style={{ transformOrigin: '50px 50px' }}
+                >
+                  <path
+                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                    fill="rgba(255, 255, 255, 0.45)"
+                    stroke="rgba(255, 255, 255, 0.75)"
+                    strokeWidth="1.2"
+                  />
+                </g>
+
+                <g
+                  className={
+                    isBouncing
+                      ? 'book-page-swipe-tap-3'
+                      : activeTyping
+                      ? 'book-page-swipe-type-3'
+                      : 'opacity-0'
+                  }
+                  style={{ transformOrigin: '50px 50px' }}
+                >
+                  <path
+                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                    fill="rgba(255, 255, 255, 0.40)"
+                    stroke="rgba(255, 255, 255, 0.70)"
+                    strokeWidth="1.2"
+                  />
+                </g>
+
+                <g
+                  className={
+                    isBouncing
+                      ? 'book-page-swipe-tap-4'
+                      : 'opacity-0'
+                  }
+                  style={{ transformOrigin: '50px 50px' }}
+                >
+                  <path
+                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                    fill="rgba(255, 255, 255, 0.35)"
+                    stroke="rgba(255, 255, 255, 0.65)"
+                    strokeWidth="1.2"
+                  />
+                </g>
+              </g>
+            )}
+
+            {renderExtra && renderExtra()}
+          </g>
+        </g>
+
+        {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
+        <g
+          ref={faceGroupRef}
+          className="mascot-face-group"
+          style={{
+            transformOrigin: '50% 50%',
+            opacity: isSleeping ? 0.45 : 1,
+            transition: 'opacity 0.2s ease-in-out',
+          }}
+        >
+          <g
+            transform={FACE_TRANSFORMS[normShape] || getFaceTransform(normShape)}
+            style={{ transformOrigin: '50% 50%' }}
+          >
+            {renderExpression(eyeColor, isLight)}
+          </g>
+        </g>
+      </g>
     </svg>
   );
 });
