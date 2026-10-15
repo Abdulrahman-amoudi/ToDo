@@ -42,6 +42,8 @@ interface NoteViewerProps {
   onUpdateNote?: (updatedContent: string) => void;
   isDark?: boolean;
   hideTopHeader?: boolean; // For dual-pane embedding
+  apiKey?: string;
+  triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
 }
 
 export default function NoteViewer({
@@ -52,7 +54,9 @@ export default function NoteViewer({
   onStartQuiz,
   onUpdateNote,
   isDark = true,
-  hideTopHeader = false
+  hideTopHeader = false,
+  apiKey,
+  triggerMascot
 }: NoteViewerProps) {
   const [showOutline, setShowOutline] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -901,9 +905,13 @@ export default function NoteViewer({
                   pdfUrl={pdfUrl} 
                   noteId={note.id} 
                   notePath={note.relativePath || note.id}
+                  noteTitle={note.title}
+                  noteContent={note.bodyContent}
+                  apiKey={apiKey}
                   initialNotesStr={note.frontmatter?.pdf_notes} 
                   isDark={isDark} 
                   onUpdateNote={onUpdateNote}
+                  triggerMascot={triggerMascot}
                 />
               ) : (
                 <div className={`flex-1 overflow-y-auto custom-scrollbar p-6 rounded-2xl border ${

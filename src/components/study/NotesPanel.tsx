@@ -8,7 +8,18 @@ import {
   Sparkles, 
   PanelRightClose,
   PanelRightOpen,
+  Send,
+  Bot,
+  Copy,
+  Check,
+  HelpCircle,
+  RotateCcw,
+  Plus,
+  CheckCircle2,
+  AlertCircle,
+  FileText
 } from 'lucide-react';
+import type { QuizResponse } from '@/types/quiz';
 
 export interface NoteData {
   text: string;
@@ -16,11 +27,16 @@ export interface NoteData {
 }
 
 export type NotesPanelState = 'expanded' | 'rail' | 'drawer';
+export type PanelTab = 'ai' | 'notes' | 'quiz';
 
 export interface NotesPanelProps {
   pageNumber: number;
   notesWidth: number;
   docId?: string;
+  docTitle?: string;
+  documentContent?: string;
+  pageContent?: string;
+  apiKey?: string;
   isDark?: boolean;
   initialNote?: NoteData;
   onChange: (pageNumber: number, note: NoteData) => void;
@@ -32,12 +48,26 @@ export interface NotesPanelProps {
   onOpenAnnotations?: () => void;
   onOpenAiSummary?: () => void;
   onClose?: () => void;
+  triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  citations?: string[];
+  grounded?: boolean;
+  timestamp: number;
 }
 
 export const NotesPanel = React.memo(function NotesPanel({
   pageNumber,
   notesWidth,
   docId = 'doc',
+  docTitle = 'Study Document',
+  documentContent = '',
+  pageContent = '',
+  apiKey = '',
   isDark = true,
   initialNote,
   onChange,
@@ -48,9 +78,12 @@ export const NotesPanel = React.memo(function NotesPanel({
   onOpenChapters,
   onOpenAnnotations,
   onOpenAiSummary,
-  onClose
+  onClose,
+  triggerMascot
 }: NotesPanelProps) {
   const getDraftKey = useCallback((pg: number) => `note_draft_${docId}_${pg}`, [docId]);
+
+  const [activeTab, setActiveTab] = useState<PanelTab>('ai');
 
   const [localNote, setLocalNote] = useState<NoteData>(() => {
     if (typeof window !== 'undefined') {
@@ -71,6 +104,29 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
+  // AI Chat State
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
+    {
+      id: 'init',
+      role: 'assistant',
+      text: `Hello! I'm your **NotebookLM** study companion powered by **Gemini 3.8 Flash**.\n\nI answer questions grounded **strictly in this document** without making up facts. Tap a quick action below or ask me anything!`,
+      grounded: true,
+      timestamp: Date.now()
+    }
+  ]);
+  const [queryInput, setQueryInput] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // In-Panel Quiz State
+  const [quizData, setQuizData] = useState<QuizResponse | null>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, { isCorrect: boolean; selectedIdx: number; feedback: string }>>({});
+  const [quizCurrentIdx, setQuizCurrentIdx] = useState(0);
+
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimerRef = useRef<NodeJS.Timeout | null>(null);
   const localNoteRef = useRef<NoteData>(localNote);
@@ -80,6 +136,10 @@ export const NotesPanel = React.memo(function NotesPanel({
   onChangeRef.current = onChange;
   const onDirtyRef = useRef(onDirty);
   onDirtyRef.current = onDirty;
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isAiLoading]);
 
   // Track responsive screen size for auto-hide drawer
   useEffect(() => {
@@ -95,7 +155,6 @@ export const NotesPanel = React.memo(function NotesPanel({
     return () => window.removeEventListener('resize', checkViewport);
   }, [panelMode, panelState]);
 
-  // Sync panelMode prop if provided
   useEffect(() => {
     if (panelMode) {
       setPanelState(panelMode);
@@ -107,69 +166,45 @@ export const NotesPanel = React.memo(function NotesPanel({
     onToggleMode?.(newState);
   };
 
-  // Immediate synchronous flush helper
-  const flushSave = useCallback(() => {
+  const flushSync = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
-      onChangeRef.current(currentPageRef.current, localNoteRef.current);
-      setSaveStatus('saved');
-      if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-      saveStatusTimerRef.current = setTimeout(() => {
-        setSaveStatus('idle');
-      }, 2000);
     }
-  }, []);
+    const currentData = localNoteRef.current;
+    try {
+      localStorage.setItem(getDraftKey(currentPageRef.current), JSON.stringify({
+        text: currentData.text,
+        lang: currentData.lang,
+        timestamp: Date.now()
+      }));
+    } catch {}
+    onChangeRef.current(currentPageRef.current, currentData);
+  }, [getDraftKey]);
 
-  // Flush on visibility change (tab hidden) and window unload
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        flushSave();
-      }
-    };
-    const handleBeforeUnload = () => {
-      flushSave();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      flushSave();
-    };
-  }, [flushSave]);
-
-  // Sync external initialNote when pageNumber changes or when external note text resets
   useEffect(() => {
     if (currentPageRef.current !== pageNumber) {
-      flushSave();
+      flushSync();
       currentPageRef.current = pageNumber;
-
-      let nextNote = initialNote || { text: '', lang: 'en' };
+      let nextNote: NoteData = { text: '', lang: 'en' };
       try {
         const raw = localStorage.getItem(getDraftKey(pageNumber));
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed.text === 'string' && parsed.text.length > (nextNote.text?.length || 0)) {
-            nextNote = { text: parsed.text, lang: parsed.lang || nextNote.lang || 'en' };
+          if (parsed && typeof parsed.text === 'string' && parsed.text.length > 0) {
+            nextNote = { text: parsed.text, lang: parsed.lang || 'en' };
           }
         }
       } catch {}
 
+      if (!nextNote.text && initialNote) {
+        nextNote = initialNote;
+      }
+
       setLocalNote(nextNote);
       localNoteRef.current = nextNote;
-    } else {
-      if (!debounceTimerRef.current && initialNote) {
-        if (initialNote.text !== localNoteRef.current.text || initialNote.lang !== localNoteRef.current.lang) {
-          setLocalNote(initialNote);
-          localNoteRef.current = initialNote;
-        }
-      }
     }
-  }, [pageNumber, initialNote, flushSave, getDraftKey]);
+  }, [pageNumber, flushSync, getDraftKey, initialNote]);
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -177,7 +212,6 @@ export const NotesPanel = React.memo(function NotesPanel({
     setLocalNote(updated);
     localNoteRef.current = updated;
 
-    // 1. Synchronously save draft to localStorage on every keystroke
     try {
       localStorage.setItem(getDraftKey(currentPageRef.current), JSON.stringify({
         text: newText,
@@ -189,13 +223,9 @@ export const NotesPanel = React.memo(function NotesPanel({
     onDirtyRef.current?.();
     setSaveStatus('saving');
 
-    // 2. Debounced save (500ms delay) to push to parent / Supabase in background
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
-      debounceTimerRef.current = null;
-      onChangeRef.current(currentPageRef.current, localNoteRef.current);
+      onChangeRef.current(currentPageRef.current, updated);
       setSaveStatus('saved');
       if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
       saveStatusTimerRef.current = setTimeout(() => {
@@ -219,19 +249,152 @@ export const NotesPanel = React.memo(function NotesPanel({
     } catch {}
 
     onDirtyRef.current?.();
-
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     onChangeRef.current(currentPageRef.current, updated);
   }, [getDraftKey]);
 
-  // Safe clamped width between 240px and 650px
-  const clampedWidth = Math.max(240, Math.min(notesWidth || 450, 650));
+  // AI Chat & Action Dispatcher
+  const handleAskAi = async (overridePrompt?: string, actionType: 'ask' | 'summarize' = 'ask', summaryMode?: string) => {
+    const q = (overridePrompt || queryInput).trim();
+    if (!q && actionType === 'ask') return;
+
+    if (actionType === 'ask') {
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        text: q,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, userMsg]);
+      setQueryInput('');
+    }
+
+    setIsAiLoading(true);
+    setAiError(null);
+    triggerMascot?.('thinking', 'curieux', true);
+
+    try {
+      const res = await fetch('/api/study/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          action: actionType,
+          model: 'gemini-3.8-flash',
+          question: q,
+          documentTitle: docTitle,
+          documentContent,
+          pageNumber,
+          pageContent,
+          mode: summaryMode || 'summary',
+          chatHistory: messages.map(m => ({ role: m.role, text: m.text }))
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || data.error || 'Failed to generate AI response');
+      }
+
+      let responseText = '';
+      let citations: string[] = [];
+      let isGrounded = true;
+
+      if (actionType === 'summarize') {
+        const s = data.data;
+        responseText = `### 📌 ${s.title || 'Summary'}\n\n${s.summary}\n\n#### Key Takeaways:\n` +
+          (s.keyPoints || []).map((kp: string) => `- ${kp}`).join('\n');
+        if (s.concepts && s.concepts.length > 0) {
+          responseText += '\n\n#### Core Concepts:\n' + s.concepts.map((c: any) => `- **${c.term}**: ${c.definition}`).join('\n');
+        }
+        citations = [`Page ${pageNumber}`];
+      } else {
+        responseText = data.answer;
+        citations = data.citations || [];
+        isGrounded = data.grounded ?? true;
+      }
+
+      const botMsg: ChatMessage = {
+        id: `bot-${Date.now()}`,
+        role: 'assistant',
+        text: responseText,
+        citations,
+        grounded: isGrounded,
+        timestamp: Date.now()
+      };
+
+      setMessages(prev => [...prev, botMsg]);
+      triggerMascot?.('orbit', 'heureux');
+    } catch (err: any) {
+      setAiError(err.message || 'Error communicating with Gemini 3.8 Flash.');
+      triggerMascot?.('idle', 'triste');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  // Generate In-Panel Quiz
+  const handleGenerateInPanelQuiz = async () => {
+    setQuizLoading(true);
+    setQuizError(null);
+    setQuizAnswers({});
+    setQuizCurrentIdx(0);
+    triggerMascot?.('thinking', 'curieux', true);
+
+    try {
+      const noteContentForQuiz = pageContent.trim() ? `[Page ${pageNumber} Content]:\n${pageContent}` : documentContent;
+      const res = await fetch('/api/study/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate',
+          apiKey,
+          model: 'gemini-3.8-flash',
+          noteTitle: `${docTitle} (Pg. ${pageNumber})`,
+          noteContent: noteContentForQuiz || 'Study document content',
+          config: { questionCount: 4, difficulty: 'medium' }
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || data.error || 'Failed to generate quiz');
+      }
+
+      setQuizData(data.quiz);
+      triggerMascot?.('orbit', 'heureux');
+    } catch (err: any) {
+      setQuizError(err.message || 'Failed to create quiz with Gemini 3.8 Flash.');
+      triggerMascot?.('idle', 'triste');
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  const handleQuizAnswer = (qId: string, idx: number, correctIdx: number, explanation: string) => {
+    if (quizAnswers[qId]) return;
+    const isCorrect = idx === correctIdx;
+    setQuizAnswers(prev => ({
+      ...prev,
+      [qId]: { isCorrect, selectedIdx: idx, feedback: explanation }
+    }));
+    triggerMascot?.('bounce', isCorrect ? 'hilare' : 'triste', true);
+  };
+
+  const handleAppendToNotes = (text: string) => {
+    const cleanAppend = text.replace(/###/g, '').trim();
+    const updatedText = localNote.text ? `${localNote.text}\n\n---\n${cleanAppend}` : cleanAppend;
+    const updated: NoteData = { ...localNote, text: updatedText };
+    setLocalNote(updated);
+    localNoteRef.current = updated;
+    onChange(pageNumber, updated);
+    setActiveTab('notes');
+  };
+
+  const clampedWidth = Math.max(280, Math.min(notesWidth || 450, 680));
   const hasPageNotes = localNote.text.trim().length > 0;
 
-  // STATE 2: COMPACT ICON RAIL (w-12 / 48px)
+  // COMPACT RAIL VIEW
   if (panelState === 'rail') {
     return (
       <div
@@ -242,7 +405,6 @@ export const NotesPanel = React.memo(function NotesPanel({
         }`}
         data-spatial-container="notes-rail"
       >
-        {/* Top: Expand Toggle & Page Indicator */}
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
@@ -250,94 +412,71 @@ export const NotesPanel = React.memo(function NotesPanel({
             className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all active:scale-[0.98] ${
               isDark
                 ? 'text-[var(--theme-primary)] hover:bg-[var(--theme-surface-elevated)] hover:text-white'
-                : 'text-purple-600 hover:bg-purple-100'
+                : 'text-blue-600 hover:bg-blue-100'
             }`}
-            title="Expand Notebook (Click to write)"
+            title="Expand AI & Notebook Studio"
             aria-label="Expand Notes"
           >
             <PanelRightOpen size={18} />
           </button>
 
-          <div
-            className={`flex flex-col items-center text-[10px] font-mono font-bold tracking-tighter ${
-              isDark ? 'text-[var(--theme-text-muted)]' : 'text-gray-500'
-            }`}
-          >
+          <div className="flex flex-col items-center text-[10px] font-mono font-bold tracking-tighter text-[var(--theme-text-muted)]">
             <span>P.{pageNumber}</span>
             {hasPageNotes && (
-              <span
-                className="w-2 h-2 rounded-full mt-1 bg-[var(--theme-primary)] shadow-sm animate-pulse"
-                title="Notes on this page"
-              />
+              <span className="w-2 h-2 rounded-full mt-1 bg-[var(--theme-primary)] shadow-sm animate-pulse" title="Notes on this page" />
             )}
           </div>
         </div>
 
-        {/* Middle: Quick-Access Action Icons */}
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
             onClick={() => {
-              onOpenChapters?.();
+              setActiveTab('ai');
               updatePanelState(isMobileOrTablet ? 'drawer' : 'expanded');
             }}
             className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all active:scale-[0.98] ${
-              isDark
-                ? 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface-elevated)]'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              activeTab === 'ai' ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30' : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
             }`}
-            title="Chapters & Outline"
-            aria-label="Chapters"
-          >
-            <BookOpen size={16} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onOpenAnnotations?.();
-              updatePanelState(isMobileOrTablet ? 'drawer' : 'expanded');
-            }}
-            className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all active:scale-[0.98] ${
-              isDark
-                ? 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface-elevated)]'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            title="Annotations"
-            aria-label="Annotations"
-          >
-            <Highlighter size={16} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onOpenAiSummary?.();
-              updatePanelState(isMobileOrTablet ? 'drawer' : 'expanded');
-            }}
-            className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all active:scale-[0.98] ${
-              isDark
-                ? 'text-[var(--theme-primary)] hover:bg-[var(--theme-surface-elevated)]'
-                : 'text-purple-600 hover:bg-purple-100'
-            }`}
-            title="AI Summary & Insights"
-            aria-label="AI Summary"
+            title="Gemini 3.8 Flash AI Studio"
           >
             <Sparkles size={16} />
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('notes');
+              updatePanelState(isMobileOrTablet ? 'drawer' : 'expanded');
+            }}
+            className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all active:scale-[0.98] ${
+              activeTab === 'notes' ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30' : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
+            }`}
+            title="Page Notes"
+          >
+            <PenTool size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('quiz');
+              updatePanelState(isMobileOrTablet ? 'drawer' : 'expanded');
+            }}
+            className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all active:scale-[0.98] ${
+              activeTab === 'quiz' ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30' : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
+            }`}
+            title="Mastery Quiz"
+          >
+            <HelpCircle size={16} />
+          </button>
         </div>
 
-        {/* Bottom: Font Mode / Quick Select */}
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
             onClick={() => updatePanelState(isMobileOrTablet ? 'drawer' : 'expanded')}
-            className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border transition-all ${
-              isDark
-                ? 'border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:border-[var(--theme-primary)]'
-                : 'border-gray-200 text-gray-700'
-            }`}
-            title={localNote.lang === 'ar' ? 'عربي (Lemonada)' : 'English (Caveat)'}
+            className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border border-[var(--theme-border)] text-[var(--theme-text-secondary)]"
           >
             {localNote.lang === 'ar' ? 'ع' : 'En'}
           </button>
@@ -346,78 +485,252 @@ export const NotesPanel = React.memo(function NotesPanel({
     );
   }
 
-  // Common Notebook Content Renderer
-  const notebookBody = (
-    <>
-      <div
-        className={`p-4 border-b flex justify-between items-center transition-colors duration-200 shrink-0 ${
-          isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]' : 'border-gray-200 bg-white'
-        }`}
-      >
-        <div
-          className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${
-            isDark ? 'text-[var(--theme-primary)]' : 'text-purple-600'
-          }`}
-        >
-          <PenTool size={14} />
-          <span
-            className="cursor-pointer hover:underline"
-            onClick={() => onSelectNote?.(pageNumber)}
-          >
-            Pg. {pageNumber} Notes
+  // Common Header & Segmented Switcher
+  const panelHeader = (
+    <div className={`p-3 border-b flex flex-col gap-2 shrink-0 ${
+      isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]' : 'border-gray-200 bg-white'
+    }`}>
+      {/* Top row: Page title, collapse, and status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/25 flex items-center gap-1">
+            <Sparkles size={11} /> Gemini 3.8 Flash
           </span>
-          {saveStatus === 'saving' && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse lowercase font-normal">
-              saving...
-            </span>
-          )}
-          {saveStatus === 'saved' && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 lowercase font-normal">
-              saved ✓
-            </span>
-          )}
+          <span className="text-xs font-semibold text-[var(--theme-text-muted)]">
+            Pg. {pageNumber}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <select
-            value={localNote.lang}
-            onChange={handleLangChange}
-            className={`text-xs px-2.5 py-1.5 rounded-lg border outline-none cursor-pointer transition-colors ${
-              isDark
-                ? 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-secondary)] focus:border-[var(--theme-primary)]'
-                : 'bg-gray-50 border-gray-200 text-gray-700'
-            }`}
-          >
-            <option value="en">English (Caveat)</option>
-            <option value="ar">عربي (Lemonada)</option>
-          </select>
+        <div className="flex items-center gap-1.5">
+          {activeTab === 'notes' && (
+            <select
+              value={localNote.lang}
+              onChange={handleLangChange}
+              className={`text-[11px] px-2 py-1 rounded-lg border outline-none cursor-pointer transition-colors ${
+                isDark
+                  ? 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-secondary)]'
+                  : 'bg-gray-50 border-gray-200 text-gray-700'
+              }`}
+            >
+              <option value="en">English</option>
+              <option value="ar">عربي</option>
+            </select>
+          )}
 
-          {/* Collapse to Rail Button */}
           <button
             type="button"
-            onClick={() => updatePanelState('rail')}
-            className={`min-w-[32px] min-h-[32px] p-1.5 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center ${
-              isDark
-                ? 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface-subtle)]'
-                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-            }`}
-            title="Collapse to Rail"
-            aria-label="Collapse to Rail"
+            onClick={() => {
+              if (onClose) onClose();
+              else updatePanelState('rail');
+            }}
+            className="p-1 rounded-lg text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-subtle)] active:scale-95"
+            title="Collapse Panel"
           >
             <PanelRightClose size={16} />
           </button>
         </div>
       </div>
 
+      {/* Segmented Control Bar */}
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setActiveTab('ai')}
+          className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+            activeTab === 'ai'
+              ? 'bg-[var(--theme-surface)] text-white shadow-sm font-bold border border-white/10'
+              : 'text-[var(--theme-text-muted)] hover:text-zinc-200'
+          }`}
+        >
+          <Sparkles size={13} className={activeTab === 'ai' ? 'text-[var(--theme-primary)]' : ''} />
+          <span>Gemini AI</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('notes')}
+          className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all relative ${
+            activeTab === 'notes'
+              ? 'bg-[var(--theme-surface)] text-white shadow-sm font-bold border border-white/10'
+              : 'text-[var(--theme-text-muted)] hover:text-zinc-200'
+          }`}
+        >
+          <PenTool size={13} className={activeTab === 'notes' ? 'text-emerald-400' : ''} />
+          <span>Notes</span>
+          {hasPageNotes && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('quiz')}
+          className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+            activeTab === 'quiz'
+              ? 'bg-[var(--theme-surface)] text-white shadow-sm font-bold border border-white/10'
+              : 'text-[var(--theme-text-muted)] hover:text-zinc-200'
+          }`}
+        >
+          <HelpCircle size={13} className={activeTab === 'quiz' ? 'text-amber-400' : ''} />
+          <span>Quiz</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  // TAB 1: GEMINI 3.8 AI CHAT
+  const renderAiStudio = () => (
+    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      {/* Quick Prompt Chips */}
+      <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-1.5 overflow-x-auto hide-scrollbar shrink-0 bg-[var(--theme-surface-subtle)]/50">
+        <button
+          type="button"
+          onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
+          disabled={isAiLoading}
+          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)] text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-50"
+        >
+          ⚡ Summarize Page
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAskAi(`Extract key takeaways from page ${pageNumber}.`, 'summarize', 'key_takeaways')}
+          disabled={isAiLoading}
+          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)] text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-50"
+        >
+          💡 Key Takeaways
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply.`, 'ask')}
+          disabled={isAiLoading}
+          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)] text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-50"
+        >
+          🔍 Explain Concepts
+        </button>
+      </div>
+
+      {/* Messages Thread */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+        {messages.map(msg => (
+          <div
+            key={msg.id}
+            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-200`}
+          >
+            <div className={`max-w-[92%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+              msg.role === 'user'
+                ? 'bg-[var(--theme-primary,#3b82f6)]/20 border border-[var(--theme-primary,#3b82f6)]/35 text-white'
+                : 'bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-zinc-200 shadow-sm'
+            }`}>
+              <div className="whitespace-pre-wrap font-sans space-y-2">
+                {msg.text}
+              </div>
+
+              {msg.role === 'assistant' && (
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-400">
+                  <div className="flex items-center gap-1.5">
+                    {msg.grounded && (
+                      <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                        <CheckCircle2 size={11} /> 100% Grounded
+                      </span>
+                    )}
+                    {msg.citations && msg.citations.length > 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300 font-mono">
+                        {msg.citations.join(', ')}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAppendToNotes(msg.text)}
+                      className="hover:text-white flex items-center gap-1 transition-colors"
+                      title="Append to Page Notes"
+                    >
+                      <Plus size={11} /> Add to Notes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(msg.text);
+                        setCopiedId(msg.id);
+                        setTimeout(() => setCopiedId(null), 2000);
+                      }}
+                      className="hover:text-white flex items-center gap-1 transition-colors"
+                      title="Copy response"
+                    >
+                      {copiedId === msg.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {isAiLoading && (
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-xs text-zinc-400 w-fit animate-pulse">
+            <Sparkles size={13} className="text-[var(--theme-primary)] animate-spin" />
+            <span>Gemini 3.8 Flash reading document...</span>
+          </div>
+        )}
+
+        {aiError && (
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs flex items-center gap-2">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{aiError}</span>
+          </div>
+        )}
+
+        <div ref={chatBottomRef} />
+      </div>
+
+      {/* Input row */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleAskAi();
+        }}
+        className="p-3 border-t border-[var(--theme-border)] bg-[var(--theme-surface-elevated)] flex items-center gap-2 shrink-0"
+      >
+        <input
+          type="text"
+          value={queryInput}
+          onChange={(e) => setQueryInput(e.target.value)}
+          placeholder={`Ask Gemini about ${docTitle}...`}
+          disabled={isAiLoading}
+          className="flex-1 bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] focus:border-[var(--theme-primary)] text-xs rounded-xl px-3 py-2.5 text-zinc-200 placeholder:text-zinc-500 outline-none transition-colors"
+        />
+        <button
+          type="submit"
+          disabled={isAiLoading || !queryInput.trim()}
+          className="p-2.5 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 disabled:opacity-40 text-white font-bold transition-all shadow-md shrink-0 flex items-center justify-center"
+          title="Send query to Gemini 3.8 Flash"
+        >
+          <Send size={14} />
+        </button>
+      </form>
+    </div>
+  );
+
+  // TAB 2: PAGE NOTES
+  const renderNotesPad = () => (
+    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      <div className="px-4 py-2 border-b border-[var(--theme-border)] flex items-center justify-between text-xs text-zinc-400 shrink-0">
+        <span className="flex items-center gap-1.5 font-bold text-zinc-300">
+          <FileText size={13} /> Notes for Page {pageNumber}
+        </span>
+        {saveStatus === 'saving' && <span className="text-amber-400 text-[10px] animate-pulse">saving...</span>}
+        {saveStatus === 'saved' && <span className="text-emerald-400 text-[10px]">saved ✓</span>}
+      </div>
+
       <textarea
         value={localNote.text}
         onChange={handleTextChange}
-        placeholder="Write your notes here..."
+        placeholder={`Write your handwritten or markdown notes for Page ${pageNumber}...`}
         dir={localNote.lang === 'ar' ? 'rtl' : 'ltr'}
-        className={`flex-1 w-full p-8 bg-transparent outline-none resize-none leading-[32px] ${
+        className={`flex-1 w-full p-6 bg-transparent outline-none resize-none leading-[32px] ${
           localNote.lang === 'ar'
-            ? 'font-[family-name:var(--font-lemonada)] text-right text-[1.1rem]'
-            : 'font-[family-name:var(--font-caveat)] text-left text-2xl tracking-wide'
+            ? 'font-[family-name:var(--font-lemonada)] text-right text-[1.05rem]'
+            : 'font-[family-name:var(--font-caveat)] text-left text-xl tracking-wide'
         } ${
           isDark
             ? 'text-[var(--theme-text-primary)] placeholder:[var(--theme-text-muted)]'
@@ -432,22 +745,170 @@ export const NotesPanel = React.memo(function NotesPanel({
           backgroundAttachment: 'local'
         }}
       />
-    </>
+    </div>
   );
 
-  // STATE 3: AUTO-HIDE DRAWER (Tablet & Mobile Overlay Mode)
+  // TAB 3: IN-PANEL QUIZ
+  const renderQuizStudio = () => {
+    const questions = quizData?.questions || [];
+    const currentQ = questions[quizCurrentIdx];
+    const currentAnswer = currentQ ? quizAnswers[currentQ.id] : null;
+
+    return (
+      <div className="flex flex-col flex-1 h-full min-h-0 overflow-y-auto p-4 custom-scrollbar">
+        {!quizData && !quizLoading && (
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)]/30 flex items-center justify-center text-[var(--theme-primary)]">
+              <HelpCircle size={24} />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white mb-1">Interactive Mastery Quiz</h4>
+              <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
+                Test your knowledge of Page {pageNumber} with AI questions generated by Gemini 3.8 Flash.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateInPanelQuiz}
+              className="py-2.5 px-4 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
+            >
+              <Sparkles size={14} /> Generate Quiz for Page {pageNumber}
+            </button>
+          </div>
+        )}
+
+        {quizLoading && (
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-3 animate-pulse">
+            <Sparkles size={28} className="text-[var(--theme-primary)] animate-spin" />
+            <h4 className="text-sm font-bold text-white">Generating Quiz with Gemini 3.8...</h4>
+            <p className="text-xs text-zinc-400">Formulating grounded questions from this document.</p>
+          </div>
+        )}
+
+        {quizError && (
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs mb-3 flex items-center gap-2">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{quizError}</span>
+          </div>
+        )}
+
+        {quizData && currentQ && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs text-zinc-400 pb-2 border-b border-white/10">
+              <span className="font-bold text-zinc-200">
+                Question {quizCurrentIdx + 1} of {questions.length}
+              </span>
+              <button
+                type="button"
+                onClick={handleGenerateInPanelQuiz}
+                className="hover:text-white flex items-center gap-1 transition-colors"
+                title="Regenerate"
+              >
+                <RotateCcw size={12} /> Reset
+              </button>
+            </div>
+
+            <h4 className="text-sm font-bold text-white leading-snug">
+              {currentQ.question}
+            </h4>
+
+            {currentQ.type === 'multiple_choice' && currentQ.options && (
+              <div className="space-y-2 pt-1">
+                {currentQ.options.map((opt, idx) => {
+                  const isSelected = currentAnswer?.selectedIdx === idx;
+                  const isCorrectAnswer = idx === currentQ.correctAnswerIndex;
+                  let btnStyle = 'bg-[var(--theme-surface-elevated)] border-[var(--theme-border)] text-zinc-300 hover:bg-[var(--theme-surface-subtle)]';
+
+                  if (currentAnswer) {
+                    if (isCorrectAnswer) {
+                      btnStyle = 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200 font-bold';
+                    } else if (isSelected && !currentAnswer.isCorrect) {
+                      btnStyle = 'bg-red-500/20 border-red-500/50 text-red-200 line-through';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={!!currentAnswer}
+                      onClick={() => handleQuizAnswer(currentQ.id, idx, currentQ.correctAnswerIndex ?? 0, currentQ.explanation || '')}
+                      className={`w-full text-left p-3 rounded-xl border text-xs transition-all active:scale-[0.99] flex items-center justify-between ${btnStyle}`}
+                    >
+                      <span>{opt}</span>
+                      {currentAnswer && isCorrectAnswer && <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {currentAnswer && (
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1.5 animate-in fade-in">
+                <span className={`font-bold ${currentAnswer.isCorrect ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {currentAnswer.isCorrect ? 'Correct! ✓' : 'Incorrect'}
+                </span>
+                <p className="text-zinc-300 leading-relaxed">{currentAnswer.feedback}</p>
+                {currentQ.sourceCitation && (
+                  <p className="text-[10px] text-zinc-400 italic">Citation: {currentQ.sourceCitation}</p>
+                )}
+              </div>
+            )}
+
+            {currentAnswer && quizCurrentIdx < questions.length - 1 && (
+              <button
+                type="button"
+                onClick={() => setQuizCurrentIdx(i => i + 1)}
+                className="w-full py-2.5 rounded-xl bg-[var(--theme-primary,#3b82f6)] text-white font-bold text-xs shadow-md active:scale-95 transition-all"
+              >
+                Next Question →
+              </button>
+            )}
+
+            {currentAnswer && quizCurrentIdx === questions.length - 1 && (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-center space-y-2">
+                <h5 className="text-xs font-bold text-emerald-400">Quiz Completed! 🎉</h5>
+                <p className="text-xs text-zinc-300">
+                  You scored {Object.values(quizAnswers).filter(a => a.isCorrect).length} / {questions.length}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleGenerateInPanelQuiz}
+                  className="py-1.5 px-3 rounded-lg bg-emerald-500 text-white font-bold text-xs active:scale-95"
+                >
+                  Try Another Quiz
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const notebookBody = (
+    <div className="flex flex-col h-full w-full overflow-hidden select-none">
+      {panelHeader}
+      {activeTab === 'ai' && renderAiStudio()}
+      {activeTab === 'notes' && renderNotesPad()}
+      {activeTab === 'quiz' && renderQuizStudio()}
+    </div>
+  );
+
+  // AUTO-HIDE DRAWER (Tablet & Mobile Overlay Mode)
   if (panelState === 'drawer') {
     return (
       <>
-        {/* Backdrop Overlay */}
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
-          onClick={() => updatePanelState('rail')}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-200"
+          onClick={() => {
+            if (onClose) onClose();
+            else updatePanelState('rail');
+          }}
         />
 
-        {/* Slide-in Drawer Container */}
         <aside
-          className={`fixed inset-y-0 right-0 z-50 w-[88vw] max-w-[440px] h-full shadow-2xl border-l flex flex-col transition-all duration-300 animate-in slide-in-from-right ${
+          className={`fixed inset-y-0 right-0 z-50 w-[92vw] max-w-[480px] h-full shadow-2xl border-l flex flex-col transition-all duration-300 animate-in slide-in-from-right ${
             isDark
               ? 'border-[var(--theme-border)] bg-[var(--theme-surface)] backdrop-blur-2xl'
               : 'border-gray-200 bg-[#fffdf5]'
@@ -460,7 +921,7 @@ export const NotesPanel = React.memo(function NotesPanel({
     );
   }
 
-  // STATE 1: EXPANDED (Default Resizable Desktop State)
+  // EXPANDED DESKTOP PANE
   return (
     <div
       style={{ width: clampedWidth }}

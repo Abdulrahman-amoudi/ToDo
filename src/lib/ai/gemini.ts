@@ -408,6 +408,181 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
   }
 
   /**
+   * Grounded NotebookLM Document Chat (Zero Hallucination)
+   */
+  static async askDocument(request: {
+    apiKey: string;
+    model?: string;
+    question: string;
+    documentTitle?: string;
+    documentContent?: string;
+    pageNumber?: number;
+    pageContent?: string;
+    chatHistory?: { role: 'user' | 'assistant'; text: string }[];
+  }): Promise<{ answer: string; citations: string[]; grounded: boolean }> {
+    const {
+      apiKey,
+      model = 'gemini-3.8-flash',
+      question,
+      documentTitle = 'Study Document',
+      documentContent = '',
+      pageNumber,
+      pageContent = '',
+      chatHistory = []
+    } = request;
+
+    if (!apiKey || apiKey.trim() === '') {
+      const err: CustomHttpError = new Error('API_KEY_REQUIRED: An external LLM API key must be provided.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (!question || question.trim() === '') {
+      const err: CustomHttpError = new Error('QUESTION_REQUIRED: Question text cannot be empty.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const availableContext = (pageContent && pageContent.trim() ? `[Active Page ${pageNumber || 1} Text]:\n${pageContent.trim()}\n\n` : '') +
+      (documentContent && documentContent.trim() ? `[Document Excerpts]:\n${documentContent.slice(0, 15000)}` : '');
+
+    if (!availableContext.trim()) {
+      return {
+        answer: 'This document does not contain readable text (it may be a scanned image or empty). Please open or upload a document with extractable text so I can ground my answers without hallucinating.',
+        citations: [],
+        grounded: false
+      };
+    }
+
+    const systemPrompt = `You are Bloub NotebookLM, an intelligent study assistant powered by Google Gemini 3.8 Flash.
+Your answers MUST be strictly and exclusively grounded in the provided document text.
+
+CRITICAL ANTI-HALLUCINATION RULES:
+1. ONLY state facts, numbers, equations, definitions, and conclusions directly present in the source text.
+2. If the user's question asks for information NOT found in the source text, state clearly:
+   "Based on the provided document, this information is not mentioned."
+   DO NOT speculate, make assumptions, or introduce outside facts that could be incorrect for this document.
+3. If only a partial answer is in the document, share only the grounded part and clarify what the document does not mention.
+4. When stating facts, cite the location when applicable (e.g. [Page ${pageNumber || 1}] or quote the relevant phrase).
+5. If the document or question is in Arabic, respond in clear, fluent Arabic.
+6. Format answers with markdown headers, concise bullet points, and bold key terms.`;
+
+    let historyText = '';
+    if (chatHistory.length > 0) {
+      historyText = 'Previous Conversation:\n' +
+        chatHistory.slice(-6).map(h => `${h.role === 'user' ? 'User' : 'Bloub'}: ${h.text}`).join('\n') + '\n\n';
+    }
+
+    const userPrompt = `${historyText}Source Document: "${documentTitle}"
+${pageNumber ? `Active Page: ${pageNumber}\n` : ''}
+${availableContext}
+
+User Question: ${question}
+
+Provide an accurate, strictly grounded answer following the rules.`;
+
+    const answer = await this.callGenerateContent(apiKey, model, userPrompt, systemPrompt, false);
+    
+    const citations: string[] = [];
+    if (pageNumber) citations.push(`Page ${pageNumber}`);
+    const pageMatches = answer.match(/\[(?:Page|Pg\.?)\s*(\d+)\]/gi);
+    if (pageMatches) {
+      pageMatches.forEach(m => {
+        if (!citations.includes(m)) citations.push(m);
+      });
+    }
+
+    const grounded = !answer.toLowerCase().includes('this information is not mentioned');
+
+    return {
+      answer: answer.trim(),
+      citations,
+      grounded
+    };
+  }
+
+  /**
+   * Grounded Document Summarizer & Study Guide Generator
+   */
+  static async summarizeDocument(request: {
+    apiKey: string;
+    model?: string;
+    documentTitle?: string;
+    documentContent?: string;
+    pageNumber?: number;
+    pageContent?: string;
+    mode?: 'summary' | 'key_takeaways' | 'study_guide';
+  }): Promise<{
+    title: string;
+    summary: string;
+    keyPoints: string[];
+    concepts?: { term: string; definition: string }[];
+    suggestedQuestions?: string[];
+  }> {
+    const {
+      apiKey,
+      model = 'gemini-3.8-flash',
+      documentTitle = 'Study Document',
+      documentContent = '',
+      pageNumber,
+      pageContent = '',
+      mode = 'summary'
+    } = request;
+
+    if (!apiKey || apiKey.trim() === '') {
+      const err: CustomHttpError = new Error('API_KEY_REQUIRED: Missing API key.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const targetText = ((pageContent && pageContent.trim()) || (documentContent && documentContent.slice(0, 15000)) || '').trim();
+    if (!targetText) {
+      return {
+        title: documentTitle,
+        summary: 'No readable text was found in this document or page to summarize.',
+        keyPoints: ['Ensure document has selectable text.'],
+        suggestedQuestions: []
+      };
+    }
+
+    const systemPrompt = `You are Bloub NotebookLM, an academic synthesizer powered by Google Gemini 3.8 Flash.
+Generate a structured study summary based STRICTLY on facts in the provided text. Never hallucinate outside facts.
+Output MUST be valid JSON adhering to this schema:
+{
+  "title": "string",
+  "summary": "string (concise overview paragraph)",
+  "keyPoints": ["bullet point 1", "bullet point 2", "bullet point 3"],
+  "concepts": [
+    { "term": "string", "definition": "string" }
+  ],
+  "suggestedQuestions": ["question 1", "question 2", "question 3"]
+}`;
+
+    const userPrompt = `Document: "${documentTitle}" ${pageNumber ? `(Page ${pageNumber})` : ''}
+Mode: ${mode}
+
+Source Text:
+${targetText}`;
+
+    const raw = await this.callGenerateContent(apiKey, model, userPrompt, systemPrompt, true);
+    const parsed = extractJsonFromText<{
+      title?: string;
+      summary?: string;
+      keyPoints?: string[];
+      concepts?: { term: string; definition: string }[];
+      suggestedQuestions?: string[];
+    }>(raw);
+
+    return {
+      title: parsed.title || `${documentTitle} — ${pageNumber ? `Page ${pageNumber}` : 'Overview'}`,
+      summary: parsed.summary || 'Summary based on document text.',
+      keyPoints: Array.isArray(parsed.keyPoints) && parsed.keyPoints.length > 0 ? parsed.keyPoints : ['Review key concepts in document.'],
+      concepts: Array.isArray(parsed.concepts) ? parsed.concepts : [],
+      suggestedQuestions: Array.isArray(parsed.suggestedQuestions) ? parsed.suggestedQuestions : []
+    };
+  }
+
+  /**
    * Tests API key validity with a lightweight ping.
    */
   static async testConnection(apiKey: string, model: string = 'gemini-3.8-flash'): Promise<ConnectionTestResult> {

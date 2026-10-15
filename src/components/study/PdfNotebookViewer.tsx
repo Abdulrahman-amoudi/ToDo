@@ -7,7 +7,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import ArabicTextLayer from './ArabicTextLayer';
 import NotesPanel from './NotesPanel';
-import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, MousePointer2, ZoomIn, ZoomOut, Eraser, Undo2, Sidebar, Hand, Eye, EyeOff, Square, Baseline } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, MousePointer2, ZoomIn, ZoomOut, Eraser, Undo2, Sidebar, Hand, Eye, EyeOff, Square, Baseline, Maximize2, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { updateFrontmatterField } from '@/lib/obsidian/parser';
 import { recordMutation, markMutationSynced, markMutationFailed } from '@/lib/storage/offline-wal';
@@ -27,12 +27,27 @@ interface PdfNotebookViewerProps {
   pdfUrl: string;
   noteId?: string;
   notePath?: string;
+  noteTitle?: string;
+  noteContent?: string;
+  apiKey?: string;
   initialNotesStr?: string;
   isDark?: boolean;
   onUpdateNote?: ((updatedContent: string) => void) | ((noteId: string, updates: { content?: string; frontmatter?: any }) => void);
+  triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
 }
 
-export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initialNotesStr, isDark = true, onUpdateNote }: PdfNotebookViewerProps) {
+export default function PdfNotebookViewer({ 
+  pdfUrl, 
+  noteId = '', 
+  notePath, 
+  noteTitle = 'Study Document',
+  noteContent = '',
+  apiKey = '',
+  initialNotesStr, 
+  isDark = true, 
+  onUpdateNote,
+  triggerMascot
+}: PdfNotebookViewerProps) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [notes, setNotes] = useState<Record<number, { text: string, lang: 'en' | 'ar' }>>({});
@@ -42,6 +57,8 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
   const [textColor, setTextColor] = useState('#9333ea'); // default purple-600
   const [highlightColor, setHighlightColor] = useState('#fef08a'); // default yellow-200
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [pageNaturalWidth, setPageNaturalWidth] = useState<number>(595);
+  const [isMobileOrTabletVertical, setIsMobileOrTabletVertical] = useState<boolean>(false);
 
   const [notesWidth, setNotesWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
@@ -104,8 +121,17 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
   const [pageTextContent, setPageTextContent] = useState<any>(null);
   const [pageViewport, setPageViewport] = useState<any>(null);
 
+  const activePageText = React.useMemo(() => {
+    if (!pageTextContent || !pageTextContent.items) return '';
+    return pageTextContent.items.map((it: any) => it.str || '').join(' ').trim();
+  }, [pageTextContent]);
+
   const handlePageLoadSuccess = (pageProxy: any) => {
     setActivePageProxy(pageProxy);
+    const unscaled = pageProxy.getViewport ? pageProxy.getViewport({ scale: 1.0 }) : null;
+    if (unscaled && unscaled.width) {
+      setPageNaturalWidth(unscaled.width);
+    }
     const vp = pageProxy.getViewport ? pageProxy.getViewport({ scale: zoomLevel }) : null;
     setPageViewport(vp);
     if (pageProxy && typeof pageProxy.getTextContent === 'function') {
@@ -116,6 +142,47 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
       });
     }
   };
+
+  const checkResponsive = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const isNarrow = w < 1024;
+    const isVertical = h >= w;
+    const isMobile = w < 640;
+    const isVerticalLayout = isNarrow || (isVertical && w <= 1180);
+    setIsMobileOrTabletVertical(isVerticalLayout);
+
+    if (containerRef.current) {
+      const availWidth = containerRef.current.clientWidth;
+      if (availWidth > 0 && (isMobile || (isNarrow && isVertical))) {
+        const targetZoom = Math.min(2.0, Math.max(0.4, (availWidth - 24) / (pageNaturalWidth || 595)));
+        setZoomLevel(prev => {
+          if (prev === 1.0 || prev * (pageNaturalWidth || 595) > availWidth) {
+            return Number(targetZoom.toFixed(2));
+          }
+          return prev;
+        });
+      }
+    }
+  }, [pageNaturalWidth]);
+
+  useEffect(() => {
+    checkResponsive();
+    window.addEventListener('resize', checkResponsive);
+    window.addEventListener('orientationchange', checkResponsive);
+    return () => {
+      window.removeEventListener('resize', checkResponsive);
+      window.removeEventListener('orientationchange', checkResponsive);
+    };
+  }, [checkResponsive]);
+
+  const fitToWidth = useCallback(() => {
+    if (!containerRef.current) return;
+    const availWidth = containerRef.current.clientWidth;
+    const target = (availWidth - (isMobileOrTabletVertical ? 16 : 32)) / (pageNaturalWidth || 595);
+    setZoomLevel(Number(Math.min(2.5, Math.max(0.35, target)).toFixed(2)));
+  }, [isMobileOrTabletVertical, pageNaturalWidth]);
 
   useEffect(() => {
     if (activePageProxy && typeof activePageProxy.getViewport === 'function') {
@@ -1247,7 +1314,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
         </div>
       )}
            
-      {viewerEngine === 'pdfjs' && numPages && (
+      {viewerEngine === 'pdfjs' && numPages && !isMobileOrTabletVertical && (
         <div className="sticky bottom-6 mt-6 left-1/2 -translate-x-1/2 w-max flex items-center gap-3 bg-[var(--theme-surface-elevated)]/90 backdrop-blur-md px-4 py-2 rounded-full border border-[var(--theme-border)] shadow-xl z-50 text-[var(--theme-text-primary)]">
           <button 
             onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
@@ -1286,27 +1353,100 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
           </button>
         </div>
       )}
+
+      {/* Mobile & Vertical Tablet Ergonomic Floating Navigation Pill */}
+      {viewerEngine === 'pdfjs' && numPages && isMobileOrTabletVertical && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-2xl bg-zinc-950/90 border border-white/15 backdrop-blur-xl shadow-2xl text-xs max-w-[94vw] animate-in fade-in slide-in-from-bottom-2">
+          <button 
+            onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
+            disabled={pageNumber <= 1} 
+            className="p-2 rounded-xl bg-white/5 disabled:opacity-30 active:scale-95 text-white"
+            title="Previous Page"
+          >
+            <ChevronLeft size={16}/>
+          </button>
+          <span className="px-2 font-mono font-bold text-zinc-300">
+            {pageNumber} / {numPages || 1}
+          </span>
+          <button 
+            onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} 
+            disabled={pageNumber >= (numPages||1)} 
+            className="p-2 rounded-xl bg-white/5 disabled:opacity-30 active:scale-95 text-white"
+            title="Next Page"
+          >
+            <ChevronRight size={16}/>
+          </button>
+
+          <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+          <button 
+            onClick={fitToWidth} 
+            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 font-semibold text-zinc-300 flex items-center gap-1"
+            title="Fit Page to Width"
+          >
+            <Maximize2 size={13}/>
+            <span>Fit</span>
+          </button>
+
+          <button 
+            onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
+            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300"
+            title="Zoom Out"
+          >
+            <ZoomOut size={15}/>
+          </button>
+          <span className="text-[11px] font-mono text-zinc-400 font-bold min-w-[32px] text-center">
+            {Math.round(zoomLevel * 100)}%
+          </span>
+          <button 
+            onClick={() => setZoomLevel(z => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
+            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300"
+            title="Zoom In"
+          >
+            <ZoomIn size={15}/>
+          </button>
+
+          <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+          <button 
+            onClick={() => setShowNotes(s => !s)} 
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all active:scale-95 ${
+              showNotes ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md' : 'bg-white/10 text-zinc-200 hover:bg-white/15'
+            }`}
+          >
+            <Sparkles size={14}/>
+            <span>AI / Notes</span>
+          </button>
+        </div>
+      )}
     </div>
 
     {showNotes && (
       <>
-        {/* Draggable Resizer */}
-        <div 
-          className="w-3 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/20 active:bg-[var(--theme-primary)]/40 transition-colors z-20 relative flex-shrink-0 group flex items-center justify-center" title="Drag to resize notebook pane"
-          onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }} 
-          onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
-          aria-label="Resize Notes Panel"
-        >
-          <div className="w-1 h-12 bg-white/20 group-hover:bg-[var(--theme-primary)] group-hover:h-16 group-active:bg-[var(--theme-primary)] rounded-full transition-all pointer-events-none"></div>
-        </div>
+        {/* Draggable Resizer - only on desktop horizontal layout */}
+        {!isMobileOrTabletVertical && (
+          <div 
+            className="w-3 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/20 active:bg-[var(--theme-primary)]/40 transition-colors z-20 relative flex-shrink-0 group flex items-center justify-center" title="Drag to resize notebook pane"
+            onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }} 
+            onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
+            aria-label="Resize Notes Panel"
+          >
+            <div className="w-1 h-12 bg-white/20 group-hover:bg-[var(--theme-primary)] group-hover:h-16 group-active:bg-[var(--theme-primary)] rounded-full transition-all pointer-events-none"></div>
+          </div>
+        )}
 
-        {/* Handwriting / Markdown Notes Panel */}
+        {/* Handwriting / Markdown Notes & NotebookLM Panel */}
         <NotesPanel
           docId={noteId || notePath || 'current'}
+          docTitle={noteTitle}
+          documentContent={noteContent}
+          pageContent={activePageText}
+          apiKey={apiKey}
           pageNumber={pageNumber}
           notesWidth={notesWidth}
           isDark={isDark}
           initialNote={notes[pageNumber] || { text: '', lang: 'en' }}
+          panelMode={isMobileOrTabletVertical ? 'drawer' : 'expanded'}
           onChange={(pg, noteData) => {
             isDirtyRef.current = true;
             setNotes(n => ({
@@ -1318,6 +1458,7 @@ export default function PdfNotebookViewer({ pdfUrl, noteId = '', notePath, initi
             isDirtyRef.current = true;
           }}
           onClose={() => setShowNotes(false)}
+          triggerMascot={triggerMascot}
         />
       </>
     )}
