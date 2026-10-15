@@ -25,6 +25,7 @@ export interface BloubMascotProps {
   expression?: ExpressionId | string;
   gaze?: { yaw: number; pitch: number; roll?: number } | string;
   onInteract?: () => void;
+  onClick?: (e?: React.MouseEvent) => void;
   isStatic?: boolean;
   animated?: boolean;
   isTyping?: boolean;
@@ -70,14 +71,15 @@ export const BloubMascot = React.memo(function BloubMascot({
   expression = 'neutre',
   gaze,
   onInteract,
+  onClick,
   isStatic = false,
   animated = true,
   isTyping: propIsTyping,
   className = '',
   style = {},
 }: BloubMascotProps) {
-  const [isInteracting, setIsInteracting] = useState(false);
-  const [isBouncingState, setIsBouncingState] = useState(state === 'orbit');
+  const [tapCount, setTapCount] = useState(0);
+  const [isTapping, setIsTapping] = useState(false);
   const [internalTyping, setInternalTyping] = useState(false);
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -87,6 +89,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
   // Normalization and blink gating: closed/sunglasses expressions never blink
   const normShape = normalizeShape(shape);
+  const prevShapeRef = useRef(normShape);
   const normExpr = normalizeExpression(expression);
   const isSun = normShape === 'soleil';
   const isHexagon = normShape === 'hexagone';
@@ -126,14 +129,36 @@ export const BloubMascot = React.memo(function BloubMascot({
 
   const activeTyping = propIsTyping ?? internalTyping;
 
-  // Sync state prop with squish-pop animation
+  // Sync state prop with kinetic tap burst
   useEffect(() => {
     if (state === 'orbit' || state === 'wide') {
-      setIsBouncingState(true);
-      const timer = setTimeout(() => setIsBouncingState(false), 1250);
+      if (!isStatic && animated) {
+        setTapCount((c) => c + 1);
+        setIsTapping(true);
+      }
+    }
+  }, [state, isStatic, animated]);
+
+  // Trigger bespoke tap burst on shape change (e.g. when selected in Settings)
+  useEffect(() => {
+    if (prevShapeRef.current !== normShape) {
+      prevShapeRef.current = normShape;
+      if (!isStatic && animated) {
+        setTapCount((c) => c + 1);
+        setIsTapping(true);
+      }
+    }
+  }, [normShape, isStatic, animated]);
+
+  // Fallback safety timeout for isTapping
+  useEffect(() => {
+    if (isTapping) {
+      const timer = setTimeout(() => {
+        setIsTapping(false);
+      }, 750);
       return () => clearTimeout(timer);
     }
-  }, [state]);
+  }, [isTapping, tapCount]);
 
   // Handle explicit gaze prop
   useEffect(() => {
@@ -238,23 +263,19 @@ export const BloubMascot = React.memo(function BloubMascot({
     EXPRESSION_RENDERERS[normExpr] || EXPRESSION_RENDERERS.neutre;
   const renderExtra = SHAPE_EXTRAS[normShape];
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
+  const handleMascotTap = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      onClick?.(e);
       onInteract?.();
       if (!isStatic && animated) {
-        setIsInteracting(true);
-        setIsBouncingState(true);
-        setTimeout(() => {
-          setIsInteracting(false);
-          setIsBouncingState(false);
-        }, 1250);
+        setTapCount((prev) => prev + 1);
+        setIsTapping(true);
       }
     },
-    [onInteract, isStatic, animated]
+    [onClick, onInteract, isStatic, animated]
   );
 
-  const isBouncing = isInteracting || isBouncingState;
   const isThinking = state === 'thinking';
   const isSleeping = state === 'sleep';
 
@@ -264,12 +285,10 @@ export const BloubMascot = React.memo(function BloubMascot({
       width={size}
       height={size}
       viewBox="0 0 100 100"
-      onClick={handleClick}
+      onClick={handleMascotTap}
       role="img"
       aria-label={`Mascot ${normShape} with ${normExpr} expression`}
       className={`select-none overflow-visible transition-transform duration-200 ${
-        isBouncing ? 'mascot-squish-active' : ''
-      } ${
         isThinking ? '-rotate-6 scale-105' : ''
       } ${
         isStatic || size <= 44 ? 'mascot-static' : ''
@@ -277,7 +296,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         activeTyping ? 'mascot-typing' : ''
       } ${className}`}
       style={{
-        cursor: onInteract || (!isStatic && animated) ? 'pointer' : 'default',
+        cursor: onInteract || onClick || (!isStatic && animated) ? 'pointer' : 'default',
         transformOrigin: '50% 50%',
         ['--mascot-glow-soft' as any]: hexToRgba(bodyHex, 0.45),
         ['--mascot-glow-mid' as any]: hexToRgba(bodyHex, 0.65),
@@ -286,76 +305,194 @@ export const BloubMascot = React.memo(function BloubMascot({
       }}
     >
       <style>{`
-        /* 1. Universal Tactile Mochi Squish & Hop for non-specialized shapes (Extended 1.25s) */
-        @keyframes mascotSquishPop {
+        /* 12 BESPOKE SHAPE TAP BURST ANIMATIONS (Groq-style high-velocity kinetic physics, 650ms) */
+        .mascot-tap-rig {
+          transform-origin: 50% 50%;
+          transform-box: fill-box;
+        }
+
+        /* 1. Cercle: High-Velocity Basketball Slam & Double Dribble */
+        @keyframes tapBurstCercle {
           0% { transform: scale(1) translateY(0); }
-          15% { transform: scale(1.15, 0.85) translateY(2.5px); }
-          42% { transform: scale(0.92, 1.12) translateY(-9px); }
-          68% { transform: scale(1.05, 0.96) translateY(2px); }
-          85% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          18% { transform: translateY(12px) scaleX(1.32) scaleY(0.68); }
+          48% { transform: translateY(-26px) scaleX(0.84) scaleY(1.22); }
+          72% { transform: translateY(6px) scaleX(1.16) scaleY(0.84); }
+          88% { transform: translateY(-6px) scaleX(0.96) scaleY(1.04); }
           100% { transform: scale(1) translateY(0); }
         }
-        .mascot-squish-active {
-          animation: mascotSquishPop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        .tap-burst-cercle {
+          animation: tapBurstCercle 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        /* 2. Unique Sun Tactile Elastic Hop (Extended 1.25s with floaty apex hang-time) */
-        @keyframes sunTapBounce {
-          0% { transform: scale(1) translateY(0); }
-          14% { transform: scale(1.14, 0.86) translateY(2.5px); }
-          38% { transform: scale(0.92, 1.12) translateY(-10px); }
-          56% { transform: scale(1.01, 0.99) translateY(-7.5px); }
-          74% { transform: scale(1.06, 0.95) translateY(2px); }
-          88% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+        /* 2. Hexagone: Harsh 180° / 360° Mechanical Heavy-Metal Flip & Slam */
+        @keyframes tapBurstHexagone {
+          0% { transform: rotate(0deg) translateY(0); }
+          25% { transform: translateY(-14px) rotate(90deg) scale(1.06); }
+          50% { transform: translateY(4px) rotate(180deg) scaleX(1.14) scaleY(0.88); }
+          75% { transform: translateY(-10px) rotate(270deg); }
+          90% { transform: translateY(3px) rotate(360deg) scaleX(1.08) scaleY(0.92); }
+          100% { transform: rotate(360deg) scale(1); }
+        }
+        .tap-burst-hexagone {
+          animation: tapBurstHexagone 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* 3. Livre: Snap-Shut Hardcover Clap & Tornado Page Riffle */
+        @keyframes tapBurstLivre {
+          0% { transform: scaleX(1) scaleY(1) translateY(0); }
+          22% { transform: scaleX(0.14) scaleY(1.12) translateY(-10px); }
+          45% { transform: scaleX(1.24) scaleY(0.90) translateY(4px) rotate(-4deg); }
+          68% { transform: scaleX(0.92) scaleY(1.06) translateY(-6px) rotate(4deg); }
+          85% { transform: scaleX(1.05) scaleY(0.97); }
           100% { transform: scale(1) translateY(0); }
         }
-        .sun-tap-bounce {
-          animation: sunTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        .tap-burst-livre {
+          animation: tapBurstLivre 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        /* 3. Unique Sun Rays Elastic Twirl (Smooth silky 90deg ray twirl with dynamic matching color shimmer) */
-        @keyframes sunRaysTwirl {
-          0% {
-            transform: rotate(0deg) scale(1);
-          }
-          15% {
-            transform: rotate(12deg) scale(1.03);
-            filter: drop-shadow(0 0 8px var(--mascot-glow-soft, rgba(251, 191, 36, 0.45)));
-          }
-          45% {
-            transform: rotate(75deg) scale(1.14);
-            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75)));
-          }
-          65% {
-            transform: rotate(96deg) scale(1.08);
-            filter: drop-shadow(0 0 14px var(--mascot-glow-mid, rgba(251, 191, 36, 0.6)));
-          }
-          82% {
-            transform: rotate(88deg) scale(0.98);
-            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(251, 191, 36, 0.3)));
-          }
-          100% {
-            transform: rotate(90deg) scale(1);
-            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
-          }
+        /* 4. Soleil: Supernova Charge-Up & 180° Rotary Saw-Spin */
+        @keyframes tapBurstSoleil {
+          0% { transform: scale(1) rotate(0deg); }
+          25% { transform: scale(0.72) rotate(-35deg); }
+          55% { transform: scale(1.28) rotate(145deg); }
+          80% { transform: scale(0.94) rotate(190deg); }
+          100% { transform: scale(1) rotate(180deg); }
         }
-        .sun-rays-twirl {
-          animation: sunRaysTwirl 1.25s cubic-bezier(0.25, 1.25, 0.35, 1) forwards;
+        .tap-burst-soleil {
+          animation: tapBurstSoleil 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        /* 4. Sun Joyful Face Hop (Synchronized with the floaty apex) */
-        @keyframes sunFacePop {
+        /* 5. Squircle: 3D Coin-Flip & Isometric Snap */
+        @keyframes tapBurstSquircle {
+          0% { transform: perspective(400px) rotateY(0deg) scale(1); }
+          30% { transform: perspective(400px) translateY(-16px) rotateY(180deg) rotateZ(-8deg) scale(1.12); }
+          65% { transform: perspective(400px) translateY(4px) rotateY(360deg) rotateZ(4deg) scaleX(1.10) scaleY(0.90); }
+          100% { transform: perspective(400px) rotateY(360deg) scale(1); }
+        }
+        .tap-burst-squircle {
+          animation: tapBurstSquircle 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* 6. Galet: Water-Skip Triple Ricochet */
+        @keyframes tapBurstGalet {
+          0% { transform: translate(0, 0) rotate(0deg); }
+          20% { transform: translate(-14px, 6px) rotate(-14deg) scaleX(1.15) scaleY(0.85); }
+          45% { transform: translate(12px, -16px) rotate(12deg) scale(0.95); }
+          70% { transform: translate(-6px, 4px) rotate(-6deg) scaleX(1.10) scaleY(0.90); }
+          100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+        .tap-burst-galet {
+          animation: tapBurstGalet 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* 7. Capsule: Spring-Loaded Pill Launcher & 360° Backflip */
+        @keyframes tapBurstCapsule {
+          0% { transform: translateY(0) scale(1) rotate(0deg); }
+          22% { transform: translateY(14px) scaleX(1.28) scaleY(0.65); }
+          55% { transform: translateY(-28px) scaleX(0.85) scaleY(1.18) rotate(-180deg); }
+          82% { transform: translateY(5px) scaleX(1.14) scaleY(0.88) rotate(-360deg); }
+          100% { transform: translateY(0) scale(1) rotate(-360deg); }
+        }
+        .tap-burst-capsule {
+          animation: tapBurstCapsule 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* 8. Triangle: Onigiri Corner-Kick & Pendulum Rock */
+        @keyframes tapBurstTriangle {
+          0% { transform: translate(0,0) rotate(0deg); }
+          25% { transform: translate(-10px, -8px) rotate(-28deg) scale(1.06); }
+          55% { transform: translate(10px, -12px) rotate(26deg) scale(1.06); }
+          80% { transform: translate(0, 6px) rotate(0deg) scaleX(1.22) scaleY(0.80); }
+          100% { transform: scale(1); }
+        }
+        .tap-burst-triangle {
+          animation: tapBurstTriangle 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+          transform-origin: 50% 75%;
+        }
+
+        /* 9. Nuage: Thundercloud Squeeze & Lightning Shudder */
+        @keyframes tapBurstNuage {
+          0% { transform: scale(1); }
+          25% { transform: scaleX(0.74) scaleY(0.78) translateY(6px); }
+          45% { transform: scaleX(1.26) scaleY(1.18) translate(-6px, -10px); }
+          55% { transform: scaleX(1.22) scaleY(1.14) translate(6px, -10px); }
+          65% { transform: scaleX(1.16) scaleY(1.10) translate(-4px, -6px); }
+          100% { transform: scale(1) translate(0,0); }
+        }
+        .tap-burst-nuage {
+          animation: tapBurstNuage 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* 10. Goutte: Water Balloon Splat & High-Frequency Jelly Wobble */
+        @keyframes tapBurstGoutte {
           0% { transform: scale(1) translateY(0); }
-          38% { transform: scale(1.10) translateY(-3.5px); }
-          60% { transform: scale(1.04) translateY(-2px); }
-          80% { transform: scale(0.98) translateY(0.5px); }
+          20% { transform: translateY(-18px) scaleX(0.78) scaleY(1.26); }
+          42% { transform: translateY(12px) scaleX(1.42) scaleY(0.62); }
+          62% { transform: translateY(-6px) scaleX(0.86) scaleY(1.16); }
+          80% { transform: translateY(3px) scaleX(1.10) scaleY(0.92); }
           100% { transform: scale(1) translateY(0); }
         }
-        .sun-face-pop {
-          animation: sunFacePop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        .tap-burst-goutte {
+          animation: tapBurstGoutte 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
 
-        /* 5. Ambient Sun Typing Energy Glow with dynamic matching color */
+        /* 11. Oeuf: Frantic Egg-Crack Shake & Pop-Jump */
+        @keyframes tapBurstOeuf {
+          0% { transform: rotate(0deg); }
+          12% { transform: rotate(-22deg) translateX(-4px); }
+          24% { transform: rotate(22deg) translateX(4px); }
+          36% { transform: rotate(-20deg) translateX(-3px); }
+          48% { transform: rotate(20deg) translateX(3px); }
+          68% { transform: translateY(-20px) rotate(0deg) scaleX(0.90) scaleY(1.14); }
+          86% { transform: translateY(4px) scaleX(1.12) scaleY(0.90); }
+          100% { transform: scale(1); }
+        }
+        .tap-burst-oeuf {
+          animation: tapBurstOeuf 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+          transform-origin: 50% 85%;
+        }
+
+        /* 12. Fromage: Mouse-Trap Snap & Elastic Wedge Flip */
+        @keyframes tapBurstFromage {
+          0% { transform: rotate(0deg); }
+          28% { transform: translateX(8px) translateY(-6px) rotate(32deg) scale(0.95); }
+          52% { transform: translateX(-10px) translateY(6px) rotate(-16deg) scaleX(1.24) scaleY(0.80); }
+          76% { transform: translateY(-10px) rotate(6deg) scaleX(0.94) scaleY(1.08); }
+          100% { transform: rotate(0deg) scale(1); }
+        }
+        .tap-burst-fromage {
+          animation: tapBurstFromage 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* Facial Tap Impact Reactions & Counter-Rotations */
+        @keyframes tapFaceHexagone {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(-360deg); }
+        }
+        .tap-face-hexagone {
+          animation: tapFaceHexagone 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+        }
+
+        @keyframes tapFaceSoleil {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(-180deg); }
+        }
+        .tap-face-soleil {
+          animation: tapFaceSoleil 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes tapFaceImpact {
+          0% { transform: scale(1); }
+          20% { transform: scale(1.12, 0.86); }
+          48% { transform: scale(0.94, 1.08); }
+          75% { transform: scale(1.04, 0.96); }
+          100% { transform: scale(1); }
+        }
+        .tap-face-impact {
+          animation: tapFaceImpact 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* Ambient Sun Typing Energy Glow with dynamic matching color */
         @keyframes sunTypingGlow {
           0%, 100% {
             filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(251, 191, 36, 0.4)));
@@ -368,48 +505,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: sunTypingGlow 1.2s ease-in-out infinite;
         }
 
-        /* 6. Unique Hexagon Tumble Roll (Physical 360-degree roll across ground and back) */
-        @keyframes hexagonTapRoll {
-          0% {
-            transform: translateX(0px) translateY(0px) rotate(0deg);
-          }
-          8% {
-            transform: translateX(-4px) translateY(1.5px) rotate(-14deg);
-          }
-          22% {
-            transform: translateX(12px) translateY(-5px) rotate(90deg);
-          }
-          36% {
-            transform: translateX(24px) translateY(0px) rotate(195deg);
-          }
-          50% {
-            transform: translateX(34px) translateY(-6px) rotate(295deg);
-          }
-          58% {
-            transform: translateX(38px) translateY(1px) rotate(360deg) scale(0.92, 1.08);
-            filter: drop-shadow(0 0 16px var(--mascot-glow-intense, rgba(59, 130, 246, 0.8)));
-          }
-          68% {
-            transform: translateX(26px) translateY(-5px) rotate(260deg);
-          }
-          80% {
-            transform: translateX(10px) translateY(0px) rotate(125deg);
-          }
-          90% {
-            transform: translateX(-5px) translateY(-1.5px) rotate(-18deg);
-          }
-          96% {
-            transform: translateX(1.5px) translateY(0px) rotate(6deg);
-          }
-          100% {
-            transform: translateX(0px) translateY(0px) rotate(0deg);
-          }
-        }
-        .hexagon-tap-roll {
-          animation: hexagonTapRoll 1.25s cubic-bezier(0.25, 1, 0.35, 1) forwards;
-        }
-
-        /* 7. Unique Hexagon Rocking Roll while typing */
+        /* Unique Hexagon Rocking Roll while typing */
         @keyframes hexagonTypingRock {
           0%, 100% {
             transform: translateX(0px) translateY(0px) rotate(0deg);
@@ -432,53 +528,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: hexagonTypingRock 0.85s ease-in-out infinite;
         }
 
-        /* 8. Unique Circle In-Place Superball Squish Bounce (Extended 1.25s) */
-        @keyframes circleTapBounce {
-          0% {
-            transform: translateY(0px) scale(1, 1);
-          }
-          10% {
-            /* Deep floor squash before launch */
-            transform: translateY(5px) scale(1.36, 0.64);
-          }
-          24% {
-            /* Rocket launch with vertical elongation */
-            transform: translateY(-20px) scale(0.76, 1.30);
-          }
-          38% {
-            /* Floaty apex hang-time with theme glow flare */
-            transform: translateY(-24px) scale(1.06, 0.94);
-            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(59, 130, 246, 0.8)));
-          }
-          52% {
-            /* Gravity drop stretch */
-            transform: translateY(-8px) scale(0.86, 1.16);
-          }
-          62% {
-            /* Rebound ground squash */
-            transform: translateY(3.5px) scale(1.26, 0.76);
-          }
-          74% {
-            /* Secondary rebound hop */
-            transform: translateY(-9px) scale(0.90, 1.10);
-          }
-          84% {
-            /* Cushioned landing */
-            transform: translateY(1px) scale(1.08, 0.94);
-          }
-          92% {
-            /* Soft jelly ripple settle */
-            transform: translateY(-0.5px) scale(0.98, 1.02);
-          }
-          100% {
-            transform: translateY(0px) scale(1, 1);
-          }
-        }
-        .circle-tap-bounce {
-          animation: circleTapBounce 1.25s cubic-bezier(0.28, 1.4, 0.35, 1) forwards;
-        }
-
-        /* 9. Circle Buoyant Levitation Pulse while typing */
+        /* Circle Buoyant Levitation Pulse while typing */
         @keyframes circleTypingLevitate {
           0%, 100% {
             transform: translateY(0px) scale(1, 1);
@@ -497,7 +547,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: circleTypingLevitate 0.9s ease-in-out infinite;
         }
 
-        /* 10. Book Rapid Page Swipe Flutter Keyframes */
+        /* Book Rapid Page Swipe Flutter Keyframes */
         @keyframes bookPageSwipe {
           0% {
             transform: scaleX(1);
@@ -549,24 +599,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: bookPageSwipe 0.26s cubic-bezier(0.4, 0, 0.2, 1) 0.30s infinite;
         }
 
-        /* 11. Book Tap Hop */
-        @keyframes bookTapBounce {
-          0% { transform: scale(1, 1) translateY(0); }
-          12% { transform: scale(1.10, 0.88) translateY(2.5px); }
-          32% {
-            transform: scale(0.92, 1.10) translateY(-12px);
-            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(244, 63, 94, 0.8)));
-          }
-          56% { transform: scale(1.02, 0.98) translateY(-8px); }
-          76% { transform: scale(1.06, 0.95) translateY(2px); }
-          90% { transform: scale(0.98, 1.01) translateY(-0.5px); }
-          100% { transform: scale(1, 1) translateY(0); }
-        }
-        .book-tap-bounce {
-          animation: bookTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        /* 12. Book Typing Rhythm Glow */
+        /* Book Typing Rhythm Glow */
         @keyframes bookTypingGlow {
           0%, 100% {
             filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(244, 63, 94, 0.4)));
@@ -581,21 +614,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: bookTypingGlow 0.8s ease-in-out infinite;
         }
 
-        /* 13. Cloud Tactile Marshmallow Jelly Bounce */
-        @keyframes cloudTapPuff {
-          0% { transform: scale(1, 1) translateY(0); }
-          12% { transform: scale(1.28, 0.74) translateY(4px); }
-          32% { transform: scale(0.82, 1.22) translateY(-16px); }
-          52% { transform: scale(1.14, 0.90) translateY(-6px); }
-          68% { transform: scale(0.94, 1.06) translateY(2px); }
-          84% { transform: scale(1.03, 0.97) translateY(-1px); }
-          100% { transform: scale(1, 1) translateY(0); }
-        }
-        .cloud-tap-puff {
-          animation: cloudTapPuff 1.1s cubic-bezier(0.28, 1.4, 0.58, 1) forwards;
-        }
-
-        /* 14. Cloud Typing Fluffy Atmospheric Bob */
+        /* Cloud Typing Fluffy Atmospheric Bob */
         @keyframes cloudTypingDrift {
           0%, 100% {
             filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(147, 197, 253, 0.35)));
@@ -862,112 +881,127 @@ export const BloubMascot = React.memo(function BloubMascot({
           transition: 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
-        <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
-          <g style={{ transformOrigin: '50% 50%' }}>
-            {renderUnderlay ? (
-              renderUnderlay(bodyHex)
-            ) : (
+        <g
+          key={isTapping ? `tap-${tapCount}` : 'idle'}
+          onAnimationEnd={() => setIsTapping(false)}
+          className={`mascot-tap-rig ${isTapping ? `tap-burst-${normShape}` : `idle-${normShape}`}`}
+          style={{ transformOrigin: '50% 50%', transformBox: 'fill-box' }}
+        >
+          {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
+          <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
+            <g style={{ transformOrigin: '50% 50%' }}>
+              {renderUnderlay ? (
+                renderUnderlay(bodyHex)
+              ) : (
+                <path
+                  key={`underlay-${normShape}`}
+                  d={shapeD}
+                  fill={bodyHex}
+                  transform="translate(0, 3)"
+                  filter="brightness(0.82)"
+                  style={{
+                    pointerEvents: 'none',
+                    transition: 'fill 0.2s ease',
+                  }}
+                />
+              )}
+
               <path
-                key={`underlay-${normShape}`}
+                key={`body-${normShape}`}
                 d={shapeD}
                 fill={bodyHex}
-                transform="translate(0, 3)"
-                filter="brightness(0.82)"
+                className="mascot-body-path"
                 style={{
-                  pointerEvents: 'none',
                   transition: 'fill 0.2s ease',
+                  filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
                 }}
               />
-            )}
 
-            <path
-              key={`body-${normShape}`}
-              d={shapeD}
-              fill={bodyHex}
-              className="mascot-body-path"
-              style={{
-                transition: 'fill 0.2s ease',
-                filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
-              }}
-            />
+              {/* Rapid Page Swipe Flutter Layer for Book */}
+              {isBook && (
+                <g className="book-pages-layer" style={{ pointerEvents: 'none' }}>
+                  <g
+                    className={isTapping ? 'book-page-swipe-tap-1' : 'opacity-0'}
+                    style={{ transformOrigin: '50px 50px' }}
+                  >
+                    <path
+                      d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                      fill="rgba(255, 255, 255, 0.40)"
+                      stroke="rgba(255, 255, 255, 0.70)"
+                      strokeWidth="1.2"
+                    />
+                  </g>
 
-            {/* Rapid Page Swipe Flutter Layer for Book */}
-            {isBook && (
-              <g className="book-pages-layer" style={{ pointerEvents: 'none' }}>
-                <g
-                  className={isBouncing ? 'book-page-swipe-tap-1' : 'opacity-0'}
-                  style={{ transformOrigin: '50px 50px' }}
-                >
-                  <path
-                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                    fill="rgba(255, 255, 255, 0.40)"
-                    stroke="rgba(255, 255, 255, 0.70)"
-                    strokeWidth="1.2"
-                  />
+                  <g
+                    className={isTapping ? 'book-page-swipe-tap-2' : 'opacity-0'}
+                    style={{ transformOrigin: '50px 50px' }}
+                  >
+                    <path
+                      d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                      fill="rgba(255, 255, 255, 0.45)"
+                      stroke="rgba(255, 255, 255, 0.75)"
+                      strokeWidth="1.2"
+                    />
+                  </g>
+
+                  <g
+                    className={isTapping ? 'book-page-swipe-tap-3' : 'opacity-0'}
+                    style={{ transformOrigin: '50px 50px' }}
+                  >
+                    <path
+                      d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                      fill="rgba(255, 255, 255, 0.40)"
+                      stroke="rgba(255, 255, 255, 0.70)"
+                      strokeWidth="1.2"
+                    />
+                  </g>
+
+                  <g
+                    className={
+                      isTapping
+                        ? 'book-page-swipe-tap-4'
+                        : 'opacity-0'
+                    }
+                    style={{ transformOrigin: '50px 50px' }}
+                  >
+                    <path
+                      d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                      fill="rgba(255, 255, 255, 0.35)"
+                      stroke="rgba(255, 255, 255, 0.65)"
+                      strokeWidth="1.2"
+                    />
+                  </g>
                 </g>
+              )}
 
-                <g
-                  className={isBouncing ? 'book-page-swipe-tap-2' : 'opacity-0'}
-                  style={{ transformOrigin: '50px 50px' }}
-                >
-                  <path
-                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                    fill="rgba(255, 255, 255, 0.45)"
-                    stroke="rgba(255, 255, 255, 0.75)"
-                    strokeWidth="1.2"
-                  />
-                </g>
-
-                <g
-                  className={isBouncing ? 'book-page-swipe-tap-3' : 'opacity-0'}
-                  style={{ transformOrigin: '50px 50px' }}
-                >
-                  <path
-                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                    fill="rgba(255, 255, 255, 0.40)"
-                    stroke="rgba(255, 255, 255, 0.70)"
-                    strokeWidth="1.2"
-                  />
-                </g>
-
-                <g
-                  className={
-                    isBouncing
-                      ? 'book-page-swipe-tap-4'
-                      : 'opacity-0'
-                  }
-                  style={{ transformOrigin: '50px 50px' }}
-                >
-                  <path
-                    d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
-                    fill="rgba(255, 255, 255, 0.35)"
-                    stroke="rgba(255, 255, 255, 0.65)"
-                    strokeWidth="1.2"
-                  />
-                </g>
-              </g>
-            )}
-
-            {renderExtra && renderExtra()}
+              {renderExtra && renderExtra()}
+            </g>
           </g>
-        </g>
 
-        {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
-        <g
-          ref={faceGroupRef}
-          className="mascot-face-group"
-          style={{
-            transformOrigin: '50% 50%',
-            opacity: isSleeping ? 0.45 : 1,
-            transition: 'opacity 0.2s ease-in-out',
-          }}
-        >
+          {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
           <g
-            transform={FACE_TRANSFORMS[normShape] || getFaceTransform(normShape)}
-            style={{ transformOrigin: '50% 50%' }}
+            ref={faceGroupRef}
+            className={`mascot-face-group mascot-face-rig ${
+              isTapping
+                ? normShape === 'hexagone'
+                  ? 'tap-face-hexagone'
+                  : normShape === 'soleil'
+                  ? 'tap-face-soleil'
+                  : 'tap-face-impact'
+                : ''
+            }`}
+            style={{
+              transformOrigin: '50% 50%',
+              opacity: isSleeping ? 0.45 : 1,
+              transition: 'opacity 0.2s ease-in-out',
+            }}
           >
-            {renderExpression(eyeColor, isLight)}
+            <g
+              transform={FACE_TRANSFORMS[normShape] || getFaceTransform(normShape)}
+              style={{ transformOrigin: '50% 50%' }}
+            >
+              {renderExpression(eyeColor, isLight)}
+            </g>
           </g>
         </g>
       </g>

@@ -2023,7 +2023,7 @@ export default function Home() {
               /* Hero Header Banner for My Lists */
               <div className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-4 sm:gap-5 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] bg-[var(--theme-surface,#12141a)]/70 backdrop-blur-md shadow-lg">
                 <div 
-                  className="relative cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible flex-shrink-0"
+                  className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible flex-shrink-0"
                   onClick={() => triggerMascot('orbit', 'heureux')}
                   title="Interact with Bloub"
                 >
@@ -2717,7 +2717,7 @@ export default function Home() {
             className={`flex justify-center relative items-center transition-all duration-300 overflow-visible ${showAddModal ? 'mb-1 pt-0' : 'mb-3 pt-2 pb-1'}`}
           >
             <div 
-              className="relative cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible" 
+              className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible" 
               onClick={() => triggerMascot('orbit', 'heureux')}
             >
               {(() => {
@@ -3228,7 +3228,7 @@ export default function Home() {
                   {/* Mascot Preview & XP Bar */}
                   <div className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] mb-2">
                     <div 
-                      className="w-16 h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                      className="w-16 h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => triggerMascot('orbit', 'heureux')}
                     >
                       <BloubMascot 
@@ -3335,7 +3335,7 @@ export default function Home() {
                   <div className={`p-5 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
                     <div className="flex items-center gap-4">
                       <div 
-                        className="w-14 h-14 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                        className="w-14 h-14 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
                         onClick={() => triggerMascot('orbit', 'heureux')}
                       >
                         <BloubMascot 
