@@ -505,39 +505,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: circleTapBounce 1.25s cubic-bezier(0.28, 1.4, 0.35, 1) forwards;
         }
 
-        /* 9. Circle Air Flow Particles Burst on Tap */
-        @keyframes circleAirBlast {
-          0% {
-            opacity: 0;
-            transform: translateY(0) scale(0.8);
-          }
-          12% {
-            opacity: 0.35;
-            transform: translateY(3px) scale(1.1);
-          }
-          26% {
-            opacity: 1;
-            transform: translateY(14px) scale(1.05);
-            filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(59, 130, 246, 0.8)));
-          }
-          48% {
-            opacity: 0.85;
-            transform: translateY(20px) scale(1.18);
-          }
-          72% {
-            opacity: 0.25;
-            transform: translateY(24px) scale(1.28);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(28px) scale(1.35);
-          }
-        }
-        .circle-air-blast {
-          animation: circleAirBlast 1.25s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-        }
-
-        /* 10. Circle Air Cushion Levitation while typing */
+        /* 9. Circle Buoyant Levitation Pulse while typing */
         @keyframes circleTypingLevitate {
           0%, 100% {
             transform: translateY(0px) scale(1, 1);
@@ -555,108 +523,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         .circle-typing-levitate {
           animation: circleTypingLevitate 0.9s ease-in-out infinite;
         }
-
-        /* 11. Continuous Airflow Stream while typing */
-        @keyframes circleAirLevitate {
-          0%, 100% {
-            opacity: 0.45;
-            transform: translateY(1.5px) scale(0.98);
-          }
-          50% {
-            opacity: 0.95;
-            transform: translateY(-3.5px) scale(1.04);
-            filter: drop-shadow(0 0 8px var(--mascot-glow-mid, rgba(59, 130, 246, 0.6)));
-          }
-        }
-        .circle-air-levitate {
-          animation: circleAirLevitate 0.9s ease-in-out infinite;
-        }
       `}</style>
-
-      {/* Layer 0: Circle Aerodynamic Air Flow Streamlines & Breeze Particles */}
-      {isCircle && (
-        <g
-          className={`circle-air-layer ${
-            isBouncing
-              ? 'circle-air-blast'
-              : activeTyping
-              ? 'circle-air-levitate'
-              : 'opacity-0'
-          }`}
-          style={{
-            pointerEvents: 'none',
-            transformOrigin: '50% 50%',
-            transition: 'opacity 0.25s ease',
-          }}
-        >
-          {/* Left curved slipstream air streaks */}
-          <path
-            d="M 12 30 C 4 42 4 58 12 70"
-            fill="none"
-            stroke="var(--mascot-glow-mid, rgba(255,255,255,0.45))"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 6 40 C 1 48 1 54 6 62"
-            fill="none"
-            stroke="var(--mascot-glow-soft, rgba(255,255,255,0.3))"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-
-          {/* Right curved slipstream air streaks */}
-          <path
-            d="M 88 30 C 96 42 96 58 88 70"
-            fill="none"
-            stroke="var(--mascot-glow-mid, rgba(255,255,255,0.45))"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 94 40 C 99 48 99 54 94 62"
-            fill="none"
-            stroke="var(--mascot-glow-soft, rgba(255,255,255,0.3))"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-
-          {/* Bottom downward air thrust whoosh jets */}
-          <line
-            x1="38"
-            y1="82"
-            x2="38"
-            y2="96"
-            stroke="var(--mascot-glow-soft, rgba(255,255,255,0.35))"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <line
-            x1="50"
-            y1="85"
-            x2="50"
-            y2="102"
-            stroke="var(--mascot-glow-intense, rgba(255,255,255,0.65))"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <line
-            x1="62"
-            y1="82"
-            x2="62"
-            y2="96"
-            stroke="var(--mascot-glow-soft, rgba(255,255,255,0.35))"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-
-          {/* Air flow levitation breeze particles */}
-          <circle cx="18" cy="22" r="2" fill="var(--mascot-glow-mid, rgba(255,255,255,0.5))" />
-          <circle cx="82" cy="20" r="2.5" fill="var(--mascot-glow-mid, rgba(255,255,255,0.5))" />
-          <circle cx="14" cy="62" r="1.5" fill="var(--mascot-glow-soft, rgba(255,255,255,0.4))" />
-          <circle cx="86" cy="64" r="1.8" fill="var(--mascot-glow-soft, rgba(255,255,255,0.4))" />
-        </g>
-      )}
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
       <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
