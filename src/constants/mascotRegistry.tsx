@@ -129,6 +129,24 @@ export const SHAPE_PATHS: Record<string, string> = {
 };
 
 /**
+ * Precise Face Transforms per Shape to prevent eye and blush clipping.
+ */
+export const FACE_TRANSFORMS: Record<string, string> = {
+  squircle: 'translate(0, 1) scale(1)',
+  cercle:   'translate(0, 1) scale(1)',
+  galet:    'translate(0, 5) scale(1.02)',
+  capsule:  'translate(0, 1) scale(0.84)',
+  triangle: 'translate(0, 13) scale(0.85)',
+  hexagone: 'translate(0, 1) scale(0.95)',
+  nuage:    'translate(0, 6) scale(0.92)',
+  goutte:   'translate(0, 12) scale(0.84)',
+  oeuf:     'translate(0, 7) scale(0.86)',
+  soleil:   'translate(0, 1) scale(0.86)',
+  fromage:  'translate(-2, 6) scale(0.88)',
+  livre:    'translate(0, -2) scale(0.95)',
+};
+
+/**
  * Shape underlays rendered BEHIND the primary body path (back cover rim, bookmark tails).
  */
 export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNode> = {

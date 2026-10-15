@@ -7,6 +7,7 @@ import {
   SHAPE_PATHS,
   SHAPE_EXTRAS,
   SHAPE_UNDERLAYS,
+  FACE_TRANSFORMS,
   EXPRESSION_RENDERERS,
   resolveColor,
   isLightColor,
@@ -178,10 +179,9 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
       }
 
-      // 4. Calculate coordinates for face group (livre has a -2px vertical center offset)
-      const baseOffsetY = normShape === 'livre' ? -2 : 0;
+      // 4. Calculate coordinates for face group
       const faceX = currentLook.current.x * 7.2;
-      const faceY = currentLook.current.y * 5.2 + floatY * 0.4 + baseOffsetY;
+      const faceY = currentLook.current.y * 5.2 + floatY * 0.4;
       const headTilt = currentLook.current.x * 3.4;
 
       // Update DOM directly for zero React reconciliation cost
@@ -278,14 +278,26 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
       `}</style>
 
-      {/* Layer 1 & 2: Shape-specific underlays (e.g. livre back cover rim & bottom ribbon) */}
-      {renderUnderlay && (
+      {/* Layer 1: Shape underlay OR bottom cushion depth (brightness 0.82) */}
+      {renderUnderlay ? (
         <g style={{ transformOrigin: '50% 50%' }}>
           {renderUnderlay(bodyHex)}
         </g>
+      ) : (
+        <path
+          d={shapeD}
+          fill={bodyHex}
+          transform="translate(0, 3.2)"
+          filter="brightness(0.82)"
+          style={{
+            pointerEvents: 'none',
+            transformOrigin: '50% 50%',
+            transition: 'd 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s ease',
+          }}
+        />
       )}
 
-      {/* Layer 3: Mascot Silhouette Body Path with Morphs */}
+      {/* Layer 2: Main Silhouette Body Path with Morphs */}
       <path
         ref={bodyPathRef}
         d={shapeD}
@@ -299,6 +311,16 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       />
 
+      {/* Layer 3: Glossy Highlight Overlay */}
+      {normShape !== 'livre' && (
+        <path
+          d="M26 24 C34 17 50 16 62 19 C52 21 36 23 26 24 Z"
+          fill="#FFFFFF"
+          opacity="0.22"
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
+
       {/* Layer 4: Shape-specific decorative accessories (cheese holes, sprout, book spine crease) */}
       {renderExtra && (
         <g ref={extrasGroupRef} style={{ transformOrigin: '50% 50%' }}>
@@ -306,7 +328,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         </g>
       )}
 
-      {/* Mascot Expression / Face Group with 120fps Mouse Tracking */}
+      {/* Layer 5: Mascot Expression / Face Group with 120fps Mouse Tracking & Per-Shape Transform */}
       <g
         ref={faceGroupRef}
         className="mascot-face-group"
@@ -315,7 +337,12 @@ export const BloubMascot = React.memo(function BloubMascot({
           opacity: isSleeping ? 0.45 : 1,
         }}
       >
-        {renderExpression(eyeColor, isLight)}
+        <g
+          transform={FACE_TRANSFORMS[normShape] || 'translate(0, 1) scale(1)'}
+          style={{ transformOrigin: '50% 50%' }}
+        >
+          {renderExpression(eyeColor, isLight)}
+        </g>
       </g>
     </svg>
   );

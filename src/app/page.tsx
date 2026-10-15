@@ -2537,8 +2537,8 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2.5 self-start sm:self-auto bg-white/[0.03] border border-white/[0.08] rounded-full px-3.5 py-1.5 text-xs text-zinc-300">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Flame size={13} className="text-amber-400" />
-                  <span>{studyStreak} Day Streak</span>
+                  <span className="select-none text-xs">🔥</span>
+                  <span>{studyStreak} Day Streak 🔥</span>
                 </span>
                 <span className="text-zinc-600">•</span>
                 <span className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
@@ -2590,17 +2590,17 @@ export default function Home() {
               <div className={`p-5 rounded-2xl ${t.card} flex flex-col justify-between relative overflow-hidden group border`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Study Streak</span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
-                    <Flame size={16} />
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-sm">
+                    <span className="select-none">🔥</span>
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-baseline gap-1 mb-1">
+                  <div className="flex items-baseline gap-1.5 mb-1">
                     <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-amber-400">
                       {studyStreak}
                     </span>
                     <span className="text-sm font-bold text-amber-400/80">Days</span>
-                    <span className="text-base">🔥</span>
+                    <span className="text-base select-none">🔥</span>
                   </div>
                   <p className={`text-[11px] ${t.textSecondary}`}>
                     Daily momentum active
@@ -2633,102 +2633,73 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Middle Row: Compact 90-Day Activity Heatmap (< 220px high) */}
-            <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            {/* Middle Row: 90-Day Activity & Study Heatmap (Wide Expansive Layout) */}
+            <div className={`p-5 sm:p-6 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-[var(--theme-primary,#3b82f6)]" />
+                    <Calendar size={17} className="text-[var(--theme-primary,#3b82f6)]" />
                     <h3 className={`text-sm sm:text-base font-bold ${t.textPrimary}`}>
-                      90-Day Activity Heatmap
+                      90-Day Activity & Study Heatmap
                     </h3>
                   </div>
                   <p className={`text-xs mt-0.5 ${t.textSecondary}`}>
-                    Daily task completions and study sessions
+                    Daily task completions and study sessions over the last 12 weeks
                   </p>
                 </div>
-                {/* 3-Mini-Stat Summary Strip */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06] text-right">
-                    <span className="text-[9px] uppercase tracking-wider text-zinc-500 block font-semibold">Total Sessions</span>
-                    <span className="text-xs font-mono font-bold text-white">{heatmapData.totalContributions}</span>
-                  </div>
-                  <div className="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06] text-right">
-                    <span className="text-[9px] uppercase tracking-wider text-zinc-500 block font-semibold">Best Streak</span>
-                    <span className="text-xs font-mono font-bold text-amber-400">{heatmapData.bestStreak}d</span>
-                  </div>
-                  <div className="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06] text-right">
-                    <span className="text-[9px] uppercase tracking-wider text-zinc-500 block font-semibold">Active Days</span>
-                    <span className="text-xs font-mono font-bold text-[var(--theme-primary,#3b82f6)]">{heatmapData.activeDays}/84</span>
-                  </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {hoveredHeatmapDay && (
+                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/10 text-white animate-in fade-in duration-150">
+                      {hoveredHeatmapDay.count} activities • {hoveredHeatmapDay.label}
+                    </span>
+                  )}
+                  <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-white/5 border border-white/10 text-[var(--theme-primary,#3b82f6)]">
+                    {heatmapData.totalContributions} Contributions
+                  </span>
                 </div>
               </div>
 
-              {/* Heatmap Grid with Mon/Wed/Fri labels & Months header */}
-              <div className="overflow-x-auto pb-1 custom-scrollbar">
-                <div className="min-w-[500px] flex gap-2">
-                  {/* Day of Week Labels */}
-                  <div className="flex flex-col justify-between pt-4 pb-0.5 text-[9px] font-mono text-zinc-500 select-none w-6 shrink-0">
-                    <span>Mon</span>
-                    <span>Wed</span>
-                    <span>Fri</span>
-                  </div>
+              {/* Heatmap Grid (Wide & Expansive) */}
+              <div className="overflow-x-auto pb-2 custom-scrollbar">
+                {/* Month Labels on top */}
+                <div className="min-w-[560px] flex justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500 mb-2 px-1">
+                  <span>JUL</span>
+                  <span>AUG</span>
+                  <span>SEP</span>
+                  <span>OCT</span>
+                </div>
 
-                  {/* Columns */}
-                  <div className="flex-1 flex flex-col">
-                    {/* Month headers row */}
-                    <div className="flex justify-between text-[9px] font-mono uppercase tracking-wider text-zinc-500 mb-1 px-0.5">
-                      {heatmapData.weeks.map((week, idx) => {
-                        const d = new Date(week[0].date);
-                        const prevMonth = idx > 0 ? new Date(heatmapData.weeks[idx - 1][0].date).getMonth() : null;
-                        const isNewMonth = idx === 0 || d.getMonth() !== prevMonth;
+                <div className="min-w-[560px] flex items-center justify-between gap-1.5 pt-1 pb-1">
+                  {heatmapData.weeks.map((week, wIndex) => (
+                    <div key={`week-${wIndex}`} className="flex flex-col gap-1.5 flex-1">
+                      {week.map((day) => {
+                        const count = day.count;
+                        let cellBg = 'bg-white/[0.04] border border-white/[0.05]';
+                        if (count === 1) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/25 border border-[var(--theme-primary,#3b82f6)]/35';
+                        else if (count === 2) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/50 border border-[var(--theme-primary,#3b82f6)]/60';
+                        else if (count === 3) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/75 border border-[var(--theme-primary,#3b82f6)]/80 shadow-sm shadow-[var(--theme-primary,#3b82f6)]/20';
+                        else if (count >= 4) cellBg = 'bg-[var(--theme-primary,#3b82f6)] border border-white/20 shadow-sm shadow-[var(--theme-primary,#3b82f6)]/40';
+
                         return (
-                          <span key={`month-${idx}`} className="flex-1 text-left">
-                            {isNewMonth ? d.toLocaleDateString('en-US', { month: 'short' }) : ''}
-                          </span>
+                          <div
+                            key={day.date}
+                            onMouseEnter={() => setHoveredHeatmapDay(day)}
+                            onMouseLeave={() => setHoveredHeatmapDay(null)}
+                            className={`w-full aspect-square rounded-[4px] transition-all duration-150 cursor-pointer hover:scale-125 hover:z-20 ${cellBg}`}
+                            title={`${day.count} activities on ${day.label}`}
+                          />
                         );
                       })}
                     </div>
-
-                    {/* Cells Columns (12 weeks x 7 days) */}
-                    <div className="flex items-center justify-between gap-1 sm:gap-1.5">
-                      {heatmapData.weeks.map((week, wIndex) => (
-                        <div key={`week-${wIndex}`} className="flex flex-col gap-1 sm:gap-1.5 flex-1">
-                          {week.map((day) => {
-                            const count = day.count;
-                            let cellBg = 'bg-white/[0.04] border border-white/[0.05]';
-                            if (count === 1) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/25 border border-[var(--theme-primary,#3b82f6)]/35';
-                            else if (count === 2) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/50 border border-[var(--theme-primary,#3b82f6)]/60';
-                            else if (count === 3) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/75 border border-[var(--theme-primary,#3b82f6)]/80 shadow-sm shadow-[var(--theme-primary,#3b82f6)]/20';
-                            else if (count >= 4) cellBg = 'bg-[var(--theme-primary,#3b82f6)] border border-white/20 shadow-sm shadow-[var(--theme-primary,#3b82f6)]/40';
-
-                            return (
-                              <div key={day.date} className="relative group w-full flex items-center justify-center">
-                                <div
-                                  className={`w-full aspect-square max-w-[20px] rounded-[3px] sm:rounded-[4px] transition-all duration-150 cursor-pointer hover:ring-2 hover:ring-white/40 ${cellBg}`}
-                                />
-                                {/* Micro Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap">
-                                  <div className="bg-zinc-900 border border-white/15 text-white text-[10px] font-medium py-1 px-2 rounded-md shadow-xl">
-                                    {day.count} {day.count === 1 ? 'activity' : 'activities'} • {day.label}
-                                  </div>
-                                  <div className="w-1.5 h-1.5 bg-zinc-900 border-r border-b border-white/15 rotate-45 -mt-1" />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Heatmap Legend */}
-              <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-white/[0.06] text-[11px] text-zinc-400">
+              {/* Heatmap Legend with Fire Emoji */}
+              <div className="flex items-center justify-between pt-3 mt-1 border-t border-white/[0.06] text-[11px] text-zinc-400">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Flame size={12} className="text-amber-400" />
-                  <span>Consistency: {Math.min(100, Math.round((heatmapData.totalContributions / 84) * 100))}%</span>
+                  <span className="select-none text-sm">🔥</span>
+                  <span>Consistency Score: {Math.min(100, Math.round((heatmapData.totalContributions / 84) * 100))}%</span>
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-zinc-500">Less</span>
