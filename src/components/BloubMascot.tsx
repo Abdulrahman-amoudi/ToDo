@@ -271,6 +271,10 @@ export const BloubMascot = React.memo(function BloubMascot({
         isBouncing ? 'mascot-squish-active' : ''
       } ${
         isThinking ? '-rotate-6 scale-105' : ''
+      } ${
+        isStatic || size <= 44 ? 'mascot-static' : ''
+      } ${
+        activeTyping ? 'mascot-typing' : ''
       } ${className}`}
       style={{
         cursor: onInteract || (!isStatic && animated) ? 'pointer' : 'default',
@@ -654,6 +658,124 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
         .grok-dot-3 {
           animation: grokDotWave 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.30s infinite;
+        }
+
+        /* 16. Mascot Facial Feature Live Micro-Animations */
+        @keyframes mascotBlink {
+          0%, 92%, 100% {
+            transform: scaleY(1);
+          }
+          95% {
+            transform: scaleY(0.1);
+          }
+          98% {
+            transform: scaleY(1);
+          }
+        }
+        .eye-blink {
+          transform-box: fill-box;
+          transform-origin: center 45px;
+          animation: mascotBlink 4.2s ease-in-out infinite;
+        }
+
+        @keyframes laughChortleMouth {
+          0%, 100% { transform: scale(1, 1); }
+          25% { transform: scale(1.05, 1.18); }
+          50% { transform: scale(0.96, 0.88); }
+          75% { transform: scale(1.03, 1.12); }
+        }
+        @keyframes laughChortleEyes {
+          0%, 100% { transform: translateY(0); }
+          25% { transform: translateY(-1.5px); }
+          50% { transform: translateY(0); }
+          75% { transform: translateY(-1.5px); }
+        }
+        .laugh-mouth {
+          transform-box: fill-box;
+          transform-origin: 50px 55px;
+          animation: laughChortleMouth 0.44s ease-in-out infinite;
+        }
+        .laugh-eyes {
+          animation: laughChortleEyes 0.44s ease-in-out infinite;
+        }
+
+        @keyframes tearDripSway {
+          0%, 100% { transform: rotate(-6deg); }
+          50% { transform: rotate(6deg) scaleY(1.06); }
+        }
+        .tear-drip {
+          transform-origin: 74px 46px;
+          animation: tearDripSway 2.4s ease-in-out infinite;
+        }
+
+        @keyframes effrayeTremor {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-1px); }
+          75% { transform: translateX(1px); }
+        }
+        .effraye-pupils {
+          animation: effrayeTremor 0.12s linear infinite;
+        }
+
+        @keyframes sleepZzzFloat {
+          0% {
+            transform: translate(0, 0) scale(0.85);
+            opacity: 0.35;
+          }
+          50% {
+            transform: translate(2px, -3.5px) scale(1.05);
+            opacity: 0.95;
+          }
+          80% {
+            transform: translate(3px, -6px) scale(1.1);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translate(4px, -8px) scale(1.15);
+            opacity: 0;
+          }
+        }
+        @keyframes sleepMouthBreathe {
+          0%, 100% { transform: scale(0.85); }
+          50% { transform: scale(1.25); }
+        }
+        .sleep-zzz {
+          animation: sleepZzzFloat 2.8s ease-in-out infinite;
+        }
+        .sleep-mouth {
+          transform-box: fill-box;
+          transform-origin: 50px 58px;
+          animation: sleepMouthBreathe 3.0s ease-in-out infinite;
+        }
+
+        @keyframes mouthPulseO {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.12); }
+        }
+        .mouth-pulse {
+          transform-box: fill-box;
+          transform-origin: 50px 59px;
+          animation: mouthPulseO 2.2s ease-in-out infinite;
+        }
+
+        /* Suppress facial micro-animations when static, typing, or tiny (size <= 44) */
+        .mascot-static .eye-blink,
+        .mascot-static .laugh-mouth,
+        .mascot-static .laugh-eyes,
+        .mascot-static .tear-drip,
+        .mascot-static .effraye-pupils,
+        .mascot-static .sleep-zzz,
+        .mascot-static .sleep-mouth,
+        .mascot-static .mouth-pulse,
+        .mascot-typing .eye-blink,
+        .mascot-typing .laugh-mouth,
+        .mascot-typing .laugh-eyes,
+        .mascot-typing .tear-drip,
+        .mascot-typing .effraye-pupils,
+        .mascot-typing .sleep-zzz,
+        .mascot-typing .sleep-mouth,
+        .mascot-typing .mouth-pulse {
+          animation: none !important;
         }
       `}</style>
 

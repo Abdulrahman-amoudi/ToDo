@@ -241,159 +241,183 @@ export const EXPRESSION_RENDERERS: Record<
   string,
   (eyeColor: string, isLightBody: boolean) => React.ReactNode
 > = {
-  // 1. neutre: Two soft vertical pills
-  neutre: (eyeColor) => (
+  // 1. neutre (Calm Classic): 32px separation, y=38..53 with eye blink
+  neutre: (eyeColor = '#18181B') => (
     <g>
-      <rect x="36" y="42" width="7" height="15" rx="3.5" fill={eyeColor} />
-      <rect x="57" y="42" width="7" height="15" rx="3.5" fill={eyeColor} />
+      <rect className="eye-blink" x="30.5" y="38" width="7" height="15" rx="3.5" fill={eyeColor} />
+      <rect className="eye-blink" x="62.5" y="38" width="7" height="15" rx="3.5" fill={eyeColor} />
     </g>
   ),
 
-  // 2. timide (User Favorite): Soft vertical pills looking down-left + pink blush cheeks
-  timide: (eyeColor) => (
-    <g>
-      <rect x="37" y="45" width="6.5" height="12" rx="3.25" fill={eyeColor} />
-      <rect x="56.5" y="45" width="6.5" height="12" rx="3.25" fill={eyeColor} />
-      <ellipse cx="29" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="71" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+  // 2. attentif (Wide Starry-Eyed Focus): Taller glossy pill eyes + dual white specular highlights
+  attentif: (eyeColor = '#18181B') => (
+    <g className="eye-blink">
+      <rect x="29.75" y="36" width="8.5" height="17" rx="4.25" fill={eyeColor} />
+      <rect x="61.75" y="36" width="8.5" height="17" rx="4.25" fill={eyeColor} />
+      <circle cx="32.5" cy="40.5" r="2.4" fill="#FFFFFF" />
+      <circle cx="64.5" cy="40.5" r="2.4" fill="#FFFFFF" />
+      <circle cx="35.5" cy="49" r="1.2" fill="#FFFFFF" />
+      <circle cx="67.5" cy="49" r="1.2" fill="#FFFFFF" />
     </g>
   ),
 
-  // 3. attentif: Tall glossy pill eyes with white kawaii sparkle dot in each eye
-  attentif: (eyeColor) => (
+  // 3. surpris (Shocked Wide Eyes + Low 'O' Mouth): Clean air gap, arched brows, low mouth
+  surpris: (eyeColor = '#18181B') => (
     <g>
-      <rect x="35" y="40" width="8" height="17" rx="4" fill={eyeColor} />
-      <rect x="57" y="40" width="8" height="17" rx="4" fill={eyeColor} />
-      <circle cx="38" cy="44" r="2.2" fill="#FFFFFF" />
-      <circle cx="60" cy="44" r="2.2" fill="#FFFFFF" />
+      <path d="M28 31 Q34 26 40 31 M60 31 Q66 26 72 31" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
+      <ellipse cx="34" cy="44" rx="5" ry="6.5" fill={eyeColor} />
+      <ellipse cx="66" cy="44" rx="5" ry="6.5" fill={eyeColor} />
+      <circle cx="34" cy="41.5" r="1.8" fill="#FFFFFF" />
+      <circle cx="66" cy="41.5" r="1.8" fill="#FFFFFF" />
+      <ellipse className="mouth-pulse" cx="50" cy="59" rx="4" ry="4.8" fill={eyeColor} />
     </g>
   ),
 
-  // 4. surpris: Solid, chubby wide oval eyes with sparkle dots + cute round 'o' mouth
-  surpris: (eyeColor) => (
+  // 4. excite (Super Happy Arcs + Rosy Cheeks): Wide separated arcs at cx=34/66 + rosy blush
+  excite: (eyeColor = '#18181B') => (
     <g>
-      <rect x="34" y="40" width="9" height="14" rx="4.5" fill={eyeColor} />
-      <rect x="57" y="40" width="9" height="14" rx="4.5" fill={eyeColor} />
-      <circle cx="37" cy="43" r="2" fill="#FFFFFF" />
-      <circle cx="60" cy="43" r="2" fill="#FFFFFF" />
-      <circle cx="50" cy="59" r="3" fill={eyeColor} />
+      <path d="M27 48 Q34 36 41 48" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" fill="none" />
+      <path d="M59 48 Q66 36 73 48" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" fill="none" />
+      <ellipse cx="23" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <ellipse cx="77" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
     </g>
   ),
 
-  // 5. excite: Thick rounded upward happy arcs + pink blush cheeks
-  excite: (eyeColor) => (
+  // 5. heureux (Warm Sweet Smile + Glossy Eyes): Glossy pill eyes, blush, and smile cleanly at y=56
+  heureux: (eyeColor = '#18181B') => (
     <g>
-      <path d="M34 52 Q39.5 41 45 52" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <path d="M55 52 Q60.5 41 66 52" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
+      <g className="eye-blink">
+        <rect x="30.5" y="38" width="7" height="14" rx="3.5" fill={eyeColor} />
+        <rect x="62.5" y="38" width="7" height="14" rx="3.5" fill={eyeColor} />
+        <circle cx="33" cy="41.5" r="1.8" fill="#FFFFFF" />
+        <circle cx="65" cy="41.5" r="1.8" fill="#FFFFFF" />
+      </g>
+      <ellipse cx="23" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <ellipse cx="77" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <path d="M44 56 Q50 62 56 56" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 6. heureux: Warm gentle smile with vertical pills, pink blush cheeks, and cute curved cat mouth
-  heureux: (eyeColor) => (
+  // 6. hilare (Squinting > < Laughing Eyes + Open Pink Mouth): Separated eyes + laughing D-mouth
+  hilare: (eyeColor = '#18181B') => (
     <g>
-      <rect x="36" y="42" width="7" height="15" rx="3.5" fill={eyeColor} />
-      <rect x="57" y="42" width="7" height="15" rx="3.5" fill={eyeColor} />
-      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <path d="M46 55 Q50 59 54 55" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
+      <g className="laugh-eyes">
+        <path d="M28 39 L38 45 L28 51" stroke={eyeColor} strokeWidth="5.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M72 39 L62 45 L72 51" stroke={eyeColor} strokeWidth="5.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </g>
+      <ellipse cx="22" cy="55" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <ellipse cx="78" cy="55" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <path className="laugh-mouth" d="M42 55 L58 55 C58 64 42 64 42 55 Z" fill="#FF4D6D" stroke={eyeColor} strokeWidth="4" strokeLinejoin="round" />
     </g>
   ),
 
-  // 7. hilare: Soft rounded > < laughing eyes + pink blush cheeks + chubby happy mouth
-  hilare: (eyeColor) => (
+  // 7. colere (Fierce Cute Pout): V-brows strictly at y=31..37 with 5px clear gap above eyes at y=42
+  colere: (eyeColor = '#18181B') => (
     <g>
-      <path d="M34 44 L43 49 L34 54" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M66 44 L57 49 L66 54" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
-      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <path d="M44 56 Q50 64 56 56 Z" fill="#FF6B8B" stroke={eyeColor} strokeWidth="3.5" strokeLinejoin="round" />
+      <path d="M26 31 L40 37 M74 31 L60 37" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
+      <rect x="30.5" y="42" width="7" height="12" rx="3.5" fill={eyeColor} />
+      <rect x="62.5" y="42" width="7" height="12" rx="3.5" fill={eyeColor} />
+      <path d="M45 60 Q50 56 55 60" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 8. colere: Pouty cute angry with angled rounded pill eyebrows and slight pout curve
-  colere: (eyeColor) => (
+  // 8. triste (Droopy Puppy Eyes + Animated Teardrop): Clean brows at y=31..37, eyes at y=41, teardrop
+  triste: (eyeColor = '#18181B') => (
     <g>
-      <rect x="36" y="44" width="7" height="12" rx="3.5" fill={eyeColor} />
-      <rect x="57" y="44" width="7" height="12" rx="3.5" fill={eyeColor} />
-      <rect x="32" y="37" width="13" height="5" rx="2.5" fill={eyeColor} transform="rotate(18 38 39)" />
-      <rect x="55" y="37" width="13" height="5" rx="2.5" fill={eyeColor} transform="rotate(-18 61 39)" />
-      <path d="M46 59 Q50 56 54 59" fill="none" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" />
+      <path d="M26 37 Q33 31 40 33 M74 37 Q67 31 60 33" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <rect x="30.5" y="41" width="7" height="13" rx="3.5" fill={eyeColor} />
+      <rect x="62.5" y="41" width="7" height="13" rx="3.5" fill={eyeColor} />
+      <circle cx="33" cy="44.5" r="2" fill="#FFFFFF" />
+      <circle cx="65" cy="44.5" r="2" fill="#FFFFFF" />
+      <path d="M45 60 Q50 56 55 60" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <path className="tear-drip" d="M74 46 C74 46 79 53 79 56.5 A4.5 4.5 0 1 1 70 56.5 C70 53 74 46 74 46 Z" fill="#38BDF8" />
     </g>
   ),
 
-  // 9. triste: Soft teary vertical pill eyes with drooping pill brows + sky-blue teardrop pill
-  triste: (eyeColor) => (
+  // 9. effraye (Spooked Shrunk Pupils + Wavy Squiggle Mouth): Worried brows, sclera + jitter pupils
+  effraye: (eyeColor = '#18181B') => (
     <g>
-      <rect x="36" y="44" width="7" height="13" rx="3.5" fill={eyeColor} />
-      <rect x="57" y="44" width="7" height="13" rx="3.5" fill={eyeColor} />
-      <rect x="32" y="37" width="13" height="5" rx="2.5" fill={eyeColor} transform="rotate(-16 38 39)" />
-      <rect x="55" y="37" width="13" height="5" rx="2.5" fill={eyeColor} transform="rotate(16 61 39)" />
-      <path d="M46 60 Q50 57 54 60" fill="none" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" />
-      <rect x="65" y="52" width="4.5" height="7" rx="2.25" fill="#38BDF8" />
+      <path d="M27 33 Q34 28 40 32 M73 33 Q66 28 60 32" stroke={eyeColor} strokeWidth="4.2" strokeLinecap="round" fill="none" />
+      <ellipse cx="34" cy="44" rx="5.5" ry="6.5" fill="#FFFFFF" stroke={eyeColor} strokeWidth="3.5" />
+      <ellipse cx="66" cy="44" rx="5.5" ry="6.5" fill="#FFFFFF" stroke={eyeColor} strokeWidth="3.5" />
+      <g className="effraye-pupils">
+        <circle cx="34" cy="44" r="2.2" fill={eyeColor} />
+        <circle cx="66" cy="44" r="2.2" fill={eyeColor} />
+      </g>
+      <path d="M41 59 Q44 55 47 59 T53 59 T59 59" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 10. effraye: Shrunk vertical pill eyes with high curved worried pill brows and wavy nervous mouth
-  effraye: (eyeColor) => (
+  // 10. mefiant (Skeptical Side-Eye Glare): Heavy half-lidded bars shifted + flat mouth at y=58
+  mefiant: (eyeColor = '#18181B') => (
     <g>
-      <rect x="37" y="45" width="6" height="10" rx="3" fill={eyeColor} />
-      <rect x="57" y="45" width="6" height="10" rx="3" fill={eyeColor} />
-      <path d="M33 38 Q39 34 45 38" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M55 38 Q61 34 67 38" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M45 58 Q47.5 55 50 58 T55 58" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
+      <g transform="translate(3, 0)">
+        <rect x="28" y="42" width="12" height="5.5" rx="2.75" fill={eyeColor} />
+        <rect x="60" y="42" width="12" height="5.5" rx="2.75" fill={eyeColor} />
+      </g>
+      <line x1="45" y1="58" x2="55" y2="58" stroke={eyeColor} strokeWidth="4.2" strokeLinecap="round" />
     </g>
   ),
 
-  // 11. mefiant: Cute side-eye with chubby horizontal pills shifted right + flat unimpressed mouth
-  mefiant: (eyeColor) => (
-    <g transform="translate(3, 0)">
-      <rect x="33" y="46" width="11" height="6" rx="3" fill={eyeColor} />
-      <rect x="54" y="46" width="11" height="6" rx="3" fill={eyeColor} />
-      <line x1="45" y1="58" x2="52" y2="58" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
+  // 11. curieux (Asymmetric Inquisitive Brow & Tilt): Pill eyes, high arch brow above right eye, cute smirk
+  curieux: (eyeColor = '#18181B') => (
+    <g>
+      <rect className="eye-blink" x="30.5" y="40" width="7" height="13" rx="3.5" fill={eyeColor} />
+      <g className="eye-blink">
+        <rect x="61.5" y="36" width="8" height="16" rx="4" fill={eyeColor} />
+        <circle cx="64.5" cy="40.5" r="2" fill="#FFFFFF" />
+      </g>
+      <path d="M59 29 Q66 24 73 29" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <ellipse cx="50" cy="58" rx="2.8" ry="3.2" fill={eyeColor} />
     </g>
   ),
 
-  // 12. curieux: Asymmetric vertical pills with one thick rounded arc brow raised high
-  curieux: (eyeColor) => (
+  // 12. fier (Smug Confident Closed Arcs + Smirk): Smug closed arcs, blush ovals, confident smirk
+  fier: (eyeColor = '#18181B') => (
     <g>
-      <rect x="36" y="43" width="7" height="13" rx="3.5" fill={eyeColor} />
-      <rect x="57" y="40" width="8" height="16" rx="4" fill={eyeColor} />
-      <path d="M55 35 Q61 30.5 67 35" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
+      <path d="M27 46 Q34 39 41 46 M59 46 Q66 39 73 46" stroke={eyeColor} strokeWidth="5.2" strokeLinecap="round" fill="none" />
+      <ellipse cx="23" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <ellipse cx="77" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.65" />
+      <path d="M44 57 Q51 60 57 53" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 13. fier: Confident closed smiling upward eye arcs, pink blush cheeks, and smirk
-  fier: (eyeColor) => (
+  // 13. timide (Shy Blushing — User Favorite, Spacious & Crisp): Clean pills, prominent blush, low wobble mouth
+  timide: (eyeColor = '#18181B') => (
     <g>
-      <path d="M34 48 Q39.5 42 45 48" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <path d="M55 48 Q60.5 42 66 48" fill="none" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <ellipse cx="29" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <ellipse cx="71" cy="56" rx="5" ry="3" fill="#FF758F" opacity="0.65" />
-      <path d="M46 56 Q51 58 55 54" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <g className="eye-blink">
+        <rect x="31" y="41" width="6.5" height="12.5" rx="3.25" fill={eyeColor} />
+        <rect x="62.5" y="41" width="6.5" height="12.5" rx="3.25" fill={eyeColor} />
+      </g>
+      <ellipse cx="23" cy="53" rx="6.5" ry="3.8" fill="#FF6B8B" opacity="0.78" />
+      <ellipse cx="77" cy="53" rx="6.5" ry="3.8" fill="#FF6B8B" opacity="0.78" />
+      <path d="M47.5 56 Q50 58 52.5 56" stroke={eyeColor} strokeWidth="3.8" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 14. blase: Smooth rounded kawaii sunglasses centered (x: 31..69, width 38px)
-  blase: (eyeColor) => (
+  // 14. blase (Cool Deal-With-It Shades): Connected sunglasses with thick frames and lens glare slashes
+  blase: (eyeColor = '#18181B') => (
     <g>
-      <rect x="31" y="42" width="16" height="11" rx="4" fill={eyeColor} />
-      <rect x="53" y="42" width="16" height="11" rx="4" fill={eyeColor} />
-      <line x1="47" y1="46" x2="53" y2="46" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
-      <line x1="46" y1="59" x2="54" y2="59" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" />
+      <path d="M24 41 L76 41" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
+      <rect x="26" y="40" width="19" height="13" rx="4" fill={eyeColor} />
+      <rect x="55" y="40" width="19" height="13" rx="4" fill={eyeColor} />
+      <line x1="30" y1="49" x2="35" y2="43" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="59" y1="49" x2="64" y2="43" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="46" y1="58" x2="54" y2="58" stroke={eyeColor} strokeWidth="3.8" strokeLinecap="round" />
     </g>
   ),
 
-  // 15. somnolent: Sleepy / drowsy with curved closed drooping eyes, soft blush, and gentle 'z'
-  somnolent: (eyeColor) => (
+  // 15. somnolent (Peaceful Sleeping Eyes + Floating "Zzz" & Breathing Mouth): Downward arcs, blush, floating Zzz
+  somnolent: (eyeColor = '#18181B') => (
     <g>
-      <path d="M35 48 Q40 54 45 48" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M55 48 Q60 54 65 48" fill="none" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
-      <ellipse cx="29" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.5" />
-      <ellipse cx="71" cy="55" rx="5" ry="3" fill="#FF758F" opacity="0.5" />
-      <ellipse cx="50" cy="59" rx="2.5" ry="2" fill={eyeColor} opacity="0.75" />
-      <text x="67" y="39" fill={eyeColor} fontSize="8" fontWeight="bold" opacity="0.75" style={{ userSelect: 'none' }}>z</text>
+      <path d="M27 45 Q34 52 41 45 M59 45 Q66 52 73 45" stroke={eyeColor} strokeWidth="5" strokeLinecap="round" fill="none" />
+      <ellipse cx="23" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.5" />
+      <ellipse cx="77" cy="54" rx="5.5" ry="3.2" fill="#FF6B8B" opacity="0.5" />
+      <circle className="sleep-mouth" cx="50" cy="58" r="2.8" fill={eyeColor} />
+      <g className="sleep-zzz">
+        <text x="74" y="32" fill={eyeColor} fontSize="11" fontWeight="900" fontFamily="sans-serif">z</text>
+        <text x="81" y="24" fill={eyeColor} fontSize="14" fontWeight="900" fontFamily="sans-serif">Z</text>
+      </g>
     </g>
   ),
 };
