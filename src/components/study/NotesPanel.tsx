@@ -22,10 +22,14 @@ import {
   Lightbulb,
   Search,
   Award,
-  ArrowRight
+  ArrowRight,
+  Workflow,
+  ScrollText,
+  Image as ImageIcon
 } from 'lucide-react';
 import type { QuizResponse } from '@/types/quiz';
 import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
+import { BloubMascot } from '@/components/BloubMascot';
 
 export interface NoteData {
   text: string;
@@ -45,6 +49,7 @@ export interface NotesPanelProps {
   apiKey?: string;
   isDark?: boolean;
   initialNote?: NoteData;
+  initialTab?: PanelTab;
   onChange: (pageNumber: number, note: NoteData) => void;
   onDirty?: () => void;
   panelMode?: NotesPanelState;
@@ -78,6 +83,7 @@ export const NotesPanel = React.memo(function NotesPanel({
   apiKey = '',
   isDark = true,
   initialNote,
+  initialTab,
   onChange,
   onDirty,
   panelMode = 'expanded',
@@ -93,7 +99,13 @@ export const NotesPanel = React.memo(function NotesPanel({
 }: NotesPanelProps) {
   const getDraftKey = useCallback((pg: number) => `note_draft_${docId}_${pg}`, [docId]);
 
-  const [activeTab, setActiveTab] = useState<PanelTab>('ai');
+  const [activeTab, setActiveTab] = useState<PanelTab>(initialTab || 'ai');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const [localNote, setLocalNote] = useState<NoteData>(() => {
     if (typeof window !== 'undefined') {
@@ -114,16 +126,8 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  // AI Chat State
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: 'init',
-      role: 'assistant',
-      text: `Hello! I'm your **NotebookLM** study companion powered by **Gemini 3.8 Flash**.\n\nI answer questions grounded **strictly in this document** without making up facts. Tap a quick action below or ask me anything!`,
-      grounded: true,
-      timestamp: Date.now()
-    }
-  ]);
+  // AI Chat State: start clean so Hero Welcome Canvas renders when empty
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [queryInput, setQueryInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -141,6 +145,7 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [quizError, setQuizError] = useState<string | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, { isCorrect: boolean; selectedIdx: number; feedback: string }>>({});
   const [quizCurrentIdx, setQuizCurrentIdx] = useState(0);
+  const [quizQuestionCount, setQuizQuestionCount] = useState<number>(8);
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -369,7 +374,7 @@ export const NotesPanel = React.memo(function NotesPanel({
           model: 'gemini-3.8-flash',
           noteTitle: `${docTitle} (Pg. ${pageNumber})`,
           noteContent: noteContentForQuiz || 'Study document content',
-          config: { questionCount: 4, difficulty: 'medium' }
+          config: { questionCount: quizQuestionCount || 8, difficulty: 'medium' }
         })
       });
 
@@ -505,7 +510,7 @@ export const NotesPanel = React.memo(function NotesPanel({
   // Common Header & Segmented Switcher
   const panelHeader = (
     <div className={`p-3 border-b flex flex-col gap-2.5 shrink-0 ${
-      isDark ? 'border-white/10 bg-zinc-950/80 backdrop-blur-xl' : 'border-gray-200 bg-white'
+      isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]/90 backdrop-blur-xl' : 'border-gray-200 bg-white'
     }`}>
       {/* Top row: Page title, collapse, and status */}
       <div className="flex items-center justify-between">
@@ -513,7 +518,7 @@ export const NotesPanel = React.memo(function NotesPanel({
           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg bg-[var(--theme-primary,#6366f1)]/15 text-[var(--theme-primary,#818cf8)] border border-[var(--theme-primary,#6366f1)]/25 flex items-center gap-1.5">
             <Sparkles size={11} className="text-[var(--theme-primary,#818cf8)]" /> Gemini 3.8 Flash
           </span>
-          <span className="text-xs font-mono font-semibold text-zinc-400">
+          <span className="text-xs font-mono font-semibold text-[var(--theme-text-muted)]">
             Pg. {pageNumber}
           </span>
           {onToggleBook && (
@@ -523,7 +528,7 @@ export const NotesPanel = React.memo(function NotesPanel({
               className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 ${
                 isBookMinimized
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
-                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+                  : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] hover:text-white border border-[var(--theme-border)]'
               }`}
               title={isBookMinimized ? "Restore split view with book" : "Minimize book to focus on study notes"}
             >
@@ -540,7 +545,7 @@ export const NotesPanel = React.memo(function NotesPanel({
               onChange={handleLangChange}
               className={`text-[11px] px-2.5 py-1 rounded-xl border outline-none cursor-pointer transition-colors ${
                 isDark
-                  ? 'bg-white/5 border-white/10 text-zinc-300'
+                  ? 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-secondary)]'
                   : 'bg-gray-50 border-gray-200 text-gray-700'
               }`}
             >
@@ -555,7 +560,7 @@ export const NotesPanel = React.memo(function NotesPanel({
               if (onClose) onClose();
               else updatePanelState('rail');
             }}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+            className="p-1.5 rounded-xl text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-subtle)] active:scale-95 transition-all"
             title="Collapse Panel"
           >
             <PanelRightClose size={16} />
@@ -564,17 +569,17 @@ export const NotesPanel = React.memo(function NotesPanel({
       </div>
 
       {/* Segmented Control Bar */}
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-white/[0.03] border border-white/10 text-xs font-semibold backdrop-blur-md">
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)]/60 text-xs font-semibold backdrop-blur-md">
         <button
           type="button"
           onClick={() => setActiveTab('ai')}
           className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 ${
             activeTab === 'ai'
               ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+              : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
           }`}
         >
-          <Sparkles size={13} className={activeTab === 'ai' ? 'text-white' : 'text-zinc-400'} />
+          <Sparkles size={13} className={activeTab === 'ai' ? 'text-white' : 'text-[var(--theme-text-muted)]'} />
           <span>Gemini AI</span>
         </button>
 
@@ -584,10 +589,10 @@ export const NotesPanel = React.memo(function NotesPanel({
           className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 relative ${
             activeTab === 'notes'
               ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+              : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
           }`}
         >
-          <PenTool size={13} className={activeTab === 'notes' ? 'text-white' : 'text-zinc-400'} />
+          <PenTool size={13} className={activeTab === 'notes' ? 'text-white' : 'text-[var(--theme-text-muted)]'} />
           <span>Notes</span>
           {hasPageNotes && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
         </button>
@@ -598,10 +603,10 @@ export const NotesPanel = React.memo(function NotesPanel({
           className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 ${
             activeTab === 'quiz'
               ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+              : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
           }`}
         >
-          <HelpCircle size={13} className={activeTab === 'quiz' ? 'text-white' : 'text-zinc-400'} />
+          <HelpCircle size={13} className={activeTab === 'quiz' ? 'text-white' : 'text-[var(--theme-text-muted)]'} />
           <span>Quiz</span>
         </button>
       </div>
@@ -610,119 +615,233 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   // TAB 1: GEMINI 3.8 AI CHAT
   const renderAiStudio = () => (
-    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden relative">
+    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden relative bg-[var(--theme-surface)]">
       {/* Dynamic Theme-Reactive Background Ambient Glow */}
       <div className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out z-0 overflow-hidden" aria-hidden="true">
         <div 
-          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[380px] h-[320px] rounded-full blur-[100px] opacity-25 transition-all duration-700" 
+          className="absolute -top-16 left-1/2 -translate-x-1/2 w-[440px] h-[360px] rounded-full blur-[110px] opacity-40 transition-all duration-700" 
           style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }} 
         />
         <div 
-          className="absolute top-1/2 -right-16 w-[240px] h-[240px] rounded-full blur-[90px] opacity-15 transition-all duration-700" 
-          style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }} 
+          className="absolute top-1/2 -right-16 w-[300px] h-[300px] rounded-full blur-[100px] opacity-30 transition-all duration-700" 
+          style={{ background: 'radial-gradient(circle, var(--theme-accent, var(--theme-primary, #6366f1)) 0%, transparent 70%)' }} 
         />
       </div>
 
-      {/* Quick Prompt Chips */}
-      <div className="p-2.5 border-b border-white/10 flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-zinc-950/40 relative z-10">
+      {/* Quick Prompt Chips Bar */}
+      <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-[var(--theme-surface-elevated)]/60 backdrop-blur-md relative z-10">
+        <button
+          type="button"
+          onClick={() => handleAskAi(`Build a Visual Concept Tree and Step-by-Step Study Roadmap for Page ${pageNumber}. Break down: 1) What foundational concepts to start with first, 2) Core mechanisms, rules, or formulas to learn, 3) Mastery summary and connection nodes. Format with visual node branches, flow arrows, and hierarchy.`, 'ask')}
+          disabled={isAiLoading}
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+        >
+          <Workflow size={12} className="text-purple-400" />
+          <span>Concept Tree</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAskAi(`Transform the events, concepts, and people on Page ${pageNumber} into a vivid, memorable story narrative. Make it engaging, historically contextual, and easy to retain for exams while remaining 100% grounded in the text.`, 'ask')}
+          disabled={isAiLoading}
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+        >
+          <ScrollText size={12} className="text-amber-400" />
+          <span>Story Mode</span>
+        </button>
         <button
           type="button"
           onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
-          <Zap size={12} className="text-amber-400" />
+          <Zap size={12} className="text-sky-400" />
           <span>Summarize Page</span>
         </button>
         <button
           type="button"
           onClick={() => handleAskAi(`Extract key takeaways from page ${pageNumber}.`, 'summarize', 'key_takeaways')}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
           <Lightbulb size={12} className="text-yellow-400" />
           <span>Key Takeaways</span>
         </button>
         <button
           type="button"
-          onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply.`, 'ask')}
+          onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply with practical examples.`, 'ask')}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
-          <Search size={12} className="text-sky-400" />
+          <Search size={12} className="text-emerald-400" />
           <span>Explain Concepts</span>
         </button>
       </div>
 
-      {/* Messages Thread */}
+      {/* Messages Thread or Hero Welcome Canvas */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar relative z-10">
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-150`}
-          >
-            {msg.role === 'user' ? (
-              <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs font-medium leading-relaxed bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-white shadow-sm">
-                <p dir="auto">{msg.text}</p>
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[460px] h-full text-center p-3 sm:p-5 space-y-6 animate-in fade-in duration-300">
+            {/* Mascot with Glowing Theme Aura */}
+            <div className="relative group select-none">
+              <div 
+                className="absolute inset-0 rounded-full blur-2xl opacity-50 scale-125 transition-all duration-700 pointer-events-none"
+                style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }}
+              />
+              <div 
+                className="relative z-10 transition-transform duration-300 group-hover:scale-105 active:scale-95 cursor-pointer" 
+                onClick={() => triggerMascot?.('bounce', 'heureux', true)}
+                title="Tap Mascot"
+              >
+                <BloubMascot size={72} state="idle" expression="curieux" isStatic={false} />
               </div>
-            ) : (
-              <div className="w-full rounded-2xl rounded-tl-sm p-4 text-xs leading-relaxed bg-zinc-950/80 border border-white/10 backdrop-blur-xl text-zinc-100 shadow-xl space-y-3">
-                {/* Identity header */}
-                <div className="flex items-center justify-between pb-2 border-b border-white/10 text-[10px] text-zinc-400 select-none">
-                  <div className="flex items-center gap-1.5 font-bold tracking-tight text-[var(--theme-primary,#818cf8)]">
-                    <Sparkles size={11} />
-                    <span>NotebookLM • Gemini 3.8 Flash</span>
-                  </div>
-                  {msg.grounded && (
-                    <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 size={10} /> 100% Grounded
-                    </span>
-                  )}
+            </div>
+
+            {/* Header / Intro */}
+            <div className="space-y-1.5 max-w-sm">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30">
+                <Sparkles size={11} />
+                <span>Gemini 3.8 Flash • Study Studio</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                What would you like to master on Pg. {pageNumber}?
+              </h3>
+              <p className="text-xs text-[var(--theme-text-muted)] leading-relaxed">
+                Grounded 100% in this document. Ask questions, construct concept trees, or turn lessons into stories.
+              </p>
+            </div>
+
+            {/* 4 Rich Starter Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md pt-1 text-left">
+              <button
+                type="button"
+                onClick={() => handleAskAi(`Build a Visual Concept Tree and Step-by-Step Study Roadmap for Page ${pageNumber}. Break down: 1) What foundational concepts to start with first, 2) Core mechanisms, rules, or formulas to learn, 3) Mastery summary and connection nodes. Format with visual node branches, flow arrows, and hierarchy.`, 'ask')}
+                disabled={isAiLoading}
+                className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
+              >
+                <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                  <Workflow size={16} />
                 </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-[var(--theme-primary)] transition-colors">Concept Map Tree</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Visual roadmap of what concepts to start with first</p>
+                </div>
+              </button>
 
-                {/* Rich Formatted Markdown with Arabic BiDi support */}
-                <StudyMarkdownRenderer content={msg.text} />
+              <button
+                type="button"
+                onClick={() => handleAskAi(`Transform the events, concepts, and people on Page ${pageNumber} into a vivid, memorable story narrative. Make it engaging, historically contextual, and easy to retain for exams while remaining 100% grounded in the text.`, 'ask')}
+                disabled={isAiLoading}
+                className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
+              >
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                  <ScrollText size={16} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">Storytelling Mode</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Turn historical events & facts into a vivid tale</p>
+                </div>
+              </button>
 
-                {/* Footer with citations and actions */}
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
-                  <div className="flex items-center gap-1.5">
-                    {msg.citations && msg.citations.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-zinc-300 font-mono text-[10px]">
-                        {msg.citations.join(', ')}
+              <button
+                type="button"
+                onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
+                disabled={isAiLoading}
+                className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
+              >
+                <div className="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
+                  <Zap size={16} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-sky-300 transition-colors">Summarize Page</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Extract core takeaways and main bullet points</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply with practical examples.`, 'ask')}
+                disabled={isAiLoading}
+                className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                  <Search size={16} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Formulas & Concepts</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Break down equations, terms, and scientific laws</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : (
+          messages.map(msg => (
+            <div
+              key={msg.id}
+              className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-150`}
+            >
+              {msg.role === 'user' ? (
+                <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs font-medium leading-relaxed bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-white shadow-sm">
+                  <p dir="auto">{msg.text}</p>
+                </div>
+              ) : (
+                <div className="w-full rounded-2xl rounded-tl-sm p-4 text-xs leading-relaxed bg-[var(--theme-surface-elevated)]/90 border border-[var(--theme-border)] backdrop-blur-xl text-[var(--theme-text-primary)] shadow-xl space-y-3">
+                  {/* Identity header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--theme-border)] text-[10px] text-[var(--theme-text-muted)] select-none">
+                    <div className="flex items-center gap-1.5 font-bold tracking-tight text-[var(--theme-primary,#818cf8)]">
+                      <Sparkles size={11} />
+                      <span>NotebookLM • Gemini 3.8 Flash</span>
+                    </div>
+                    {msg.grounded && (
+                      <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 size={10} /> 100% Grounded
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleAppendToNotes(msg.text)}
-                      className="hover:text-white px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1 transition-all active:scale-95"
-                      title="Append to Page Notes"
-                    >
-                      <Plus size={11} /> Add to Notes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(msg.text);
-                        setCopiedId(msg.id);
-                        setTimeout(() => setCopiedId(null), 2000);
-                      }}
-                      className="hover:text-white p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1 transition-all active:scale-95"
-                      title="Copy response"
-                    >
-                      {copiedId === msg.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
-                    </button>
+                  {/* Rich Formatted Markdown with Arabic BiDi support */}
+                  <StudyMarkdownRenderer content={msg.text} />
+
+                  {/* Footer with citations and actions */}
+                  <div className="pt-2 border-t border-[var(--theme-border)] flex items-center justify-between text-[11px] text-[var(--theme-text-muted)]">
+                    <div className="flex items-center gap-1.5">
+                      {msg.citations && msg.citations.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] font-mono text-[10px]">
+                          {msg.citations.join(', ')}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleAppendToNotes(msg.text)}
+                        className="hover:text-white px-2.5 py-1 rounded-lg bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] flex items-center gap-1 transition-all active:scale-95"
+                        title="Append to Page Notes"
+                      >
+                        <Plus size={11} /> Add to Notes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(msg.text);
+                          setCopiedId(msg.id);
+                          setTimeout(() => setCopiedId(null), 2000);
+                        }}
+                        className="hover:text-white p-1.5 rounded-lg bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] flex items-center gap-1 transition-all active:scale-95"
+                        title="Copy response"
+                      >
+                        {copiedId === msg.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))
+        )}
 
         {isAiLoading && (
-          <div className="flex items-center gap-2 p-3 rounded-2xl bg-zinc-950/80 border border-white/10 text-xs text-zinc-300 w-fit animate-pulse backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-[var(--theme-surface-elevated)]/90 border border-[var(--theme-border)] text-xs text-[var(--theme-text-primary)] w-fit animate-pulse backdrop-blur-md shadow-lg">
             <Sparkles size={13} className="text-[var(--theme-primary)] animate-spin" />
             <span>Gemini 3.8 Flash formulating response...</span>
           </div>
@@ -762,15 +881,15 @@ export const NotesPanel = React.memo(function NotesPanel({
         <div ref={chatBottomRef} />
       </div>
 
-      {/* Input row */}
+      {/* Floating Input Dock */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleAskAi();
         }}
-        className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-xl shrink-0 relative z-10"
+        className="p-3 border-t border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]/90 backdrop-blur-xl shrink-0 relative z-10"
       >
-        <div className="relative flex items-center bg-white/[0.04] border border-white/10 focus-within:border-[var(--theme-primary,#6366f1)] focus-within:ring-2 focus-within:ring-[var(--theme-primary,#6366f1)]/20 rounded-2xl transition-all pl-3.5 pr-1.5 py-1.5 shadow-inner">
+        <div className="relative flex items-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] focus-within:border-[var(--theme-primary,#6366f1)] focus-within:ring-2 focus-within:ring-[var(--theme-primary,#6366f1)]/20 rounded-2xl transition-all pl-3.5 pr-1.5 py-1.5 shadow-inner">
           <input
             type="text"
             value={queryInput}
@@ -778,7 +897,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             placeholder={`Ask Gemini about ${docTitle || 'document'}...`}
             disabled={isAiLoading}
             dir="auto"
-            className="flex-1 bg-transparent text-xs text-white placeholder:text-zinc-500 outline-none font-sans"
+            className="flex-1 bg-transparent text-xs text-white placeholder:text-[var(--theme-text-muted)] outline-none font-sans"
           />
           <button
             type="submit"
@@ -837,33 +956,55 @@ export const NotesPanel = React.memo(function NotesPanel({
     const currentAnswer = currentQ ? quizAnswers[currentQ.id] : null;
 
     return (
-      <div className="flex flex-col flex-1 h-full min-h-0 overflow-y-auto p-4 custom-scrollbar">
+      <div className="flex flex-col flex-1 h-full min-h-0 overflow-y-auto p-4 custom-scrollbar bg-[var(--theme-surface)]">
         {!quizData && !quizLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)]/30 flex items-center justify-center text-[var(--theme-primary)]">
-              <HelpCircle size={24} />
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-5 animate-in fade-in duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)]/30 flex items-center justify-center text-[var(--theme-primary)] shadow-inner">
+              <HelpCircle size={28} />
             </div>
-            <div>
-              <h4 className="text-sm font-bold text-white mb-1">Interactive Mastery Quiz</h4>
-              <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
-                Test your knowledge of Page {pageNumber} with AI questions generated by Gemini 3.8 Flash.
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-white">Interactive Mastery Quiz</h4>
+              <p className="text-xs text-[var(--theme-text-muted)] max-w-xs leading-relaxed">
+                Test your comprehension of Page {pageNumber} with rigorous questions formulated strictly from this document.
               </p>
             </div>
+
+            {/* Question Count Selector */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)]">Quiz Size</span>
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs font-semibold">
+                {[5, 8, 10].map(count => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setQuizQuestionCount(count)}
+                    className={`px-3 py-1 rounded-lg transition-all ${
+                      quizQuestionCount === count
+                        ? 'bg-[var(--theme-primary)] text-white shadow-xs font-bold'
+                        : 'text-[var(--theme-text-muted)] hover:text-white'
+                    }`}
+                  >
+                    {count} Questions
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={handleGenerateInPanelQuiz}
-              className="py-2.5 px-4 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
+              className="py-2.5 px-5 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
             >
-              <Sparkles size={14} /> Generate Quiz for Page {pageNumber}
+              <Sparkles size={14} /> Generate {quizQuestionCount}-Question Quiz
             </button>
           </div>
         )}
 
         {quizLoading && (
           <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-3 animate-pulse">
-            <Sparkles size={28} className="text-[var(--theme-primary)] animate-spin" />
-            <h4 className="text-sm font-bold text-white">Generating Quiz with Gemini 3.8...</h4>
-            <p className="text-xs text-zinc-400">Formulating grounded questions from this document.</p>
+            <Sparkles size={30} className="text-[var(--theme-primary)] animate-spin" />
+            <h4 className="text-sm font-bold text-white">Formulating {quizQuestionCount} Questions...</h4>
+            <p className="text-xs text-[var(--theme-text-muted)]">NotebookLM engine is verifying document facts.</p>
           </div>
         )}
 
@@ -898,7 +1039,7 @@ export const NotesPanel = React.memo(function NotesPanel({
 
         {quizData && currentQ && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs text-zinc-400 pb-2 border-b border-white/10">
+            <div className="flex items-center justify-between text-xs text-[var(--theme-text-muted)] pb-2 border-b border-[var(--theme-border)]">
               <span className="font-bold text-zinc-200">
                 Question {quizCurrentIdx + 1} of {questions.length}
               </span>
@@ -911,6 +1052,16 @@ export const NotesPanel = React.memo(function NotesPanel({
                 <RotateCcw size={12} /> Reset
               </button>
             </div>
+
+            {/* Visual Diagram / Mental Model Card */}
+            {currentQ.imageCaption && (
+              <div className="p-3 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-primary)] flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] shrink-0">
+                  <ImageIcon size={15} />
+                </div>
+                <span className="font-medium text-xs leading-relaxed">{currentQ.imageCaption}</span>
+              </div>
+            )}
 
             <div dir="auto" className="text-sm sm:text-base font-bold text-white leading-relaxed [unicode-bidi:plaintext] text-start">
               <StudyMarkdownRenderer content={currentQ.question} />
@@ -951,7 +1102,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             )}
 
             {currentAnswer && (
-              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-2 animate-in fade-in" dir="auto">
+              <div className="p-3.5 rounded-xl bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-xs space-y-2 animate-in fade-in" dir="auto">
                 <div className="flex items-center gap-1.5 font-bold">
                   {currentAnswer.isCorrect ? (
                     <span className="text-emerald-400 flex items-center gap-1">
@@ -969,7 +1120,7 @@ export const NotesPanel = React.memo(function NotesPanel({
                   <StudyMarkdownRenderer content={currentAnswer.feedback} />
                 </div>
                 {currentQ.sourceCitation && (
-                  <p className="text-[10px] text-zinc-400 italic text-start pt-1.5 border-t border-white/5" dir="auto">
+                  <p className="text-[10px] text-[var(--theme-text-muted)] italic text-start pt-1.5 border-t border-[var(--theme-border)]" dir="auto">
                     <span className="font-semibold text-zinc-300">Citation:</span> <bdi className="[unicode-bidi:isolate]">{currentQ.sourceCitation}</bdi>
                   </p>
                 )}
@@ -1054,7 +1205,7 @@ export const NotesPanel = React.memo(function NotesPanel({
         isBookMinimized ? 'flex-1 w-full min-w-0' : 'flex-shrink-0'
       } ${
         isDark
-          ? 'border-white/10 bg-zinc-950/80 backdrop-blur-xl'
+          ? 'border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-2xl text-[var(--theme-text-primary)]'
           : 'border-gray-200 bg-[#fffdf5]'
       }`}
       data-spatial-container="notes-expanded"

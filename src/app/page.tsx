@@ -197,7 +197,16 @@ export default function Home() {
       setAuthCooldown(30);
       setAuthSuccessMsg(`A 6-digit login code was sent to ${cleanEmail}.`);
     } catch (err: any) {
-      setAuthError(err.message || 'Failed to send verification code. Please check your email.');
+      const msg = String(err?.message || '');
+      if (
+        msg.toLowerCase().includes('rate limit') || 
+        msg.toLowerCase().includes('over_email_send_rate_limit') ||
+        err?.status === 429
+      ) {
+        setAuthError('Supabase email limit exceeded (free projects cap OTP emails at 3/hour). Please tap "Continue with Google" below for instant 1-click login without waiting!');
+      } else {
+        setAuthError(msg || 'Failed to send verification code. Please check your email.');
+      }
     } finally {
       setAuthLoading(false);
     }

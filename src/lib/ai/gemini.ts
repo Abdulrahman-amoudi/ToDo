@@ -254,7 +254,7 @@ export class GeminiClient {
       throw err;
     }
 
-    const questionCount = Math.max(1, config?.questionCount || 3);
+    const questionCount = Math.max(1, config?.questionCount || 8);
     const difficulty: QuizDifficulty = config?.difficulty || 'medium';
     const types: QuestionType[] = config?.types && config.types.length > 0 ? config.types : ['multiple_choice'];
 
@@ -267,8 +267,9 @@ Rules:
 3. For true_false questions, options must be ["True", "False"], correctAnswerIndex must be 0 for True or 1 for False.
 4. For short_answer questions, include correctAnswerText explaining the ideal student response.
 5. Include a precise explanation citing the specific section or quote from the note in sourceCitation.
-6. Output MUST be valid JSON adhering exactly to the requested schema.
-7. Language and Mixed Bidirectional Formatting (Arabic + English / Math / Science):
+6. When questions involve visual setups, geometry, electrical circuits, physics forces, or timelines, provide an "imageCaption" summarizing the mental diagram or formula card (e.g. "Diagram: Series circuit with 2 resistors" or "Timeline: Treaty negotiations in 1919").
+7. Output MUST be valid JSON adhering exactly to the requested schema.
+8. Language and Mixed Bidirectional Formatting (Arabic + English / Math / Science):
    - Always match the primary language of the source document (e.g. if the note is in Arabic, write questions, options, and explanations in Arabic).
    - In Arabic questions and explanations containing Latin variables, scientific units, or math equations (e.g. W, J, V, Hz, N, kg, m/s, P_max, P_avg, 2 × 75 = 150):
      * Always enclose mathematical formulas, equations, and standalone units inside inline backticks (e.g. \`P_avg = 0.5 * P_max\` or \`75 W\` or \`W\`). This guarantees perfect bidirectional rendering without inverted numbers or misplaced punctuation.
@@ -297,6 +298,7 @@ Required JSON Output Schema:
       "correctAnswerText": "string (for short_answer only)",
       "explanation": "string",
       "sourceCitation": "string (verbatim quote or concept reference)",
+      "imageCaption": "string (optional visual diagram description)",
       "difficulty": "${difficulty}"
     }
   ]
@@ -339,7 +341,9 @@ Required JSON Output Schema:
         correctAnswerText: q.correctAnswerText,
         explanation: q.explanation || 'Refer to the source note for explanation.',
         sourceCitation: q.sourceCitation || noteTitle || 'Source Note',
-        difficulty: (q.difficulty as QuizDifficulty) || difficulty
+        difficulty: (q.difficulty as QuizDifficulty) || difficulty,
+        imageCaption: q.imageCaption,
+        imageUrl: q.imageUrl
       };
     });
 
@@ -488,7 +492,17 @@ CRITICAL ANTI-HALLUCINATION RULES:
 3. If only a partial answer is in the document, share only the grounded part and clarify what the document does not mention.
 4. When stating facts, cite the location when applicable (e.g. [Page ${pageNumber || 1}] or quote the relevant phrase).
 5. If the document or question is in Arabic, respond in clear, fluent Arabic.
-6. Format answers with markdown headers, concise bullet points, and bold key terms.`;
+6. Format answers with markdown headers, concise bullet points, and bold key terms.
+7. CONCEPT TREE / ROADMAP MODE:
+   - When asked for a concept tree, mind map, or what to start with:
+     Structure the answer as a visual step-by-step roadmap:
+     * 1. Foundation & Prerequisites (What you need to know first)
+     * 2. Core Principles & Mechanisms (The central ideas and equations)
+     * 3. Applications & Mastery (How it all connects and what to test)
+     Include visual branch connectors (├─, └─, ──▶) or clean markdown cards.
+8. STORYTELLING / HISTORICAL NARRATIVE MODE:
+   - When asked for Story Mode, storytelling, or historical context:
+     Transform the facts into a compelling, chronological narrative. Make historical figures, events, and tensions feel alive and memorable for exams while remaining 100% strictly grounded in the document.`;
 
     let historyText = '';
     if (chatHistory.length > 0) {

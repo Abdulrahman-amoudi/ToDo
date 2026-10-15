@@ -64,6 +64,7 @@ export default function PdfNotebookViewer({
   const [isDragging, setIsDragging] = useState(false);
   const [showPdfUi, setShowPdfUi] = useState(true);
   const [showNotes, setShowNotes] = useState(true);
+  const [activeNotesTab, setActiveNotesTab] = useState<'ai' | 'notes' | 'quiz'>('ai');
   const [isBookMinimized, setIsBookMinimized] = useState(false);
   const [pendingText, setPendingText] = useState<{x: number, y: number, text: string, color?: string, fontSize?: number, id?: number} | null>(null);
   const [viewerEngine, setViewerEngine] = useState<'pdfjs' | 'native'>('pdfjs');
@@ -1080,9 +1081,16 @@ export default function PdfNotebookViewer({
                <div className="w-px h-4 bg-[var(--theme-border)] mx-1"></div>
 
                <button 
-                 onClick={() => setShowNotes(!showNotes)} 
+                 onClick={() => {
+                   if (showNotes && activeNotesTab === 'notes') {
+                     setShowNotes(false);
+                   } else {
+                     setShowNotes(true);
+                     setActiveNotesTab('notes');
+                   }
+                 }} 
                  className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                   showNotes 
+                   showNotes && activeNotesTab === 'notes'
                      ? 'text-[var(--theme-primary)] bg-[var(--theme-primary)]/20 border border-[var(--theme-primary)]/30' 
                      : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
                  }`} 
@@ -1090,6 +1098,27 @@ export default function PdfNotebookViewer({
                  aria-label="Toggle Notes"
                >
                  <Sidebar size={16}/>
+               </button>
+
+               <button
+                 type="button"
+                 onClick={() => {
+                   if (showNotes && activeNotesTab === 'quiz') {
+                     setShowNotes(false);
+                   } else {
+                     setShowNotes(true);
+                     setActiveNotesTab('quiz');
+                   }
+                 }}
+                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all active:scale-[0.98] border ${
+                   showNotes && activeNotesTab === 'quiz'
+                     ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)] shadow-sm font-bold'
+                     : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] border-[var(--theme-border)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text-primary)]'
+                 }`}
+                 title="Interactive AI Quiz for Document"
+               >
+                 <HelpCircle size={14} />
+                 <span className="text-xs font-bold hidden sm:inline">Quiz</span>
                </button>
 
                <div className="w-px h-4 bg-[var(--theme-border)] mx-1"></div>
@@ -1535,10 +1564,10 @@ export default function PdfNotebookViewer({
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
-            onClick={() => setShowNotes(true)}
+            onClick={() => { setShowNotes(true); setActiveNotesTab('ai'); }}
             className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--theme-primary,#6366f1)]/20 text-[var(--theme-primary,#818cf8)] border border-[var(--theme-primary,#6366f1)]/40 hover:brightness-110 active:scale-95 transition-all shadow-md"
-            title="Expand AI Studio & Notes"
-            aria-label="Expand Notes"
+            title="Expand AI Studio"
+            aria-label="Expand AI"
           >
             <Sparkles size={16} />
           </button>
@@ -1553,7 +1582,7 @@ export default function PdfNotebookViewer({
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
-            onClick={() => setShowNotes(true)}
+            onClick={() => { setShowNotes(true); setActiveNotesTab('notes'); }}
             className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
             title="Open Notes"
           >
@@ -1561,7 +1590,7 @@ export default function PdfNotebookViewer({
           </button>
           <button
             type="button"
-            onClick={() => setShowNotes(true)}
+            onClick={() => { setShowNotes(true); setActiveNotesTab('quiz'); }}
             className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
             title="Open Quiz"
           >
@@ -1587,6 +1616,7 @@ export default function PdfNotebookViewer({
 
         {/* Handwriting / Markdown Notes & NotebookLM Panel */}
         <NotesPanel
+          initialTab={activeNotesTab}
           docId={noteId || notePath || 'current'}
           docTitle={noteTitle}
           documentContent={noteContent}

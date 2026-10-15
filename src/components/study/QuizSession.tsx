@@ -28,6 +28,8 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
   
   const [isFinished, setIsFinished] = useState(false);
 
+  const fallbackContent = (note.bodyContent && note.bodyContent.trim()) || note.rawContent || (note.frontmatter?.pdf_notes ? JSON.stringify(note.frontmatter.pdf_notes) : '') || note.title || 'Study document content';
+
   useEffect(() => {
     generateQuiz();
   }, []);
@@ -45,8 +47,8 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           action: 'generate',
           apiKey,
           noteTitle: note.title,
-          noteContent: note.bodyContent,
-          config: { questionCount: 5 }
+          noteContent: fallbackContent,
+          config: { questionCount: 8 }
         })
       });
       
@@ -99,7 +101,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           question: currentQ.question,
           userAnswer: text,
           expectedAnswer: currentQ.correctAnswerText,
-          noteContent: note.bodyContent
+          noteContent: fallbackContent
         })
       });
       
@@ -136,7 +138,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           action: 'hint',
           apiKey,
           question: currentQ.question,
-          noteContent: note.bodyContent
+          noteContent: fallbackContent
         })
       });
       const data = await res.json();

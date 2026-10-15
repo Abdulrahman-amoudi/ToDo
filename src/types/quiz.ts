@@ -16,6 +16,8 @@ export interface QuizQuestion {
   explanation: string;
   sourceCitation: string;
   difficulty: QuizDifficulty;
+  imageUrl?: string;
+  imageCaption?: string;
 }
 
 export interface QuizConfig {
