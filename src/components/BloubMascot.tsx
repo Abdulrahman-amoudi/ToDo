@@ -91,6 +91,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   const isSun = normShape === 'soleil';
   const isHexagon = normShape === 'hexagone';
   const isCircle = normShape === 'cercle';
+  const isBook = normShape === 'livre';
 
   // Look coordinates (normalized -1 to 1, strictly horizontal)
   const targetLook = useRef({ x: 0, y: 0 });
@@ -288,6 +289,8 @@ export const BloubMascot = React.memo(function BloubMascot({
             ? 'hexagon-tap-roll'
             : isCircle
             ? 'circle-tap-bounce'
+            : isBook
+            ? 'book-tap-bounce'
             : 'mascot-squish-active'
           : ''
       } ${
@@ -298,6 +301,8 @@ export const BloubMascot = React.memo(function BloubMascot({
             ? 'hexagon-typing-rock'
             : isCircle
             ? 'circle-typing-levitate'
+            : isBook
+            ? 'book-typing-glow'
             : ''
           : ''
       } ${
@@ -523,6 +528,90 @@ export const BloubMascot = React.memo(function BloubMascot({
         .circle-typing-levitate {
           animation: circleTypingLevitate 0.9s ease-in-out infinite;
         }
+
+        /* 10. Book Rapid Page Swipe Flutter Keyframes */
+        @keyframes bookPageSwipe {
+          0% {
+            transform: scaleX(1);
+            opacity: 0;
+          }
+          10% {
+            transform: scaleX(0.85);
+            opacity: 0.85;
+          }
+          45% {
+            transform: scaleX(0.08);
+            opacity: 0.95;
+            filter: drop-shadow(0 0 6px var(--mascot-glow-mid, rgba(255, 255, 255, 0.5)));
+          }
+          55% {
+            transform: scaleX(-0.08);
+            opacity: 0.95;
+          }
+          90% {
+            transform: scaleX(-0.85);
+            opacity: 0.85;
+          }
+          100% {
+            transform: scaleX(-1);
+            opacity: 0;
+          }
+        }
+
+        .book-page-swipe-tap-1 {
+          animation: bookPageSwipe 0.30s cubic-bezier(0.4, 0, 0.2, 1) 0.05s 1 forwards;
+        }
+        .book-page-swipe-tap-2 {
+          animation: bookPageSwipe 0.30s cubic-bezier(0.4, 0, 0.2, 1) 0.22s 1 forwards;
+        }
+        .book-page-swipe-tap-3 {
+          animation: bookPageSwipe 0.30s cubic-bezier(0.4, 0, 0.2, 1) 0.42s 1 forwards;
+        }
+        .book-page-swipe-tap-4 {
+          animation: bookPageSwipe 0.30s cubic-bezier(0.4, 0, 0.2, 1) 0.65s 1 forwards;
+        }
+
+        .book-page-swipe-type-1 {
+          animation: bookPageSwipe 0.26s cubic-bezier(0.4, 0, 0.2, 1) 0.0s infinite;
+        }
+        .book-page-swipe-type-2 {
+          animation: bookPageSwipe 0.26s cubic-bezier(0.4, 0, 0.2, 1) 0.15s infinite;
+        }
+        .book-page-swipe-type-3 {
+          animation: bookPageSwipe 0.26s cubic-bezier(0.4, 0, 0.2, 1) 0.30s infinite;
+        }
+
+        /* 11. Book Tap Hop */
+        @keyframes bookTapBounce {
+          0% { transform: scale(1, 1) translateY(0); }
+          12% { transform: scale(1.10, 0.88) translateY(2.5px); }
+          32% {
+            transform: scale(0.92, 1.10) translateY(-12px);
+            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(244, 63, 94, 0.8)));
+          }
+          56% { transform: scale(1.02, 0.98) translateY(-8px); }
+          76% { transform: scale(1.06, 0.95) translateY(2px); }
+          90% { transform: scale(0.98, 1.01) translateY(-0.5px); }
+          100% { transform: scale(1, 1) translateY(0); }
+        }
+        .book-tap-bounce {
+          animation: bookTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 12. Book Typing Rhythm Glow */
+        @keyframes bookTypingGlow {
+          0%, 100% {
+            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(244, 63, 94, 0.4)));
+            transform: translateY(0px) scale(1, 1);
+          }
+          50% {
+            filter: drop-shadow(0 0 16px var(--mascot-glow-intense, rgba(244, 63, 94, 0.75)));
+            transform: translateY(-2px) scale(1.02, 0.98);
+          }
+        }
+        .book-typing-glow {
+          animation: bookTypingGlow 0.8s ease-in-out infinite;
+        }
       `}</style>
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
@@ -563,6 +652,81 @@ export const BloubMascot = React.memo(function BloubMascot({
               filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
             }}
           />
+
+          {/* Rapid Page Swipe Flutter Layer for Book */}
+          {isBook && (
+            <g className="book-pages-layer" style={{ pointerEvents: 'none' }}>
+              <g
+                className={
+                  isBouncing
+                    ? 'book-page-swipe-tap-1'
+                    : activeTyping
+                    ? 'book-page-swipe-type-1'
+                    : 'opacity-0'
+                }
+                style={{ transformOrigin: '50px 50px' }}
+              >
+                <path
+                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                  fill="rgba(255, 255, 255, 0.40)"
+                  stroke="rgba(255, 255, 255, 0.70)"
+                  strokeWidth="1.2"
+                />
+              </g>
+
+              <g
+                className={
+                  isBouncing
+                    ? 'book-page-swipe-tap-2'
+                    : activeTyping
+                    ? 'book-page-swipe-type-2'
+                    : 'opacity-0'
+                }
+                style={{ transformOrigin: '50px 50px' }}
+              >
+                <path
+                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                  fill="rgba(255, 255, 255, 0.45)"
+                  stroke="rgba(255, 255, 255, 0.75)"
+                  strokeWidth="1.2"
+                />
+              </g>
+
+              <g
+                className={
+                  isBouncing
+                    ? 'book-page-swipe-tap-3'
+                    : activeTyping
+                    ? 'book-page-swipe-type-3'
+                    : 'opacity-0'
+                }
+                style={{ transformOrigin: '50px 50px' }}
+              >
+                <path
+                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                  fill="rgba(255, 255, 255, 0.40)"
+                  stroke="rgba(255, 255, 255, 0.70)"
+                  strokeWidth="1.2"
+                />
+              </g>
+
+              <g
+                className={
+                  isBouncing
+                    ? 'book-page-swipe-tap-4'
+                    : 'opacity-0'
+                }
+                style={{ transformOrigin: '50px 50px' }}
+              >
+                <path
+                  d="M 50 23 C 55 18 65 15 76 15 C 82 15 86 19 86 24 L 86 70 C 86 75 82 78 76 78 C 65 78 55 76 50 81 Z"
+                  fill="rgba(255, 255, 255, 0.35)"
+                  stroke="rgba(255, 255, 255, 0.65)"
+                  strokeWidth="1.2"
+                />
+              </g>
+            </g>
+          )}
 
           {renderExtra && renderExtra()}
         </g>
