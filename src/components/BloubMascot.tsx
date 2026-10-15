@@ -305,192 +305,117 @@ export const BloubMascot = React.memo(function BloubMascot({
       }}
     >
       <style>{`
-        /* 12 BESPOKE SHAPE TAP BURST ANIMATIONS (Groq-style high-velocity kinetic physics, 650ms) */
+        /* Universal Grok Morphing Backflip (Kinetic Lines -> Squircle -> Circle) */
         .mascot-tap-rig {
           transform-origin: 50% 50%;
           transform-box: fill-box;
         }
 
-        /* 1. Cercle: High-Velocity Basketball Slam & Double Dribble */
-        @keyframes tapBurstCercle {
+        @keyframes grokMorphBackflip {
+          0% {
+            transform: translateY(0) rotate(0deg) scale(1, 1);
+            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
+          }
+          14% {
+            /* Smooth anticipation compression */
+            transform: translateY(4px) rotate(4deg) scale(1.14, 0.86);
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.22));
+          }
+          45% {
+            /* Rocket upward backflip into elongated kinetic lines */
+            transform: translateY(-24px) rotate(-165deg) scale(0.68, 1.32);
+            filter: drop-shadow(0 0 16px var(--mascot-glow-intense, rgba(251, 191, 36, 0.8)));
+          }
+          70% {
+            /* Apex float: morphing geometry into rounded squircle */
+            transform: translateY(-14px) rotate(-285deg) scale(1.08, 0.94);
+            filter: drop-shadow(0 0 12px var(--mascot-glow-mid, rgba(251, 191, 36, 0.6)));
+          }
+          86% {
+            /* Cushioned floor landing as a bouncy plump circle */
+            transform: translateY(3.5px) rotate(-360deg) scale(1.14, 0.88);
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.20));
+          }
+          100% {
+            /* Rest settle */
+            transform: translateY(0) rotate(-360deg) scale(1, 1);
+            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
+          }
+        }
+        .mascot-backflip-active {
+          animation: grokMorphBackflip 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* Face Counter-Balance during Backflip so expressions stay delightful */
+        @keyframes faceBackflipGlide {
           0% { transform: scale(1) translateY(0); }
-          18% { transform: translateY(12px) scaleX(1.32) scaleY(0.68); }
-          48% { transform: translateY(-26px) scaleX(0.84) scaleY(1.22); }
-          72% { transform: translateY(6px) scaleX(1.16) scaleY(0.84); }
-          88% { transform: translateY(-6px) scaleX(0.96) scaleY(1.04); }
+          20% { transform: scale(1.08, 0.92) translateY(1px); }
+          45% { transform: scale(0.85, 1.15) translateY(-3px); }
+          75% { transform: scale(1.05, 0.95) translateY(-1px); }
           100% { transform: scale(1) translateY(0); }
         }
-        .tap-burst-cercle {
-          animation: tapBurstCercle 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        .face-backflip-glide {
+          animation: faceBackflipGlide 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        /* 2. Hexagone: Harsh 180° / 360° Mechanical Heavy-Metal Flip & Slam */
-        @keyframes tapBurstHexagone {
-          0% { transform: rotate(0deg) translateY(0); }
-          25% { transform: translateY(-14px) rotate(90deg) scale(1.06); }
-          50% { transform: translateY(4px) rotate(180deg) scaleX(1.14) scaleY(0.88); }
-          75% { transform: translateY(-10px) rotate(270deg); }
-          90% { transform: translateY(3px) rotate(360deg) scaleX(1.08) scaleY(0.92); }
-          100% { transform: rotate(360deg) scale(1); }
+        /* 8-Dot Radial Constellation Pulse Animations (Matching typing dots visual DNA) */
+        @keyframes tapParticlePop1 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(0, -32px) scale(1.2); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(0, -40px) scale(0.9); opacity: 0.8; }
+          100% { transform: translate(0, -46px) scale(0.2); opacity: 0; }
         }
-        .tap-burst-hexagone {
-          animation: tapBurstHexagone 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        @keyframes tapParticlePop2 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(24px, -24px) scale(1.1); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(30px, -30px) scale(0.85); opacity: 0.8; }
+          100% { transform: translate(36px, -36px) scale(0.2); opacity: 0; }
         }
-
-        /* 3. Livre: Snap-Shut Hardcover Clap & Tornado Page Riffle */
-        @keyframes tapBurstLivre {
-          0% { transform: scaleX(1) scaleY(1) translateY(0); }
-          22% { transform: scaleX(0.14) scaleY(1.12) translateY(-10px); }
-          45% { transform: scaleX(1.24) scaleY(0.90) translateY(4px) rotate(-4deg); }
-          68% { transform: scaleX(0.92) scaleY(1.06) translateY(-6px) rotate(4deg); }
-          85% { transform: scaleX(1.05) scaleY(0.97); }
-          100% { transform: scale(1) translateY(0); }
+        @keyframes tapParticlePop3 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(34px, 0) scale(1.2); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(42px, 0) scale(0.9); opacity: 0.8; }
+          100% { transform: translate(48px, 0) scale(0.2); opacity: 0; }
         }
-        .tap-burst-livre {
-          animation: tapBurstLivre 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        @keyframes tapParticlePop4 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(24px, 24px) scale(1.1); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(30px, 30px) scale(0.85); opacity: 0.8; }
+          100% { transform: translate(36px, 36px) scale(0.2); opacity: 0; }
         }
-
-        /* 4. Soleil: Supernova Charge-Up & 180° Rotary Saw-Spin */
-        @keyframes tapBurstSoleil {
-          0% { transform: scale(1) rotate(0deg); }
-          25% { transform: scale(0.72) rotate(-35deg); }
-          55% { transform: scale(1.28) rotate(145deg); }
-          80% { transform: scale(0.94) rotate(190deg); }
-          100% { transform: scale(1) rotate(180deg); }
+        @keyframes tapParticlePop5 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(0, 32px) scale(1.2); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(0, 40px) scale(0.9); opacity: 0.8; }
+          100% { transform: translate(0, 46px) scale(0.2); opacity: 0; }
         }
-        .tap-burst-soleil {
-          animation: tapBurstSoleil 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        @keyframes tapParticlePop6 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(-24px, 24px) scale(1.1); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(-30px, 30px) scale(0.85); opacity: 0.8; }
+          100% { transform: translate(-36px, 36px) scale(0.2); opacity: 0; }
         }
-
-        /* 5. Squircle: 3D Coin-Flip & Isometric Snap */
-        @keyframes tapBurstSquircle {
-          0% { transform: perspective(400px) rotateY(0deg) scale(1); }
-          30% { transform: perspective(400px) translateY(-16px) rotateY(180deg) rotateZ(-8deg) scale(1.12); }
-          65% { transform: perspective(400px) translateY(4px) rotateY(360deg) rotateZ(4deg) scaleX(1.10) scaleY(0.90); }
-          100% { transform: perspective(400px) rotateY(360deg) scale(1); }
+        @keyframes tapParticlePop7 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(-34px, 0) scale(1.2); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(-42px, 0) scale(0.9); opacity: 0.8; }
+          100% { transform: translate(-48px, 0) scale(0.2); opacity: 0; }
         }
-        .tap-burst-squircle {
-          animation: tapBurstSquircle 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        /* 6. Galet: Water-Skip Triple Ricochet */
-        @keyframes tapBurstGalet {
-          0% { transform: translate(0, 0) rotate(0deg); }
-          20% { transform: translate(-14px, 6px) rotate(-14deg) scaleX(1.15) scaleY(0.85); }
-          45% { transform: translate(12px, -16px) rotate(12deg) scale(0.95); }
-          70% { transform: translate(-6px, 4px) rotate(-6deg) scaleX(1.10) scaleY(0.90); }
-          100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-        }
-        .tap-burst-galet {
-          animation: tapBurstGalet 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        @keyframes tapParticlePop8 {
+          0% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30% { transform: translate(-24px, -24px) scale(1.1); opacity: 0.95; filter: drop-shadow(0 0 8px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75))); }
+          70% { transform: translate(-30px, -30px) scale(0.85); opacity: 0.8; }
+          100% { transform: translate(-36px, -36px) scale(0.2); opacity: 0; }
         }
 
-        /* 7. Capsule: Spring-Loaded Pill Launcher & 360° Backflip */
-        @keyframes tapBurstCapsule {
-          0% { transform: translateY(0) scale(1) rotate(0deg); }
-          22% { transform: translateY(14px) scaleX(1.28) scaleY(0.65); }
-          55% { transform: translateY(-28px) scaleX(0.85) scaleY(1.18) rotate(-180deg); }
-          82% { transform: translateY(5px) scaleX(1.14) scaleY(0.88) rotate(-360deg); }
-          100% { transform: translateY(0) scale(1) rotate(-360deg); }
-        }
-        .tap-burst-capsule {
-          animation: tapBurstCapsule 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        /* 8. Triangle: Onigiri Corner-Kick & Pendulum Rock */
-        @keyframes tapBurstTriangle {
-          0% { transform: translate(0,0) rotate(0deg); }
-          25% { transform: translate(-10px, -8px) rotate(-28deg) scale(1.06); }
-          55% { transform: translate(10px, -12px) rotate(26deg) scale(1.06); }
-          80% { transform: translate(0, 6px) rotate(0deg) scaleX(1.22) scaleY(0.80); }
-          100% { transform: scale(1); }
-        }
-        .tap-burst-triangle {
-          animation: tapBurstTriangle 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-          transform-origin: 50% 75%;
-        }
-
-        /* 9. Nuage: Thundercloud Squeeze & Lightning Shudder */
-        @keyframes tapBurstNuage {
-          0% { transform: scale(1); }
-          25% { transform: scaleX(0.74) scaleY(0.78) translateY(6px); }
-          45% { transform: scaleX(1.26) scaleY(1.18) translate(-6px, -10px); }
-          55% { transform: scaleX(1.22) scaleY(1.14) translate(6px, -10px); }
-          65% { transform: scaleX(1.16) scaleY(1.10) translate(-4px, -6px); }
-          100% { transform: scale(1) translate(0,0); }
-        }
-        .tap-burst-nuage {
-          animation: tapBurstNuage 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        /* 10. Goutte: Water Balloon Splat & High-Frequency Jelly Wobble */
-        @keyframes tapBurstGoutte {
-          0% { transform: scale(1) translateY(0); }
-          20% { transform: translateY(-18px) scaleX(0.78) scaleY(1.26); }
-          42% { transform: translateY(12px) scaleX(1.42) scaleY(0.62); }
-          62% { transform: translateY(-6px) scaleX(0.86) scaleY(1.16); }
-          80% { transform: translateY(3px) scaleX(1.10) scaleY(0.92); }
-          100% { transform: scale(1) translateY(0); }
-        }
-        .tap-burst-goutte {
-          animation: tapBurstGoutte 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
-
-        /* 11. Oeuf: Frantic Egg-Crack Shake & Pop-Jump */
-        @keyframes tapBurstOeuf {
-          0% { transform: rotate(0deg); }
-          12% { transform: rotate(-22deg) translateX(-4px); }
-          24% { transform: rotate(22deg) translateX(4px); }
-          36% { transform: rotate(-20deg) translateX(-3px); }
-          48% { transform: rotate(20deg) translateX(3px); }
-          68% { transform: translateY(-20px) rotate(0deg) scaleX(0.90) scaleY(1.14); }
-          86% { transform: translateY(4px) scaleX(1.12) scaleY(0.90); }
-          100% { transform: scale(1); }
-        }
-        .tap-burst-oeuf {
-          animation: tapBurstOeuf 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-          transform-origin: 50% 85%;
-        }
-
-        /* 12. Fromage: Mouse-Trap Snap & Elastic Wedge Flip */
-        @keyframes tapBurstFromage {
-          0% { transform: rotate(0deg); }
-          28% { transform: translateX(8px) translateY(-6px) rotate(32deg) scale(0.95); }
-          52% { transform: translateX(-10px) translateY(6px) rotate(-16deg) scaleX(1.24) scaleY(0.80); }
-          76% { transform: translateY(-10px) rotate(6deg) scaleX(0.94) scaleY(1.08); }
-          100% { transform: rotate(0deg) scale(1); }
-        }
-        .tap-burst-fromage {
-          animation: tapBurstFromage 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        /* Facial Tap Impact Reactions & Counter-Rotations */
-        @keyframes tapFaceHexagone {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(-360deg); }
-        }
-        .tap-face-hexagone {
-          animation: tapFaceHexagone 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
-        }
-
-        @keyframes tapFaceSoleil {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(-180deg); }
-        }
-        .tap-face-soleil {
-          animation: tapFaceSoleil 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        @keyframes tapFaceImpact {
-          0% { transform: scale(1); }
-          20% { transform: scale(1.12, 0.86); }
-          48% { transform: scale(0.94, 1.08); }
-          75% { transform: scale(1.04, 0.96); }
-          100% { transform: scale(1); }
-        }
-        .tap-face-impact {
-          animation: tapFaceImpact 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
+        .tap-particle-1 { animation: tapParticlePop1 0.72s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .tap-particle-2 { animation: tapParticlePop2 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.03s both; }
+        .tap-particle-3 { animation: tapParticlePop3 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both; }
+        .tap-particle-4 { animation: tapParticlePop4 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.02s both; }
+        .tap-particle-5 { animation: tapParticlePop5 0.72s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .tap-particle-6 { animation: tapParticlePop6 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both; }
+        .tap-particle-7 { animation: tapParticlePop7 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.01s both; }
+        .tap-particle-8 { animation: tapParticlePop8 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.03s both; }
 
         /* Ambient Sun Typing Energy Glow with dynamic matching color */
         @keyframes sunTypingGlow {
@@ -884,7 +809,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         <g
           key={isTapping ? `tap-${tapCount}` : 'idle'}
           onAnimationEnd={() => setIsTapping(false)}
-          className={`mascot-tap-rig ${isTapping ? `tap-burst-${normShape}` : `idle-${normShape}`}`}
+          className={`mascot-tap-rig ${isTapping ? 'mascot-backflip-active' : ''}`}
           style={{ transformOrigin: '50% 50%', transformBox: 'fill-box' }}
         >
           {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
@@ -982,13 +907,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           <g
             ref={faceGroupRef}
             className={`mascot-face-group mascot-face-rig ${
-              isTapping
-                ? normShape === 'hexagone'
-                  ? 'tap-face-hexagone'
-                  : normShape === 'soleil'
-                  ? 'tap-face-soleil'
-                  : 'tap-face-impact'
-                : ''
+              isTapping ? 'face-backflip-glide' : ''
             }`}
             style={{
               transformOrigin: '50% 50%',
@@ -1005,6 +924,24 @@ export const BloubMascot = React.memo(function BloubMascot({
           </g>
         </g>
       </g>
+
+      {/* Tap Constellation Particle Pulse Layer (Active only on tap) */}
+      {isTapping && (
+        <g
+          key={`particles-${tapCount}`}
+          className="mascot-particles-cluster pointer-events-none"
+          style={{ transformOrigin: '50px 50px' }}
+        >
+          <circle cx="50" cy="50" r="3.2" className="tap-particle-dot tap-particle-1" fill={bodyHex} />
+          <circle cx="50" cy="50" r="2.6" className="tap-particle-dot tap-particle-2" fill={bodyHex} />
+          <circle cx="50" cy="50" r="3.4" className="tap-particle-dot tap-particle-3" fill={bodyHex} />
+          <circle cx="50" cy="50" r="2.8" className="tap-particle-dot tap-particle-4" fill={bodyHex} />
+          <circle cx="50" cy="50" r="3.0" className="tap-particle-dot tap-particle-5" fill={bodyHex} />
+          <circle cx="50" cy="50" r="2.6" className="tap-particle-dot tap-particle-6" fill={bodyHex} />
+          <circle cx="50" cy="50" r="3.4" className="tap-particle-dot tap-particle-7" fill={bodyHex} />
+          <circle cx="50" cy="50" r="2.8" className="tap-particle-dot tap-particle-8" fill={bodyHex} />
+        </g>
+      )}
     </svg>
   );
 });
