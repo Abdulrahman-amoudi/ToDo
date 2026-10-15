@@ -311,7 +311,7 @@ export const BloubMascot = React.memo(function BloubMascot({
       className={`select-none overflow-visible transition-transform duration-200 ${
         isBouncing
           ? isSun
-            ? 'sun-tap-active'
+            ? 'sun-tap-bounce'
             : 'mascot-squish-active'
           : ''
       } ${activeTyping && isSun ? 'sun-typing-glow' : ''} ${
@@ -324,49 +324,76 @@ export const BloubMascot = React.memo(function BloubMascot({
       }}
     >
       <style>{`
+        /* 1. Universal Tactile Mochi Squish & Hop for non-sun shapes */
         @keyframes mascotSquishPop {
           0% { transform: scale(1) translateY(0); }
-          25% { transform: scale(1.08, 1.12) translateY(-4px); }
-          50% { transform: scale(0.96, 0.94) translateY(1px); }
-          75% { transform: scale(1.02, 1.02) translateY(-0.5px); }
+          16% { transform: scale(1.14, 0.86) translateY(2px); }
+          45% { transform: scale(0.92, 1.10) translateY(-7px); }
+          70% { transform: scale(1.04, 0.97) translateY(1px); }
+          86% { transform: scale(0.99, 1.01) translateY(-0.5px); }
           100% { transform: scale(1) translateY(0); }
         }
         .mascot-squish-active {
-          animation: mascotSquishPop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: mascotSquishPop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        @keyframes sunTapFlare {
+        /* 2. Unique Sun Tactile Elastic Hop (Mascot stays right-side-up, leaps with buoyant warmth) */
+        @keyframes sunTapBounce {
+          0% { transform: scale(1) translateY(0); }
+          16% { transform: scale(1.12, 0.88) translateY(2px); }
+          42% { transform: scale(0.94, 1.10) translateY(-8px); }
+          68% { transform: scale(1.05, 0.97) translateY(1.5px); }
+          86% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        .sun-tap-bounce {
+          animation: sunTapBounce 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 3. Unique Sun Rays Elastic Twirl (Spins smoothly 60deg to the next symmetrical ray pair with golden shimmer) */
+        @keyframes sunRaysTwirl {
           0% {
-            transform: scale(1) rotate(0deg);
-            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
+            transform: rotate(0deg) scale(1);
           }
-          20% {
-            transform: scale(1.24) rotate(110deg);
-            filter: drop-shadow(0 0 24px rgba(251, 191, 36, 0.95)) drop-shadow(0 0 45px rgba(245, 158, 11, 0.6));
+          18% {
+            transform: rotate(10deg) scale(1.04);
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.5));
           }
-          50% {
-            transform: scale(1.10) rotate(240deg);
-            filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.75));
+          48% {
+            transform: rotate(70deg) scale(1.14);
+            filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.75));
           }
-          75% {
-            transform: scale(0.98) rotate(345deg);
-            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
+          74% {
+            transform: rotate(57deg) scale(0.98);
+            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.35));
           }
           100% {
-            transform: scale(1) rotate(360deg);
+            transform: rotate(60deg) scale(1);
             filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
           }
         }
-        .sun-tap-active {
-          animation: sunTapFlare 0.85s cubic-bezier(0.25, 1.4, 0.5, 1) forwards;
+        .sun-rays-twirl {
+          animation: sunRaysTwirl 0.75s cubic-bezier(0.22, 1.35, 0.36, 1) forwards;
         }
 
+        /* 4. Cute Joyful Face Hop (Matches the body hop, smiling brightly at you) */
+        @keyframes sunFacePop {
+          0% { transform: scale(1) translateY(0); }
+          42% { transform: scale(1.08) translateY(-2px); }
+          75% { transform: scale(0.98) translateY(0.5px); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        .sun-face-pop {
+          animation: sunFacePop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 5. Ambient Sun Typing Energy Glow */
         @keyframes sunTypingGlow {
           0%, 100% {
-            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+            filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4));
           }
           50% {
-            filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.85)) drop-shadow(0 0 30px rgba(245, 158, 11, 0.45));
+            filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.75));
           }
         }
         .sun-typing-glow {
@@ -376,40 +403,45 @@ export const BloubMascot = React.memo(function BloubMascot({
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
       <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
-        {renderUnderlay ? (
-          renderUnderlay(bodyHex)
-        ) : (
+        <g
+          className={isBouncing && isSun ? 'sun-rays-twirl' : ''}
+          style={{ transformOrigin: '50% 50%' }}
+        >
+          {renderUnderlay ? (
+            renderUnderlay(bodyHex)
+          ) : (
+            <path
+              key={`underlay-${normShape}`}
+              d={shapeD}
+              fill={bodyHex}
+              transform="translate(0, 3)"
+              filter="brightness(0.82)"
+              style={{
+                pointerEvents: 'none',
+                transition: 'fill 0.2s ease',
+              }}
+            />
+          )}
+
           <path
-            key={`underlay-${normShape}`}
+            key={`body-${normShape}`}
             d={shapeD}
             fill={bodyHex}
-            transform="translate(0, 3)"
-            filter="brightness(0.82)"
+            className="mascot-body-path"
             style={{
-              pointerEvents: 'none',
               transition: 'fill 0.2s ease',
+              filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
             }}
           />
-        )}
 
-        <path
-          key={`body-${normShape}`}
-          d={shapeD}
-          fill={bodyHex}
-          className="mascot-body-path"
-          style={{
-            transition: 'fill 0.2s ease',
-            filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
-          }}
-        />
-
-        {renderExtra && renderExtra()}
+          {renderExtra && renderExtra()}
+        </g>
       </g>
 
       {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
       <g
         ref={faceGroupRef}
-        className="mascot-face-group"
+        className={`mascot-face-group ${isBouncing && isSun ? 'sun-face-pop' : ''}`}
         style={{
           transformOrigin: '50% 50%',
           opacity: isSleeping ? 0.45 : 1,
