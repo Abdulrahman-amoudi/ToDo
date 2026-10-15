@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
       body = {};
     }
 
-    // Extract API key from header or body
+    // Extract API key from header, body, or environment
     const headerKey = req.headers.get('x-gemini-api-key') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
-    const apiKey = (body.apiKey || headerKey || '').trim();
+    const apiKey = (body.apiKey || headerKey || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim();
 
     if (!apiKey) {
       return NextResponse.json(
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
     // Connection Test Action
     if (action === 'test-key' || action === 'test-connection') {
-      const testResult = await QuizService.testConnection(apiKey, body.model, body.useMock);
+      const testResult = await QuizService.testConnection(apiKey, body.model || 'gemini-3.8-flash', body.useMock);
       return NextResponse.json(
         {
           success: testResult.valid,
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
 
     const quiz = await QuizService.generateQuiz({
       apiKey,
-      model: body.model || 'gemini-1.5-flash',
+      model: body.model || 'gemini-3.8-flash',
       noteTitle: body.noteTitle || 'Study Note',
       noteContent,
       config: body.config,

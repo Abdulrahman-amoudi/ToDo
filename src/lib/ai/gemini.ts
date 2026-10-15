@@ -126,7 +126,7 @@ export class GeminiClient {
     systemInstruction?: string,
     jsonMode: boolean = false
   ): Promise<string> {
-    const selectedModel = model || 'gemini-2.0-flash';
+    const selectedModel = model || 'gemini-3.8-flash';
     const url = `${GEMINI_API_BASE}/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
     const bodyPayload: GeminiRequestBody = {
@@ -166,6 +166,25 @@ export class GeminiClient {
     }
 
     if (!res.ok) {
+      // Automatic failover/retry on 503 high-demand spikes
+      if (res.status === 503 && selectedModel === 'gemini-3.8-flash') {
+        try {
+          const fallbackUrl = `${GEMINI_API_BASE}/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+          const fallbackRes = await fetch(fallbackUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyPayload)
+          });
+          if (fallbackRes.ok) {
+            const fbData = (await fallbackRes.json()) as GeminiResponseBody;
+            const fbText = fbData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (fbText) return fbText;
+          }
+        } catch {
+          // continue to normal error handling
+        }
+      }
+
       const errorData = (await res.json().catch(() => ({}))) as GeminiResponseBody;
       const errorMsg = errorData?.error?.message || res.statusText || 'Gemini API Error';
       
@@ -203,7 +222,7 @@ export class GeminiClient {
    * Generates a structured quiz using Gemini.
    */
   static async generateQuiz(request: QuizGenerateRequest): Promise<QuizResponse> {
-    const { apiKey, model = 'gemini-2.0-flash', noteTitle, noteContent, config } = request;
+    const { apiKey, model = 'gemini-3.8-flash', noteTitle, noteContent, config } = request;
 
     if (!apiKey || apiKey.trim() === '') {
       const err: CustomHttpError = new Error('API_KEY_REQUIRED: An external LLM API key must be provided.');
@@ -312,7 +331,7 @@ Required JSON Output Schema:
    * Generates a Socratic hint without spoiling the answer.
    */
   static async generateHint(request: HintRequest): Promise<HintResponse> {
-    const { apiKey, model = 'gemini-2.0-flash', question, noteContext } = request;
+    const { apiKey, model = 'gemini-3.8-flash', question, noteContext } = request;
 
     if (!apiKey || apiKey.trim() === '') {
       const err: CustomHttpError = new Error('API_KEY_REQUIRED: Missing API key for hint generation.');
@@ -342,7 +361,7 @@ DO NOT reveal the answer, correct option index, or exact option text. Guide the 
    * Evaluates a free-text response against the source note context.
    */
   static async evaluateAnswer(request: EvaluateRequest): Promise<EvaluationResponse> {
-    const { apiKey, model = 'gemini-2.0-flash', question, userAnswer, expectedAnswer, noteContext } = request;
+    const { apiKey, model = 'gemini-3.8-flash', question, userAnswer, expectedAnswer, noteContext } = request;
 
     if (!apiKey || apiKey.trim() === '') {
       const err: CustomHttpError = new Error('API_KEY_REQUIRED: Missing API key.');
@@ -391,7 +410,7 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
   /**
    * Tests API key validity with a lightweight ping.
    */
-  static async testConnection(apiKey: string, model: string = 'gemini-2.0-flash'): Promise<ConnectionTestResult> {
+  static async testConnection(apiKey: string, model: string = 'gemini-3.8-flash'): Promise<ConnectionTestResult> {
     if (!apiKey || apiKey.trim() === '') {
       return { valid: false, message: 'API key cannot be empty.' };
     }

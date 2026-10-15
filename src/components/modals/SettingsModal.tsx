@@ -32,7 +32,8 @@ export const THEMES = [
 ];
 
 export const GEMINI_MODELS = [
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recommended - Fastest & High Precision)' },
+  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Recommended - Latest & Most Powerful)' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Fast & High Precision)' },
   { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Standard Lightweight)' },
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Next-Gen)' }
 ];
@@ -91,16 +92,16 @@ export default function SettingsModal({
   // Local state for Gemini API key & model with lazy initialization
   const [apiKey, setApiKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(storageKey) || localStorage.getItem('vibe_todos_gemini_api_key') || '';
+      return localStorage.getItem(storageKey) || localStorage.getItem('vibe_todos_gemini_api_key') || localStorage.getItem('vibe_geminiApiKey') || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
     }
-    return '';
+    return process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
   });
 
   const [model, setModel] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(storageModelKey) || localStorage.getItem('vibe_todos_gemini_model') || 'gemini-2.5-flash';
+      return localStorage.getItem(storageModelKey) || localStorage.getItem('vibe_todos_gemini_model') || 'gemini-3.8-flash';
     }
-    return 'gemini-2.5-flash';
+    return 'gemini-3.8-flash';
   });
 
   const [showKey, setShowKey] = useState(false);

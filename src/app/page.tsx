@@ -155,9 +155,9 @@ export default function Home() {
   const [showQuizSession, setShowQuizSession] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('vibe_geminiApiKey') || localStorage.getItem('guest_geminiApiKey') || '';
+      return localStorage.getItem('vibe_geminiApiKey') || localStorage.getItem('guest_geminiApiKey') || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
     }
-    return '';
+    return process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
   });
   const [selectedNote, setSelectedNote] = useState<ParsedObsidianNote | null>(null);
   const [isFetchingNote, setIsFetchingNote] = useState(false);
@@ -2240,7 +2240,7 @@ export default function Home() {
                     </button>
                   </div>
                   <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">
-                    Gemini 1.5 is <strong className="text-zinc-200 font-semibold">100% free with no limits</strong> for personal use. Get your free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[var(--theme-primary,#3b82f6)] hover:underline">aistudio.google.com</a>.
+                    Powered by <strong className="text-zinc-200 font-semibold">Gemini 3.8 Flash</strong> &amp; 2.5 Flash for high-speed AI quizzes, document Q&amp;A, and tutoring. Free keys available at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[var(--theme-primary,#3b82f6)] hover:underline">aistudio.google.com</a>.
                   </p>
                 </div>
     
