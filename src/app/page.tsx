@@ -9,7 +9,7 @@ import {
   PaintBucket, LogOut, Download, Smartphone, Repeat, Bell, Monitor, Flame, 
   Cpu, AlertCircle, Mic, Camera, GraduationCap, BookOpen, Sparkles, Brain, 
   CheckSquare, Layers, FileText, Smile, ArrowLeft, Database, Target, Zap, 
-  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown 
+  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown, ExternalLink 
 } from 'lucide-react';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
@@ -1553,7 +1553,7 @@ export default function Home() {
           <p className="text-sm mb-6 leading-relaxed text-zinc-400">
             {authStep === 'email' 
               ? 'Sign in with your email inbox or Google account to sync your study notes and vibes.'
-              : `Enter the 6-digit code sent to ${authEmail}`}
+              : `Enter the 6-digit code or tap the sign-in link sent to ${authEmail}`}
           </p>
 
           {/* Feedback alerts */}
@@ -1636,7 +1636,18 @@ export default function Home() {
                   placeholder="1 2 3 4 5 6"
                   className="w-full py-4 text-center text-2xl font-mono font-bold tracking-[0.45em] rounded-2xl bg-white/5 border border-[var(--theme-primary,#3b82f6)]/50 focus:border-[var(--theme-primary,#3b82f6)] focus:ring-2 focus:ring-[var(--theme-primary,#3b82f6)]/30 outline-none text-white placeholder:text-zinc-600 transition-all"
                 />
-                <p className="text-[11px] text-zinc-400">Enter the 6 numbers from your email inbox</p>
+                <p className="text-[11px] text-zinc-400">Enter the 6 numbers or click the sign-in link in your email</p>
+              </div>
+
+              {/* Direct magic link helper card */}
+              <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-left space-y-1">
+                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                  <ExternalLink size={13} className="text-[var(--theme-primary,#3b82f6)] shrink-0" />
+                  <span>Received a sign-in link?</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  If your email contains a &quot;Sign in&quot; link, simply tap it in your email to authenticate instantly without typing any numbers!
+                </p>
               </div>
 
               <button

@@ -646,7 +646,129 @@ export const BloubMascot = React.memo(function BloubMascot({
         .cloud-typing-drift {
           animation: cloudTypingDrift 0.9s ease-in-out infinite;
         }
+
+        /* 15. Universal Typing Dots Animation Keyframes (Active for all shapes only when typing) */
+        @keyframes typingDotsLevitate {
+          0%, 100% {
+            opacity: 0.35;
+            transform: translateY(0px) scale(0.9);
+          }
+          50% {
+            opacity: 0.95;
+            transform: translateY(-4px) scale(1.15);
+            filter: drop-shadow(0 0 6px var(--mascot-glow-intense, rgba(255, 255, 255, 0.75)));
+          }
+        }
+        .typing-dot-ambient-1 {
+          animation: typingDotsLevitate 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .typing-dot-ambient-2 {
+          animation: typingDotsLevitate 1.3s cubic-bezier(0.4, 0, 0.2, 1) 0.25s infinite;
+        }
+        .typing-dot-ambient-3 {
+          animation: typingDotsLevitate 1.0s cubic-bezier(0.4, 0, 0.2, 1) 0.5s infinite;
+        }
+        .typing-dot-ambient-4 {
+          animation: typingDotsLevitate 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s infinite;
+        }
+        .typing-dot-ambient-5 {
+          animation: typingDotsLevitate 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.35s infinite;
+        }
+
+        @keyframes typingDotWave {
+          0%, 60%, 100% {
+            transform: translateY(0px);
+            opacity: 0.45;
+          }
+          30% {
+            transform: translateY(-4px);
+            opacity: 1;
+            filter: drop-shadow(0 0 5px var(--mascot-glow-mid, rgba(255, 255, 255, 0.6)));
+          }
+        }
+        .typing-dot-wave-1 {
+          animation: typingDotWave 1.1s ease-in-out infinite;
+        }
+        .typing-dot-wave-2 {
+          animation: typingDotWave 1.1s ease-in-out 0.18s infinite;
+        }
+        .typing-dot-wave-3 {
+          animation: typingDotWave 1.1s ease-in-out 0.36s infinite;
+        }
       `}</style>
+
+      {/* Layer 0: Typing Dots Animation - Rendered for ALL shapes ONLY when typing */}
+      {activeTyping && (
+        <g
+          className="mascot-typing-dots-layer"
+          style={{
+            pointerEvents: 'none',
+            transformOrigin: '50% 50%',
+          }}
+        >
+          {/* Ambient levitating energy particles around the mascot */}
+          <circle
+            cx="18"
+            cy="22"
+            r="2.2"
+            className="typing-dot-ambient-1"
+            fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
+          />
+          <circle
+            cx="82"
+            cy="20"
+            r="2.6"
+            className="typing-dot-ambient-2"
+            fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
+          />
+          <circle
+            cx="14"
+            cy="62"
+            r="1.8"
+            className="typing-dot-ambient-3"
+            fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
+          />
+          <circle
+            cx="86"
+            cy="64"
+            r="2.0"
+            className="typing-dot-ambient-4"
+            fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
+          />
+          <circle
+            cx="50"
+            cy="10"
+            r="2.4"
+            className="typing-dot-ambient-5"
+            fill="var(--mascot-glow-intense, rgba(255,255,255,0.85))"
+          />
+
+          {/* Rhythmic typing dots wave cluster floating on upper shoulder */}
+          <g className="typing-dots-cluster" transform="translate(0, 0)">
+            <circle
+              cx="72"
+              cy="16"
+              r="2.8"
+              className="typing-dot-wave-1"
+              fill={bodyHex}
+            />
+            <circle
+              cx="80"
+              cy="16"
+              r="2.8"
+              className="typing-dot-wave-2"
+              fill={bodyHex}
+            />
+            <circle
+              cx="88"
+              cy="16"
+              r="2.8"
+              className="typing-dot-wave-3"
+              fill={bodyHex}
+            />
+          </g>
+        </g>
+      )}
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
       <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
