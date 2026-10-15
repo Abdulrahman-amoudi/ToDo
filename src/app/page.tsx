@@ -1716,8 +1716,15 @@ export default function Home() {
                   } catch {}
                 }}
                 onFocus={(e) => {
-                  triggerMascot('thinking', 'curieux', true);
+                  if (heroShape === 'soleil') {
+                    triggerMascot('idle', 'attentif', true);
+                  } else {
+                    triggerMascot('thinking', 'curieux', true);
+                  }
                   e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+                onBlur={() => {
+                  triggerMascot('idle', 'neutre');
                 }}
                 placeholder="What needs to be done?"
                 rows={3}
@@ -2514,8 +2521,15 @@ export default function Home() {
                   value={newCatText} 
                   onChange={e => setNewCatText(e.target.value)}
                   onFocus={(e) => {
-                    triggerMascot('thinking', 'curieux', true);
+                    if (heroShape === 'soleil') {
+                      triggerMascot('idle', 'attentif', true);
+                    } else {
+                      triggerMascot('thinking', 'curieux', true);
+                    }
                     e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  onBlur={() => {
+                    triggerMascot('idle', 'neutre');
                   }}
                   placeholder={newCatType === 'study' ? 'New Study List (e.g. AI Concepts, Exam Prep)...' : 'New ToDo List (e.g. Work, Gym)...'} 
                   className={`flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all ${t.input}`} 

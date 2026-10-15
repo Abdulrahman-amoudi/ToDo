@@ -27,6 +27,7 @@ export interface BloubMascotProps {
   onInteract?: () => void;
   isStatic?: boolean;
   animated?: boolean;
+  isTyping?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -61,11 +62,14 @@ export const BloubMascot = React.memo(function BloubMascot({
   onInteract,
   isStatic = false,
   animated = true,
+  isTyping: propIsTyping,
   className = '',
   style = {},
 }: BloubMascotProps) {
   const [isInteracting, setIsInteracting] = useState(false);
   const [isBouncingState, setIsBouncingState] = useState(state === 'orbit');
+  const [internalTyping, setInternalTyping] = useState(false);
+  const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const faceGroupRef = useRef<SVGGElement>(null);
@@ -74,6 +78,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   // Normalize shape and expression through the single source-of-truth registry
   const normShape = normalizeShape(shape);
   const normExpr = normalizeExpression(expression);
+  const isSun = normShape === 'soleil';
 
   // Look coordinates (normalized -1 to 1)
   const targetLook = useRef({ x: 0, y: 0 });
@@ -83,6 +88,36 @@ export const BloubMascot = React.memo(function BloubMascot({
   const blinkTimerRef = useRef(0);
   const isBlinkingRef = useRef(false);
   const blinkProgressRef = useRef(0);
+
+  // Sun-specific smooth turbine spin physics
+  const sunSpinAngleRef = useRef(0);
+  const sunSpinSpeedRef = useRef(0);
+
+  // Listen for user typing activity across all active inputs / window
+  useEffect(() => {
+    if (isStatic || !animated) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) return;
+      setInternalTyping(true);
+      // Give a tiny energetic impulse to sun spin on each keystroke
+      if (isSun) {
+        sunSpinSpeedRef.current = Math.min(sunSpinSpeedRef.current + 35, 260);
+      }
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => {
+        setInternalTyping(false);
+      }, 950);
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { passive: true });
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    };
+  }, [isStatic, animated, isSun]);
+
+  const activeTyping = propIsTyping ?? internalTyping;
 
   // Sync state prop with squish-pop animation
   useEffect(() => {
@@ -156,11 +191,11 @@ export const BloubMascot = React.memo(function BloubMascot({
       currentLook.current.y += (targetLook.current.y - currentLook.current.y) * lerpFactor;
 
       // 2. Organic breathing bob & idle float
-      const floatY = Math.sin(t * 2.2) * 2.2;
+      const floatY = Math.sin(t * 2.2) * 2.0;
       const breathScaleX = 1 + Math.sin(t * 2.2) * 0.015;
       const breathScaleY = 1 - Math.sin(t * 2.2) * 0.015;
 
-      // 3. Natural eye blink (every ~4.2 seconds)
+      // 3. Natural eye blink (every ~4.2 seconds) centered around eye horizon Y=48
       blinkTimerRef.current += dt;
       if (blinkTimerRef.current > 4.2) {
         isBlinkingRef.current = true;
@@ -170,34 +205,46 @@ export const BloubMascot = React.memo(function BloubMascot({
 
       let eyeScaleY = 1;
       if (isBlinkingRef.current) {
-        blinkProgressRef.current += dt * 10;
+        blinkProgressRef.current += dt * 11;
         if (blinkProgressRef.current >= Math.PI) {
           isBlinkingRef.current = false;
           eyeScaleY = 1;
         } else {
-          eyeScaleY = Math.max(0.06, 1 - Math.sin(blinkProgressRef.current) * 0.94);
+          eyeScaleY = Math.max(0.08, 1 - Math.sin(blinkProgressRef.current) * 0.92);
         }
       }
 
-      // 4. Coordinates for gaze, tilt, and head motion
-      const faceX = currentLook.current.x * 6.5;
-      const faceY = currentLook.current.y * 4.8;
-      const headTilt = currentLook.current.x * 3.2;
-      const bodyTilt = currentLook.current.x * 1.8;
+      // 4. Coordinates for gaze, tilt, and head motion (soften downward gaze to avoid droop/nod)
+      const clampedY = currentLook.current.y > 0 ? currentLook.current.y * 0.35 : currentLook.current.y * 0.75;
+      const faceX = currentLook.current.x * 5.5;
+      const faceY = activeTyping ? -0.8 : (clampedY * 3.8);
+      const headTilt = currentLook.current.x * 2.8;
+      const bodyTilt = currentLook.current.x * 1.5;
 
-      // Update Body Group (Cushion depth + Silhouette body + Extras move as ONE cohesive unit)
+      // 5. Sun turbine spin physics while typing
+      if (isSun) {
+        if (activeTyping) {
+          sunSpinSpeedRef.current += (160 - sunSpinSpeedRef.current) * Math.min(1, dt * 10);
+        } else {
+          sunSpinSpeedRef.current += (0 - sunSpinSpeedRef.current) * Math.min(1, dt * 4.5);
+        }
+        sunSpinAngleRef.current = (sunSpinAngleRef.current + sunSpinSpeedRef.current * dt) % 360;
+      }
+
+      // Update Body Group (Rays rotate smoothly for sun, bobs and breathes as one unit)
       if (bodyGroupRef.current) {
+        const sunRot = isSun ? sunSpinAngleRef.current : 0;
         bodyGroupRef.current.setAttribute(
           'transform',
-          `translate(0, ${floatY}) translate(50, 50) rotate(${bodyTilt}) scale(${breathScaleX}, ${breathScaleY}) translate(-50, -50)`
+          `translate(0, ${floatY}) translate(50, 50) rotate(${bodyTilt + sunRot}) scale(${breathScaleX}, ${breathScaleY}) translate(-50, -50)`
         );
       }
 
-      // Update Face Group (moves with body float, tracks gaze, blinks in place around 50 50)
+      // Update Face Group (moves 1:1 with floatY, blinks symmetrically around eye horizon Y=48 without downward nod)
       if (faceGroupRef.current) {
         faceGroupRef.current.setAttribute(
           'transform',
-          `translate(${faceX}, ${faceY + floatY * 0.7}) translate(50, 50) rotate(${headTilt}) scale(1, ${eyeScaleY}) translate(-50, -50)`
+          `translate(${faceX}, ${faceY + floatY}) translate(50, 48) rotate(${headTilt}) scale(1, ${eyeScaleY}) translate(-50, -48)`
         );
       }
 
@@ -206,7 +253,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [isStatic, animated, normShape]);
+  }, [isStatic, animated, normShape, isSun, activeTyping]);
 
   // Resolve body and high-contrast eye colors
   const bodyHex = resolveColor(color);
@@ -249,8 +296,14 @@ export const BloubMascot = React.memo(function BloubMascot({
       role="img"
       aria-label={`Mascot ${normShape} with ${normExpr} expression`}
       className={`select-none overflow-visible transition-transform duration-200 ${
-        isBouncing ? 'mascot-squish-active' : ''
-      } ${isThinking ? '-rotate-6 scale-105' : ''} ${className}`}
+        isBouncing
+          ? isSun
+            ? 'sun-tap-active'
+            : 'mascot-squish-active'
+          : ''
+      } ${activeTyping && isSun ? 'sun-typing-glow' : ''} ${
+        isThinking ? '-rotate-6 scale-105' : ''
+      } ${className}`}
       style={{
         cursor: onInteract || (!isStatic && animated) ? 'pointer' : 'default',
         transformOrigin: '50% 50%',
@@ -260,14 +313,51 @@ export const BloubMascot = React.memo(function BloubMascot({
       <style>{`
         @keyframes mascotSquishPop {
           0% { transform: scale(1) translateY(0); }
-          20% { transform: scale(1.14, 0.86) translateY(3px); }
-          45% { transform: scale(0.92, 1.10) translateY(-6px); }
-          70% { transform: scale(1.04, 0.97) translateY(1.5px); }
-          85% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          25% { transform: scale(1.08, 1.12) translateY(-4px); }
+          50% { transform: scale(0.96, 0.94) translateY(1px); }
+          75% { transform: scale(1.02, 1.02) translateY(-0.5px); }
           100% { transform: scale(1) translateY(0); }
         }
         .mascot-squish-active {
           animation: mascotSquishPop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes sunTapFlare {
+          0% {
+            transform: scale(1) rotate(0deg);
+            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
+          }
+          20% {
+            transform: scale(1.24) rotate(110deg);
+            filter: drop-shadow(0 0 24px rgba(251, 191, 36, 0.95)) drop-shadow(0 0 45px rgba(245, 158, 11, 0.6));
+          }
+          50% {
+            transform: scale(1.10) rotate(240deg);
+            filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.75));
+          }
+          75% {
+            transform: scale(0.98) rotate(345deg);
+            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
+          }
+          100% {
+            transform: scale(1) rotate(360deg);
+            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
+          }
+        }
+        .sun-tap-active {
+          animation: sunTapFlare 0.85s cubic-bezier(0.25, 1.4, 0.5, 1) forwards;
+        }
+
+        @keyframes sunTypingGlow {
+          0%, 100% {
+            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+          }
+          50% {
+            filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.85)) drop-shadow(0 0 30px rgba(245, 158, 11, 0.45));
+          }
+        }
+        .sun-typing-glow {
+          animation: sunTypingGlow 1.2s ease-in-out infinite;
         }
       `}</style>
 
