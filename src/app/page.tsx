@@ -216,7 +216,7 @@ export default function Home() {
     if (e) e.preventDefault();
     const token = authOtpCode.trim();
     if (!token || token.length < 6) {
-      setAuthError('Please enter the 6-digit verification code.');
+      setAuthError('Please enter the verification code sent to your email.');
       return;
     }
     setAuthLoading(true);
@@ -232,7 +232,7 @@ export default function Home() {
         setSession(data.session);
       }
     } catch (err: any) {
-      setAuthError(err.message || 'Invalid or expired 6-digit code. Please try again.');
+      setAuthError(err.message || 'Invalid or expired code. Please enter the full code or tap "Sign In Instantly" in your email.');
     } finally {
       setAuthLoading(false);
     }
@@ -1617,26 +1617,26 @@ export default function Home() {
               <div className="space-y-1 text-center">
                 <input
                   type="text"
-                  maxLength={6}
+                  maxLength={8}
                   autoFocus
                   value={authOtpCode}
                   onChange={(e) => {
                     const clean = e.target.value.replace(/[^0-9]/g, '');
                     setAuthOtpCode(clean);
-                    if (clean.length === 6) {
+                    if (clean.length === 8 || clean.length === 6) {
                       setTimeout(() => {
                         supabase.auth.verifyOtp({ email: authEmail.trim(), token: clean, type: 'email' })
                           .then(({ data, error }) => {
-                            if (error) setAuthError(error.message);
-                            else if (data.session) setSession(data.session);
+                            if (error && clean.length === 8) setAuthError(error.message);
+                            else if (data?.session) setSession(data.session);
                           });
-                      }, 100);
+                      }, 120);
                     }
                   }}
-                  placeholder="1 2 3 4 5 6"
-                  className="w-full py-4 text-center text-2xl font-mono font-bold tracking-[0.45em] rounded-2xl bg-white/5 border border-[var(--theme-primary,#3b82f6)]/50 focus:border-[var(--theme-primary,#3b82f6)] focus:ring-2 focus:ring-[var(--theme-primary,#3b82f6)]/30 outline-none text-white placeholder:text-zinc-600 transition-all"
+                  placeholder="Code from email"
+                  className="w-full py-4 text-center text-2xl font-mono font-bold tracking-[0.35em] rounded-2xl bg-white/5 border border-[var(--theme-primary,#3b82f6)]/50 focus:border-[var(--theme-primary,#3b82f6)] focus:ring-2 focus:ring-[var(--theme-primary,#3b82f6)]/30 outline-none text-white placeholder:text-zinc-600 transition-all"
                 />
-                <p className="text-[11px] text-zinc-400">Enter the 6 numbers or click the sign-in link in your email</p>
+                <p className="text-[11px] text-zinc-400">Enter the code from your email or click the link in the email</p>
               </div>
 
               {/* Direct magic link helper card */}

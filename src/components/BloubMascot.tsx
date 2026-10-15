@@ -111,10 +111,6 @@ export const BloubMascot = React.memo(function BloubMascot({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) return;
       setInternalTyping(true);
-      // Give a tiny energetic impulse to sun spin on each keystroke
-      if (isSun) {
-        sunSpinSpeedRef.current = Math.min(sunSpinSpeedRef.current + 35, 260);
-      }
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       typingTimerRef.current = setTimeout(() => {
         setInternalTyping(false);
@@ -208,26 +204,15 @@ export const BloubMascot = React.memo(function BloubMascot({
       const headTilt = currentLook.current.x * 2.0;
       const bodyTilt = currentLook.current.x * 1.0;
 
-      // 4. Sun turbine spin physics while typing
-      if (isSun) {
-        if (activeTyping) {
-          sunSpinSpeedRef.current += (160 - sunSpinSpeedRef.current) * Math.min(1, dt * 10);
-        } else {
-          sunSpinSpeedRef.current += (0 - sunSpinSpeedRef.current) * Math.min(1, dt * 4.5);
-        }
-        sunSpinAngleRef.current = (sunSpinAngleRef.current + sunSpinSpeedRef.current * dt) % 360;
-      }
-
-      // Update Body Group (Rays rotate smoothly for sun, bobs and breathes as one unit)
+      // Update Body Group (bobs and breathes as one unified unit)
       if (bodyGroupRef.current) {
-        const sunRot = isSun ? sunSpinAngleRef.current : 0;
         bodyGroupRef.current.setAttribute(
           'transform',
-          `translate(0, ${floatY}) translate(50, 50) rotate(${bodyTilt + sunRot}) scale(${breathScaleX}, ${breathScaleY}) translate(-50, -50)`
+          `translate(0, ${floatY}) translate(50, 50) rotate(${bodyTilt}) scale(${breathScaleX}, ${breathScaleY}) translate(-50, -50)`
         );
       }
 
-      // Update Face Group (moves 1:1 with floatY, permanently stable and forward-facing, zero downward nod)
+      // Update Face Group (moves 1:1 with floatY and faceX, permanently stable and forward-facing)
       if (faceGroupRef.current) {
         faceGroupRef.current.setAttribute(
           'transform',
@@ -283,33 +268,7 @@ export const BloubMascot = React.memo(function BloubMascot({
       role="img"
       aria-label={`Mascot ${normShape} with ${normExpr} expression`}
       className={`select-none overflow-visible transition-transform duration-200 ${
-        isBouncing
-          ? isSun
-            ? 'sun-tap-bounce'
-            : isHexagon
-            ? 'hexagon-tap-roll'
-            : isCircle
-            ? 'circle-tap-bounce'
-            : isBook
-            ? 'book-tap-bounce'
-            : isCloud
-            ? 'cloud-tap-puff'
-            : 'mascot-squish-active'
-          : ''
-      } ${
-        activeTyping
-          ? isSun
-            ? 'sun-typing-glow'
-            : isHexagon
-            ? 'hexagon-typing-rock'
-            : isCircle
-            ? 'circle-typing-levitate'
-            : isBook
-            ? 'book-typing-glow'
-            : isCloud
-            ? 'cloud-typing-drift'
-            : ''
-          : ''
+        isBouncing ? 'mascot-squish-active' : ''
       } ${
         isThinking ? '-rotate-6 scale-105' : ''
       } ${className}`}
@@ -772,16 +731,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
       <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
-        <g
-          className={
-            isBouncing
-              ? isSun
-                ? 'sun-rays-twirl'
-                : ''
-              : ''
-          }
-          style={{ transformOrigin: '50% 50%' }}
-        >
+        <g style={{ transformOrigin: '50% 50%' }}>
           {renderUnderlay ? (
             renderUnderlay(bodyHex)
           ) : (
@@ -891,16 +841,10 @@ export const BloubMascot = React.memo(function BloubMascot({
       {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
       <g
         ref={faceGroupRef}
-        className={`mascot-face-group ${
-          isBouncing
-            ? isSun
-              ? 'sun-face-pop'
-              : ''
-            : ''
-        } ${activeTyping && isSun ? 'opacity-0 pointer-events-none' : ''}`}
+        className="mascot-face-group"
         style={{
           transformOrigin: '50% 50%',
-          opacity: (activeTyping && isSun) ? 0 : isSleeping ? 0.45 : 1,
+          opacity: isSleeping ? 0.45 : 1,
           transition: 'opacity 0.2s ease-in-out',
         }}
       >
