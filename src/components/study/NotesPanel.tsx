@@ -20,6 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import type { QuizResponse } from '@/types/quiz';
+import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
 
 export interface NoteData {
   text: string;
@@ -49,6 +50,8 @@ export interface NotesPanelProps {
   onOpenAiSummary?: () => void;
   onClose?: () => void;
   triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
+  isBookMinimized?: boolean;
+  onToggleBook?: () => void;
 }
 
 interface ChatMessage {
@@ -79,7 +82,9 @@ export const NotesPanel = React.memo(function NotesPanel({
   onOpenAnnotations,
   onOpenAiSummary,
   onClose,
-  triggerMascot
+  triggerMascot,
+  isBookMinimized = false,
+  onToggleBook
 }: NotesPanelProps) {
   const getDraftKey = useCallback((pg: number) => `note_draft_${docId}_${pg}`, [docId]);
 
@@ -494,18 +499,33 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   // Common Header & Segmented Switcher
   const panelHeader = (
-    <div className={`p-3 border-b flex flex-col gap-2 shrink-0 ${
-      isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]' : 'border-gray-200 bg-white'
+    <div className={`p-3 border-b flex flex-col gap-2.5 shrink-0 ${
+      isDark ? 'border-white/10 bg-zinc-950/80 backdrop-blur-xl' : 'border-gray-200 bg-white'
     }`}>
       {/* Top row: Page title, collapse, and status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/25 flex items-center gap-1">
-            <Sparkles size={11} /> Gemini 3.8 Flash
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg bg-[var(--theme-primary,#6366f1)]/15 text-[var(--theme-primary,#818cf8)] border border-[var(--theme-primary,#6366f1)]/25 flex items-center gap-1.5">
+            <Sparkles size={11} className="text-[var(--theme-primary,#818cf8)]" /> Gemini 3.8 Flash
           </span>
-          <span className="text-xs font-semibold text-[var(--theme-text-muted)]">
+          <span className="text-xs font-mono font-semibold text-zinc-400">
             Pg. {pageNumber}
           </span>
+          {onToggleBook && (
+            <button
+              type="button"
+              onClick={onToggleBook}
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 ${
+                isBookMinimized
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+              }`}
+              title={isBookMinimized ? "Restore split view with book" : "Minimize book to focus on study notes"}
+            >
+              <BookOpen size={11} />
+              <span>{isBookMinimized ? "Show Book" : "Minimize Book"}</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -513,9 +533,9 @@ export const NotesPanel = React.memo(function NotesPanel({
             <select
               value={localNote.lang}
               onChange={handleLangChange}
-              className={`text-[11px] px-2 py-1 rounded-lg border outline-none cursor-pointer transition-colors ${
+              className={`text-[11px] px-2.5 py-1 rounded-xl border outline-none cursor-pointer transition-colors ${
                 isDark
-                  ? 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-secondary)]'
+                  ? 'bg-white/5 border-white/10 text-zinc-300'
                   : 'bg-gray-50 border-gray-200 text-gray-700'
               }`}
             >
@@ -530,7 +550,7 @@ export const NotesPanel = React.memo(function NotesPanel({
               if (onClose) onClose();
               else updatePanelState('rail');
             }}
-            className="p-1 rounded-lg text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-subtle)] active:scale-95"
+            className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
             title="Collapse Panel"
           >
             <PanelRightClose size={16} />
@@ -539,44 +559,44 @@ export const NotesPanel = React.memo(function NotesPanel({
       </div>
 
       {/* Segmented Control Bar */}
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs font-semibold">
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-white/[0.03] border border-white/10 text-xs font-semibold backdrop-blur-md">
         <button
           type="button"
           onClick={() => setActiveTab('ai')}
-          className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+          className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 ${
             activeTab === 'ai'
-              ? 'bg-[var(--theme-surface)] text-white shadow-sm font-bold border border-white/10'
-              : 'text-[var(--theme-text-muted)] hover:text-zinc-200'
+              ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
           }`}
         >
-          <Sparkles size={13} className={activeTab === 'ai' ? 'text-[var(--theme-primary)]' : ''} />
+          <Sparkles size={13} className={activeTab === 'ai' ? 'text-white' : 'text-zinc-400'} />
           <span>Gemini AI</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('notes')}
-          className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all relative ${
+          className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 relative ${
             activeTab === 'notes'
-              ? 'bg-[var(--theme-surface)] text-white shadow-sm font-bold border border-white/10'
-              : 'text-[var(--theme-text-muted)] hover:text-zinc-200'
+              ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
           }`}
         >
-          <PenTool size={13} className={activeTab === 'notes' ? 'text-emerald-400' : ''} />
+          <PenTool size={13} className={activeTab === 'notes' ? 'text-white' : 'text-zinc-400'} />
           <span>Notes</span>
-          {hasPageNotes && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+          {hasPageNotes && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('quiz')}
-          className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+          className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 ${
             activeTab === 'quiz'
-              ? 'bg-[var(--theme-surface)] text-white shadow-sm font-bold border border-white/10'
-              : 'text-[var(--theme-text-muted)] hover:text-zinc-200'
+              ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
           }`}
         >
-          <HelpCircle size={13} className={activeTab === 'quiz' ? 'text-amber-400' : ''} />
+          <HelpCircle size={13} className={activeTab === 'quiz' ? 'text-white' : 'text-zinc-400'} />
           <span>Quiz</span>
         </button>
       </div>
@@ -585,32 +605,32 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   // TAB 1: GEMINI 3.8 AI CHAT
   const renderAiStudio = () => (
-    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden bg-zinc-950/20">
       {/* Quick Prompt Chips */}
-      <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-1.5 overflow-x-auto hide-scrollbar shrink-0 bg-[var(--theme-surface-subtle)]/50">
+      <div className="p-2.5 border-b border-white/10 flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-zinc-950/40">
         <button
           type="button"
           onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
           disabled={isAiLoading}
-          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)] text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
         >
-          ⚡ Summarize Page
+          <span>⚡ Summarize Page</span>
         </button>
         <button
           type="button"
           onClick={() => handleAskAi(`Extract key takeaways from page ${pageNumber}.`, 'summarize', 'key_takeaways')}
           disabled={isAiLoading}
-          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)] text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
         >
-          💡 Key Takeaways
+          <span>💡 Key Takeaways</span>
         </button>
         <button
           type="button"
           onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply.`, 'ask')}
           disabled={isAiLoading}
-          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)] text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
         >
-          🔍 Explain Concepts
+          <span>🔍 Explain Concepts</span>
         </button>
       </div>
 
@@ -619,37 +639,45 @@ export const NotesPanel = React.memo(function NotesPanel({
         {messages.map(msg => (
           <div
             key={msg.id}
-            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-200`}
+            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-150`}
           >
-            <div className={`max-w-[92%] rounded-2xl p-3.5 text-xs leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-[var(--theme-primary,#3b82f6)]/20 border border-[var(--theme-primary,#3b82f6)]/35 text-white'
-                : 'bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-zinc-200 shadow-sm'
-            }`}>
-              <div className="whitespace-pre-wrap font-sans space-y-2">
-                {msg.text}
+            {msg.role === 'user' ? (
+              <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs font-medium leading-relaxed bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-white shadow-sm">
+                <p dir="auto">{msg.text}</p>
               </div>
+            ) : (
+              <div className="w-full rounded-2xl rounded-tl-sm p-4 text-xs leading-relaxed bg-zinc-950/80 border border-white/10 backdrop-blur-xl text-zinc-100 shadow-xl space-y-3">
+                {/* Identity header */}
+                <div className="flex items-center justify-between pb-2 border-b border-white/10 text-[10px] text-zinc-400 select-none">
+                  <div className="flex items-center gap-1.5 font-bold tracking-tight text-[var(--theme-primary,#818cf8)]">
+                    <Sparkles size={11} />
+                    <span>NotebookLM • Gemini 3.8 Flash</span>
+                  </div>
+                  {msg.grounded && (
+                    <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 size={10} /> 100% Grounded
+                    </span>
+                  )}
+                </div>
 
-              {msg.role === 'assistant' && (
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-400">
+                {/* Rich Formatted Markdown with Arabic BiDi support */}
+                <StudyMarkdownRenderer content={msg.text} />
+
+                {/* Footer with citations and actions */}
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
                   <div className="flex items-center gap-1.5">
-                    {msg.grounded && (
-                      <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                        <CheckCircle2 size={11} /> 100% Grounded
-                      </span>
-                    )}
                     {msg.citations && msg.citations.length > 0 && (
-                      <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300 font-mono">
+                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-zinc-300 font-mono text-[10px]">
                         {msg.citations.join(', ')}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleAppendToNotes(msg.text)}
-                      className="hover:text-white flex items-center gap-1 transition-colors"
+                      className="hover:text-white px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1 transition-all active:scale-95"
                       title="Append to Page Notes"
                     >
                       <Plus size={11} /> Add to Notes
@@ -661,22 +689,22 @@ export const NotesPanel = React.memo(function NotesPanel({
                         setCopiedId(msg.id);
                         setTimeout(() => setCopiedId(null), 2000);
                       }}
-                      className="hover:text-white flex items-center gap-1 transition-colors"
+                      className="hover:text-white p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1 transition-all active:scale-95"
                       title="Copy response"
                     >
                       {copiedId === msg.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         ))}
 
         {isAiLoading && (
-          <div className="flex items-center gap-2 p-3 rounded-2xl bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-xs text-zinc-400 w-fit animate-pulse">
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-zinc-950/80 border border-white/10 text-xs text-zinc-300 w-fit animate-pulse backdrop-blur-md shadow-lg">
             <Sparkles size={13} className="text-[var(--theme-primary)] animate-spin" />
-            <span>Gemini 3.8 Flash reading document...</span>
+            <span>Gemini 3.8 Flash formulating response...</span>
           </div>
         )}
 
@@ -720,24 +748,27 @@ export const NotesPanel = React.memo(function NotesPanel({
           e.preventDefault();
           handleAskAi();
         }}
-        className="p-3 border-t border-[var(--theme-border)] bg-[var(--theme-surface-elevated)] flex items-center gap-2 shrink-0"
+        className="p-3 border-t border-white/10 bg-zinc-950/80 backdrop-blur-xl shrink-0"
       >
-        <input
-          type="text"
-          value={queryInput}
-          onChange={(e) => setQueryInput(e.target.value)}
-          placeholder={`Ask Gemini about ${docTitle}...`}
-          disabled={isAiLoading}
-          className="flex-1 bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] focus:border-[var(--theme-primary)] text-xs rounded-xl px-3 py-2.5 text-zinc-200 placeholder:text-zinc-500 outline-none transition-colors"
-        />
-        <button
-          type="submit"
-          disabled={isAiLoading || !queryInput.trim()}
-          className="p-2.5 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 disabled:opacity-40 text-white font-bold transition-all shadow-md shrink-0 flex items-center justify-center"
-          title="Send query to Gemini 3.8 Flash"
-        >
-          <Send size={14} />
-        </button>
+        <div className="relative flex items-center bg-white/[0.04] border border-white/10 focus-within:border-[var(--theme-primary,#6366f1)] focus-within:ring-2 focus-within:ring-[var(--theme-primary,#6366f1)]/20 rounded-2xl transition-all pl-3.5 pr-1.5 py-1.5 shadow-inner">
+          <input
+            type="text"
+            value={queryInput}
+            onChange={(e) => setQueryInput(e.target.value)}
+            placeholder={`Ask Gemini about ${docTitle || 'document'}...`}
+            disabled={isAiLoading}
+            dir="auto"
+            className="flex-1 bg-transparent text-xs text-white placeholder:text-zinc-500 outline-none font-sans"
+          />
+          <button
+            type="submit"
+            disabled={isAiLoading || !queryInput.trim()}
+            className="p-2 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 disabled:opacity-30 text-white font-bold transition-all shadow-md shrink-0 flex items-center justify-center"
+            title="Send query to Gemini 3.8 Flash"
+          >
+            <Send size={14} />
+          </button>
+        </div>
       </form>
     </div>
   );
@@ -977,10 +1008,12 @@ export const NotesPanel = React.memo(function NotesPanel({
   // EXPANDED DESKTOP PANE
   return (
     <div
-      style={{ width: clampedWidth }}
-      className={`flex-shrink-0 h-full border-l flex flex-col transition-colors duration-200 ${
+      style={isBookMinimized ? undefined : { width: clampedWidth }}
+      className={`h-full border-l flex flex-col transition-all duration-200 ${
+        isBookMinimized ? 'flex-1 w-full min-w-0' : 'flex-shrink-0'
+      } ${
         isDark
-          ? 'border-[var(--theme-border)] bg-[var(--theme-surface)] backdrop-blur-xl'
+          ? 'border-white/10 bg-zinc-950/80 backdrop-blur-xl'
           : 'border-gray-200 bg-[#fffdf5]'
       }`}
       data-spatial-container="notes-expanded"

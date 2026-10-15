@@ -7,7 +7,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import ArabicTextLayer from './ArabicTextLayer';
 import NotesPanel from './NotesPanel';
-import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, MousePointer2, ZoomIn, ZoomOut, Eraser, Undo2, Sidebar, Hand, Eye, EyeOff, Square, Baseline, Maximize2, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, MousePointer2, ZoomIn, ZoomOut, Eraser, Undo2, Sidebar, Hand, Eye, EyeOff, Square, Baseline, Maximize2, Sparkles, BookOpen, HelpCircle, PanelLeftOpen, PanelRightOpen, Minimize2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { updateFrontmatterField } from '@/lib/obsidian/parser';
 import { recordMutation, markMutationSynced, markMutationFailed } from '@/lib/storage/offline-wal';
@@ -64,6 +64,7 @@ export default function PdfNotebookViewer({
   const [isDragging, setIsDragging] = useState(false);
   const [showPdfUi, setShowPdfUi] = useState(true);
   const [showNotes, setShowNotes] = useState(true);
+  const [isBookMinimized, setIsBookMinimized] = useState(false);
   const [pendingText, setPendingText] = useState<{x: number, y: number, text: string, color?: string, fontSize?: number, id?: number} | null>(null);
   const [viewerEngine, setViewerEngine] = useState<'pdfjs' | 'native'>('pdfjs');
   const [highlightMode, setHighlightMode] = useState<'box' | 'text'>('box');
@@ -872,7 +873,47 @@ export default function PdfNotebookViewer({
         }
       `}</style>
        
-       {/* PDF Viewer Side */}
+       {/* PDF Viewer Side or Minimized Rail */}
+       {isBookMinimized ? (
+         <div className="w-12 flex-shrink-0 h-full border-r border-white/10 flex flex-col items-center py-4 justify-between bg-zinc-950/80 backdrop-blur-xl z-20 transition-all select-none">
+           <div className="flex flex-col items-center gap-3">
+             <button
+               type="button"
+               onClick={() => setIsBookMinimized(false)}
+               className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:brightness-110 transition-all active:scale-95 shadow-md"
+               title="Expand Book / PDF"
+               aria-label="Expand Book"
+             >
+               <BookOpen size={16} />
+             </button>
+             <div className="flex flex-col items-center text-[10px] font-mono font-bold tracking-tighter text-zinc-400">
+               <span>P.{pageNumber}</span>
+               <span className="text-[9px] text-zinc-500">/ {numPages || 1}</span>
+             </div>
+           </div>
+
+           <div className="flex flex-col items-center gap-1.5">
+             <button
+               type="button"
+               onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+               disabled={pageNumber <= 1}
+               className="p-1.5 rounded-lg text-zinc-400 hover:text-white disabled:opacity-30 active:scale-95 transition-all"
+               title="Previous Page"
+             >
+               <ChevronLeft size={16} />
+             </button>
+             <button
+               type="button"
+               onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))}
+               disabled={pageNumber >= (numPages || 1)}
+               className="p-1.5 rounded-lg text-zinc-400 hover:text-white disabled:opacity-30 active:scale-95 transition-all"
+               title="Next Page"
+             >
+               <ChevronRight size={16} />
+             </button>
+           </div>
+         </div>
+       ) : (
        <div 
           className={`flex-1 h-full overflow-auto custom-scrollbar flex flex-col py-6 px-6 relative bg-black/20 ${(pdfTool === 'pan' || (pdfTool === 'highlight' && highlightMode === 'box')) ? 'touch-none' : ''}`}
           onPointerDown={(e) => {
@@ -1315,19 +1356,19 @@ export default function PdfNotebookViewer({
       )}
            
       {viewerEngine === 'pdfjs' && numPages && !isMobileOrTabletVertical && (
-        <div className="sticky bottom-6 mt-6 left-1/2 -translate-x-1/2 w-max flex items-center gap-3 bg-[var(--theme-surface-elevated)]/90 backdrop-blur-md px-4 py-2 rounded-full border border-[var(--theme-border)] shadow-xl z-50 text-[var(--theme-text-primary)]">
+        <div className="sticky bottom-6 mt-6 left-1/2 -translate-x-1/2 w-max flex items-center gap-2 bg-zinc-950/90 backdrop-blur-xl px-3.5 py-2 rounded-2xl border border-white/15 shadow-2xl z-50 text-white animate-in fade-in select-none">
           <button 
             onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
             disabled={pageNumber <= 1} 
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--theme-text-primary)] disabled:opacity-30 hover:bg-[var(--theme-surface-subtle)] active:scale-95 rounded-full transition-all"
+            className="p-1.5 rounded-xl hover:bg-white/10 disabled:opacity-30 active:scale-95 text-white transition-all"
             aria-label="Previous page"
             title="Previous page"
           >
-            <ChevronLeft size={20}/>
+            <ChevronLeft size={16}/>
           </button>
           
-          <div className="flex items-center gap-2 text-xs tracking-widest font-bold uppercase text-[var(--theme-text-secondary)]">
-            <span>Page</span>
+          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-zinc-300">
+            <span>Pg</span>
             <input 
               type="number" 
               min={1} 
@@ -1337,19 +1378,85 @@ export default function PdfNotebookViewer({
                 const val = parseInt(e.target.value);
                 if (!isNaN(val)) setPageNumber(Math.min(Math.max(1, val), numPages || 1));
               }}
-              className="w-12 text-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-primary)] rounded py-1 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-mono"
+              className="w-11 text-center bg-white/10 border border-white/15 text-white rounded-lg py-0.5 outline-none focus:border-[var(--theme-primary,#3b82f6)] font-mono text-xs"
             />
-            <span>/ {numPages}</span>
+            <span className="text-zinc-500">/ {numPages}</span>
           </div>
 
           <button 
             onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} 
             disabled={pageNumber >= (numPages||1)} 
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--theme-text-primary)] disabled:opacity-30 hover:bg-[var(--theme-surface-subtle)] active:scale-95 rounded-full transition-all"
+            className="p-1.5 rounded-xl hover:bg-white/10 disabled:opacity-30 active:scale-95 text-white transition-all"
             aria-label="Next page"
             title="Next page"
           >
-            <ChevronRight size={20}/>
+            <ChevronRight size={16}/>
+          </button>
+
+          <div className="w-px h-4 bg-white/15 mx-1" />
+
+          {/* Fit to width */}
+          <button
+            type="button"
+            onClick={fitToWidth}
+            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-xs font-semibold text-zinc-300 hover:text-white flex items-center gap-1 transition-all"
+            title="Fit Page to Width"
+          >
+            <Maximize2 size={13} />
+            <span>Fit</span>
+          </button>
+
+          {/* Zoom Out & In */}
+          <button
+            type="button"
+            onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
+            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300 hover:text-white transition-all"
+            title="Zoom Out"
+          >
+            <ZoomOut size={14} />
+          </button>
+          <span className="text-[11px] font-mono font-bold text-zinc-400 min-w-[32px] text-center">
+            {Math.round(zoomLevel * 100)}%
+          </span>
+          <button
+            type="button"
+            onClick={() => setZoomLevel(z => Math.min(3.0, Number((z + 0.15).toFixed(2))))}
+            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300 hover:text-white transition-all"
+            title="Zoom In"
+          >
+            <ZoomIn size={14} />
+          </button>
+
+          <div className="w-px h-4 bg-white/15 mx-1" />
+
+          {/* Minimize / Expand Book */}
+          <button
+            type="button"
+            onClick={() => setIsBookMinimized(m => !m)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+              isBookMinimized
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white'
+            }`}
+            title={isBookMinimized ? "Restore book side" : "Minimize book to focus on Notes & AI"}
+          >
+            <BookOpen size={14} />
+            <span>{isBookMinimized ? "Show Book" : "Minimize Book"}</span>
+          </button>
+
+          {/* Minimize / Expand Notes & AI */}
+          <button
+            type="button"
+            onClick={() => setShowNotes(s => !s)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+              showNotes
+                ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md'
+                : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white'
+            }`}
+            title={showNotes ? "Minimize Notes & AI pane" : "Expand Notes & AI pane"}
+          >
+            <Sparkles size={14} />
+            <span>{showNotes ? "Notes & AI" : "Show Notes"}</span>
           </button>
         </div>
       )}
@@ -1420,11 +1527,54 @@ export default function PdfNotebookViewer({
         </div>
       )}
     </div>
+    )}
+
+    {/* Right Rail when Notes are minimized */}
+    {!showNotes && !isMobileOrTabletVertical && (
+      <div className="w-12 flex-shrink-0 h-full border-l border-white/10 flex flex-col items-center py-4 justify-between bg-zinc-950/80 backdrop-blur-xl z-20 transition-all select-none">
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowNotes(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--theme-primary,#6366f1)]/20 text-[var(--theme-primary,#818cf8)] border border-[var(--theme-primary,#6366f1)]/40 hover:brightness-110 active:scale-95 transition-all shadow-md"
+            title="Expand AI Studio & Notes"
+            aria-label="Expand Notes"
+          >
+            <Sparkles size={16} />
+          </button>
+          <div className="flex flex-col items-center text-[10px] font-mono font-bold tracking-tighter text-zinc-400">
+            <span>P.{pageNumber}</span>
+            {notes[pageNumber]?.text && (
+              <span className="w-2 h-2 rounded-full mt-1 bg-emerald-400 shadow-sm animate-pulse" title="Notes on this page" />
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowNotes(true)}
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
+            title="Open Notes"
+          >
+            <PenTool size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNotes(true)}
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
+            title="Open Quiz"
+          >
+            <HelpCircle size={15} />
+          </button>
+        </div>
+      </div>
+    )}
 
     {showNotes && (
       <>
-        {/* Draggable Resizer - only on desktop horizontal layout */}
-        {!isMobileOrTabletVertical && (
+        {/* Draggable Resizer - only on desktop horizontal layout when book is not minimized */}
+        {!isMobileOrTabletVertical && !isBookMinimized && (
           <div 
             className="w-3 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/20 active:bg-[var(--theme-primary)]/40 transition-colors z-20 relative flex-shrink-0 group flex items-center justify-center" title="Drag to resize notebook pane"
             onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }} 
@@ -1447,6 +1597,8 @@ export default function PdfNotebookViewer({
           isDark={isDark}
           initialNote={notes[pageNumber] || { text: '', lang: 'en' }}
           panelMode={isMobileOrTabletVertical ? 'drawer' : 'expanded'}
+          isBookMinimized={isBookMinimized}
+          onToggleBook={() => setIsBookMinimized(m => !m)}
           onChange={(pg, noteData) => {
             isDirtyRef.current = true;
             setNotes(n => ({

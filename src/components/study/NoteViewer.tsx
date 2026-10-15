@@ -884,15 +884,25 @@ export default function NoteViewer({
               )}
             </div>
           ) : pdfUrl ? (
-            <div className={`flex flex-col w-full h-full min-h-0 flex-1 gap-3 ${isPdfFullscreen ? 'fixed inset-0 z-50 p-6 bg-[var(--theme-bg)]/95 backdrop-blur-xl' : ''}`}>
-              {/* If hideTopHeader is true (dual-pane embed), render compact portal bar */}
-              {hideTopHeader && (
-                <div className={`flex items-center justify-between px-3 py-1.5 rounded-xl border text-xs shrink-0 ${
-                  isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)] text-[var(--theme-text-primary)]' : 'border-gray-200 bg-white text-gray-700'
-                }`}>
+            <div className={`flex flex-col w-full h-full min-h-0 flex-1 gap-3 ${isPdfFullscreen ? 'fixed inset-0 z-50 p-4 sm:p-6 bg-[var(--theme-bg)]/95 backdrop-blur-2xl' : ''}`}>
+              {/* If in fullscreen OR hideTopHeader is true (dual-pane embed), render compact portal bar */}
+              {(isPdfFullscreen || hideTopHeader) && (
+                <div className="flex items-center justify-between px-4 py-2 rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-xl shadow-xl text-xs shrink-0 z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-[var(--theme-primary)] shrink-0" />
-                    <span className="text-xs font-bold truncate max-w-[150px]">{note.title}</span>
+                    {isPdfFullscreen ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsPdfFullscreen(false)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold transition-all active:scale-95 shadow-sm"
+                        title="Exit Fullscreen"
+                      >
+                        <Minimize2 size={13} />
+                        <span>Exit Fullscreen</span>
+                      </button>
+                    ) : (
+                      <FileText size={14} className="text-[var(--theme-primary)] shrink-0" />
+                    )}
+                    <span className="text-xs font-bold truncate max-w-[200px] text-zinc-200">{note.title}</span>
                   </div>
                   <div id="pdf-tools-portal" className="flex items-center gap-1 overflow-x-auto hide-scrollbar"></div>
                 </div>
