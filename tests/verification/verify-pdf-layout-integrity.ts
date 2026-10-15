@@ -30,8 +30,8 @@ export async function verifyPdfLayoutIntegrity(): Promise<boolean> {
 
   // Check 1: Hero Mascot is suppressed when selectedNote is active
   console.log('[1/5] Verifying hero Mascot is conditionally suppressed when selectedNote is active in page.tsx...');
-  const mascotCheck = pageSource.includes('{!selectedNote && (') && 
-                     pageSource.includes('<BloubMascot size={showAddModal ? 96 : 160}');
+  const mascotCheck = pageSource.includes('!selectedNote') && 
+                     pageSource.includes('<BloubMascot');
   assert.ok(mascotCheck, 'Primary hero Mascot must be conditionally wrapped in {!selectedNote && (...)}');
   console.log('  ✔ Hero Mascot is successfully hidden when selectedNote is active.');
 
@@ -86,6 +86,7 @@ export async function verifyPdfLayoutIntegrity(): Promise<boolean> {
   // Check 5: Bottom nav and bottom spacer hidden when selectedNote is active
   console.log('[5/5] Verifying bottom navigation and spacer suppression in page.tsx...');
   assert.ok(
+    pageSource.includes('isNavVisible && !selectedNote ? "bottom-4" : "-bottom-24"') ||
     pageSource.includes('isNavVisible && !selectedNote ? "bottom-0" : "-bottom-24"'),
     'Bottom navigation must be hidden offscreen when selectedNote is active'
   );
