@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
 
     const action = body.action || 'ask';
     const model = body.model || 'gemini-3.8-flash';
+    const language = body.language || body.locale;
 
     if (action === 'summarize') {
       const summaryResult = await GeminiClient.summarizeDocument({
@@ -35,7 +36,8 @@ export async function POST(req: NextRequest) {
         documentContent: body.documentContent || '',
         pageNumber: body.pageNumber,
         pageContent: body.pageContent || '',
-        mode: body.mode || 'summary'
+        mode: body.mode || 'summary',
+        language
       });
 
       return NextResponse.json({
@@ -65,7 +67,8 @@ export async function POST(req: NextRequest) {
       documentContent: body.documentContent || '',
       pageNumber: body.pageNumber,
       pageContent: body.pageContent || '',
-      chatHistory: Array.isArray(body.chatHistory) ? body.chatHistory : []
+      chatHistory: Array.isArray(body.chatHistory) ? body.chatHistory : [],
+      language
     });
 
     return NextResponse.json({

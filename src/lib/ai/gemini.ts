@@ -240,7 +240,9 @@ export class GeminiClient {
    * Generates a structured quiz using Gemini.
    */
   static async generateQuiz(request: QuizGenerateRequest): Promise<QuizResponse> {
-    const { apiKey, model = 'gemini-3.8-flash', noteTitle, noteContent, config } = request;
+    const { apiKey, model = 'gemini-3.8-flash', noteTitle, noteContent, config, language } = request;
+    const reqLang = language || config?.language;
+    const isArabic = reqLang === 'ar' || /[\u0600-\u06FF]/.test(noteContent.slice(0, 600));
 
     if (!apiKey || apiKey.trim() === '') {
       const err: CustomHttpError = new Error('API_KEY_REQUIRED: An external LLM API key must be provided.');
@@ -264,16 +266,16 @@ Your task is to generate high-yield, conceptually rigorous quiz questions based 
 Rules:
 1. Rely strictly on facts directly mentioned in the note. Do not assume or extrapolate external knowledge.
 2. For multiple_choice questions, provide exactly 4 clear, mutually exclusive options. Ensure only ONE option is unmistakably correct. correctAnswerIndex must be a number 0, 1, 2, or 3.
-3. For true_false questions, options must be ["True", "False"], correctAnswerIndex must be 0 for True or 1 for False.
+3. For true_false questions, options must be ${isArabic ? '["صحيح", "خطأ"]' : '["True", "False"]'}, correctAnswerIndex must be 0 for True or 1 for False.
 4. For short_answer questions, include correctAnswerText explaining the ideal student response.
 5. Include a precise explanation citing the specific section or quote from the note in sourceCitation.
 6. When questions involve visual setups, geometry, electrical circuits, physics forces, or timelines, provide an "imageCaption" summarizing the mental diagram or formula card (e.g. "Diagram: Series circuit with 2 resistors" or "Timeline: Treaty negotiations in 1919").
 7. Output MUST be valid JSON adhering exactly to the requested schema.
-8. Language and Mixed Bidirectional Formatting (Arabic + English / Math / Science):
-   - Always match the primary language of the source document (e.g. if the note is in Arabic, write questions, options, and explanations in Arabic).
-   - In Arabic questions and explanations containing Latin variables, scientific units, or math equations (e.g. W, J, V, Hz, N, kg, m/s, P_max, P_avg, 2 × 75 = 150):
+8. Language & Arabic Style:
+${isArabic ? `   - Write ALL questions, options, explanations, and titles in natural, modern, high-clarity Arabic (فصحى معاصرة وسلسة بدون ركاكة أو ترجمة حرفية جافة).
+   - In Arabic questions containing Latin variables, scientific units, or math equations (e.g. W, J, V, Hz, N, kg, m/s, P_max, P_avg, 2 × 75 = 150):
      * Always enclose mathematical formulas, equations, and standalone units inside inline backticks (e.g. \`P_avg = 0.5 * P_max\` or \`75 W\` or \`W\`). This guarantees perfect bidirectional rendering without inverted numbers or misplaced punctuation.
-   - For multiple choice options with numbers and units, write them clearly with spacing, e.g. "75 W", "150 W", "200 W", "250 W".`;
+   - For multiple choice options with numbers and units, write them clearly with spacing, e.g. "75 W", "150 W", "200 W", "250 W".` : `   - Always match the primary language of the source document (e.g. if the note is in Arabic, write questions, options, and explanations in Arabic).`}`;
 
     const userPrompt = `Generate a ${difficulty} difficulty quiz with ${questionCount} questions based on the following note.
 
@@ -328,7 +330,7 @@ Required JSON Output Schema:
         }
         correctAnswerIndex = Math.max(0, Math.min(3, correctAnswerIndex));
       } else if (qType === 'true_false') {
-        options = ['True', 'False'];
+        options = isArabic ? ['صحيح', 'خطأ'] : ['True', 'False'];
         correctAnswerIndex = correctAnswerIndex === 1 ? 1 : 0;
       }
 
@@ -358,7 +360,8 @@ Required JSON Output Schema:
    * Generates a Socratic hint without spoiling the answer.
    */
   static async generateHint(request: HintRequest): Promise<HintResponse> {
-    const { apiKey, model = 'gemini-3.8-flash', question, noteContext } = request;
+    const { apiKey, model = 'gemini-3.8-flash', question, noteContext, language } = request;
+    const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(question);
 
     if (!apiKey || apiKey.trim() === '') {
       const err: CustomHttpError = new Error('API_KEY_REQUIRED: Missing API key for hint generation.');
@@ -372,15 +375,20 @@ Required JSON Output Schema:
       throw err;
     }
 
-    const systemPrompt = `You are Bloub, a friendly, encouraging study mascot.
+    const systemPrompt = isArabic
+      ? `أنت بلوب، مساعد دراسي ذكي ومرح.
+قدم تلميحاً سقراطياً لطيفاً (جملة أو جملتين) باللغة العربية الفصحى المعاصرة والسلسة لمساعدة الطالب في استنتاج الإجابة بنفسه دون كشفها مباشرة.`
+      : `You are Bloub, a friendly, encouraging study mascot.
 Provide a 1-to-2 sentence subtle Socratic hint for the given question based on the note context.
 DO NOT reveal the answer, correct option index, or exact option text. Guide the user to think for themselves.`;
 
     const prompt = `Question: ${question}\n\nNote Context:\n${(noteContext || '').slice(0, 3000)}`;
 
     const text = await this.callGenerateContent(apiKey, model, prompt, systemPrompt, false);
+    const prefix = isArabic ? 'همسة من بلوب: ' : "Bloub's Hint: ";
+    const cleanText = text.trim();
     return {
-      hint: text.trim().startsWith("Bloub's Hint:") ? text.trim() : `Bloub's Hint: ${text.trim()}`
+      hint: cleanText.startsWith(prefix) ? cleanText : `${prefix}${cleanText}`
     };
   }
 
@@ -388,7 +396,8 @@ DO NOT reveal the answer, correct option index, or exact option text. Guide the 
    * Evaluates a free-text response against the source note context.
    */
   static async evaluateAnswer(request: EvaluateRequest): Promise<EvaluationResponse> {
-    const { apiKey, model = 'gemini-3.8-flash', question, userAnswer, expectedAnswer, noteContext } = request;
+    const { apiKey, model = 'gemini-3.8-flash', question, userAnswer, expectedAnswer, noteContext, language } = request;
+    const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(question) || /[\u0600-\u06FF]/.test(userAnswer);
 
     if (!apiKey || apiKey.trim() === '') {
       const err: CustomHttpError = new Error('API_KEY_REQUIRED: Missing API key.');
@@ -400,13 +409,25 @@ DO NOT reveal the answer, correct option index, or exact option text. Guide the 
       return {
         score: 0,
         isCorrect: false,
-        feedback: 'No answer was provided. Please write a response explaining the concept.',
+        feedback: isArabic 
+          ? 'لم يتم إدخال إجابة. اكتب شرحاً مبسطاً للمفهوم لتقييمه.'
+          : 'No answer was provided. Please write a response explaining the concept.',
         keyPointsCovered: [],
-        missedPoints: ['Core definition', 'Key mechanisms']
+        missedPoints: isArabic ? ['التعريف الجوهري', 'الآليات الأساسية'] : ['Core definition', 'Key mechanisms']
       };
     }
 
-    const systemPrompt = `You are an accurate grading assistant. Evaluate the student's answer to the question based on the note context and expected answer.
+    const systemPrompt = isArabic
+      ? `أنت مساعد تقييم دراسي دقيق. قيّم إجابة الطالب باللغة العربية الفصحى السلسة والمشجعة بناءً على السياق والإجابة النموذجية.
+أخرج JSON حصراً وفق هذا المخطط:
+{
+  "score": number (0-100),
+  "isCorrect": boolean (score >= 60),
+  "feedback": "string (ملاحظات تقييم ذكية ومشجعة بالعربية المعاصرة)",
+  "keyPointsCovered": ["string بالعربية"],
+  "missedPoints": ["string بالعربية"]
+}`
+      : `You are an accurate grading assistant. Evaluate the student's answer to the question based on the note context and expected answer.
 Output JSON adhering to this schema:
 {
   "score": number (0-100),
@@ -428,7 +449,7 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
     return {
       score,
       isCorrect: score >= 60,
-      feedback: parsed.feedback || (score >= 60 ? 'Good understanding!' : 'Needs review.'),
+      feedback: parsed.feedback || (score >= 60 ? (isArabic ? 'فهم رائع ومتقن!' : 'Good understanding!') : (isArabic ? 'تحتاج مراجعة سريعة لتثبيت المعلومة.' : 'Needs review.')),
       keyPointsCovered: Array.isArray(parsed.keyPointsCovered) ? parsed.keyPointsCovered : [],
       missedPoints: Array.isArray(parsed.missedPoints) ? parsed.missedPoints : []
     };
@@ -446,6 +467,7 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
     pageNumber?: number;
     pageContent?: string;
     chatHistory?: { role: 'user' | 'assistant'; text: string }[];
+    language?: string;
   }): Promise<{ answer: string; citations: string[]; grounded: boolean }> {
     const {
       apiKey,
@@ -455,7 +477,8 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
       documentContent = '',
       pageNumber,
       pageContent = '',
-      chatHistory = []
+      chatHistory = [],
+      language
     } = request;
 
     if (!apiKey || apiKey.trim() === '') {
@@ -473,9 +496,13 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
     const availableContext = (pageContent && pageContent.trim() ? `[Active Page ${pageNumber || 1} Text]:\n${pageContent.trim()}\n\n` : '') +
       (documentContent && documentContent.trim() ? `[Document Excerpts]:\n${documentContent.slice(0, 15000)}` : '');
 
+    const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(question) || /[\u0600-\u06FF]/.test(availableContext.slice(0, 400));
+
     if (!availableContext.trim()) {
       return {
-        answer: 'This document does not contain readable text (it may be a scanned image or empty). Please open or upload a document with extractable text so I can ground my answers without hallucinating.',
+        answer: isArabic
+          ? 'لا يوجد نص قابل للقراءة في هذا المستند أو الصفحة (قد تكون صورة ممسوحة ضوئياً). يُرجى فتح أو رفع مستند يحتوي على نصوص قابلة للاستخراج لأتمكن من إجابتك بدقة.'
+          : 'This document does not contain readable text (it may be a scanned image or empty). Please open or upload a document with extractable text so I can ground my answers without hallucinating.',
         citations: [],
         grounded: false
       };
@@ -487,18 +514,21 @@ Your answers MUST be strictly and exclusively grounded in the provided document 
 CRITICAL ANTI-HALLUCINATION RULES:
 1. ONLY state facts, numbers, equations, definitions, and conclusions directly present in the source text.
 2. If the user's question asks for information NOT found in the source text, state clearly:
-   "Based on the provided document, this information is not mentioned."
+   ${isArabic ? '"بناءً على المستند المقدم، هذه المعلومة غير مذكورة."' : '"Based on the provided document, this information is not mentioned."'}
    DO NOT speculate, make assumptions, or introduce outside facts that could be incorrect for this document.
 3. If only a partial answer is in the document, share only the grounded part and clarify what the document does not mention.
 4. When stating facts, cite the location when applicable (e.g. [Page ${pageNumber || 1}] or quote the relevant phrase).
-5. If the document or question is in Arabic, respond in clear, fluent Arabic.
+5. Language & Arabic Tone:
+${isArabic ? `   - أجب باللغة العربية الفصحى المعاصرة، السلسة والذكية (ابتعد تماماً عن الترجمة الحرفية الركيكة أو الأسلوب الأكاديمي المعقد والجاف).
+   - نسق إجابتك بنقاط وعناوين واضحة وممتعة للمراجعة والمذاكرة السريعة.
+   - المصطلحات الإنجليزية أو المعادلات الرياضية اكتبها بدقة داخل inline code (مثال: \`W\`, \`P_max\`).` : `   - If the document or question is in Arabic, respond in clear, fluent Arabic.`}
 6. Format answers with markdown headers, concise bullet points, and bold key terms.
 7. CONCEPT TREE / ROADMAP MODE:
    - When asked for a concept tree, mind map, or what to start with:
      Structure the answer as a visual step-by-step roadmap:
-     * 1. Foundation & Prerequisites (What you need to know first)
-     * 2. Core Principles & Mechanisms (The central ideas and equations)
-     * 3. Applications & Mastery (How it all connects and what to test)
+     * 1. Foundation & Prerequisites (${isArabic ? 'الأساسيات والمتطلبات السابقة' : 'What you need to know first'})
+     * 2. Core Principles & Mechanisms (${isArabic ? 'المفاهيم والآليات الجوهرية' : 'The central ideas and equations'})
+     * 3. Applications & Mastery (${isArabic ? 'التطبيقات وربط الأفكار' : 'How it all connects and what to test'})
      Include visual branch connectors (├─, └─, ──▶) or clean markdown cards.
 8. STORYTELLING / HISTORICAL NARRATIVE MODE:
    - When asked for Story Mode, storytelling, or historical context:
@@ -529,7 +559,8 @@ Provide an accurate, strictly grounded answer following the rules.`;
       });
     }
 
-    const grounded = !answer.toLowerCase().includes('this information is not mentioned');
+    const grounded = !answer.toLowerCase().includes('this information is not mentioned') &&
+      !answer.includes('غير مذكورة');
 
     return {
       answer: answer.trim(),
@@ -549,6 +580,7 @@ Provide an accurate, strictly grounded answer following the rules.`;
     pageNumber?: number;
     pageContent?: string;
     mode?: 'summary' | 'key_takeaways' | 'study_guide';
+    language?: string;
   }): Promise<{
     title: string;
     summary: string;
@@ -563,7 +595,8 @@ Provide an accurate, strictly grounded answer following the rules.`;
       documentContent = '',
       pageNumber,
       pageContent = '',
-      mode = 'summary'
+      mode = 'summary',
+      language
     } = request;
 
     if (!apiKey || apiKey.trim() === '') {
@@ -573,16 +606,38 @@ Provide an accurate, strictly grounded answer following the rules.`;
     }
 
     const targetText = ((pageContent && pageContent.trim()) || (documentContent && documentContent.slice(0, 15000)) || '').trim();
+    const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(targetText.slice(0, 500));
+
     if (!targetText) {
       return {
         title: documentTitle,
-        summary: 'No readable text was found in this document or page to summarize.',
-        keyPoints: ['Ensure document has selectable text.'],
+        summary: isArabic 
+          ? 'لم يتم العثور على نص قابل للقراءة في هذه الصفحة أو المستند لتلخيصه.'
+          : 'No readable text was found in this document or page to summarize.',
+        keyPoints: [isArabic ? 'تأكد من أن المستند يحتوي على نصوص قابلة للاختيار.' : 'Ensure document has selectable text.'],
         suggestedQuestions: []
       };
     }
 
-    const systemPrompt = `You are Bloub NotebookLM, an academic synthesizer powered by Google Gemini 3.8 Flash.
+    const systemPrompt = isArabic
+      ? `أنت بلوب (Bloub NotebookLM)، مساعد دراسي ومُلخّص أكاديمي فائق الذكاء مدعوم بنموذج Google Gemini 3.8 Flash.
+مهمتك: توليد ملخص دراسي مُحكَم، ذكي وسلس باللغة العربية الفصحى المعاصرة بناءً حصراً ومباشرة على النص المقدم، بدون أي هلاوس أو معلومات خارج النص.
+
+قواعد الأسلوب واللغة العربية:
+1. اكتب بلغة عربية فصحى معاصرة فائقة الوضوح والجاذبية — ابتعد تماماً عن الركاكة، الترجمة الحرفية الجافة، والتعقيد الأكاديمي المتكلف.
+2. رتب الأفكار ترتيباً ذكياً يسهل استيعابه وحفظه للمذاكرة والاختبارات.
+3. حافظ على المصطلحات الدقيقة بالإنجليزية بين قوسين أو inline code إذا لزم الأمر (مثال: \`P_max\`, \`75 W\`).
+4. المخرجات يجب أن تكون JSON صالحاً مطابقاً تماماً لهذا المخطط:
+{
+  "title": "عنوان ذكي وموجز للملخص بالعربية",
+  "summary": "فقرة ملخصة تجمع جوهر الصفحة أو النص بأسلوب عربي راقٍ وسلس ومباشر",
+  "keyPoints": ["نقطة جوهرية 1 مركزة", "نقطة جوهرية 2", "نقطة جوهرية 3"],
+  "concepts": [
+    { "term": "المصطلح بالعربية (مع أصله إن وجد)", "definition": "شرح مبسط ومباشر للمفهوم" }
+  ],
+  "suggestedQuestions": ["سؤال مراجعة ذكي لتثبيت الفهم 1", "سؤال 2"]
+}`
+      : `You are Bloub NotebookLM, an academic synthesizer powered by Google Gemini 3.8 Flash.
 Generate a structured study summary based STRICTLY on facts in the provided text. Never hallucinate outside facts.
 Output MUST be valid JSON adhering to this schema:
 {
@@ -611,9 +666,9 @@ ${targetText}`;
     }>(raw);
 
     return {
-      title: parsed.title || `${documentTitle} — ${pageNumber ? `Page ${pageNumber}` : 'Overview'}`,
-      summary: parsed.summary || 'Summary based on document text.',
-      keyPoints: Array.isArray(parsed.keyPoints) && parsed.keyPoints.length > 0 ? parsed.keyPoints : ['Review key concepts in document.'],
+      title: parsed.title || `${documentTitle} — ${pageNumber ? (isArabic ? `صفحة ${pageNumber}` : `Page ${pageNumber}`) : (isArabic ? 'نظرة عامة' : 'Overview')}`,
+      summary: parsed.summary || (isArabic ? 'ملخص مستند إلى نص الوثيقة.' : 'Summary based on document text.'),
+      keyPoints: Array.isArray(parsed.keyPoints) && parsed.keyPoints.length > 0 ? parsed.keyPoints : [isArabic ? 'راجع المفاهيم الأساسية في الوثيقة.' : 'Review key concepts in document.'],
       concepts: Array.isArray(parsed.concepts) ? parsed.concepts : [],
       suggestedQuestions: Array.isArray(parsed.suggestedQuestions) ? parsed.suggestedQuestions : []
     };

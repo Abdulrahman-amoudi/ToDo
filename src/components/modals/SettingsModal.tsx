@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Eye, EyeOff, Sparkles, Key, Check, AlertCircle, Loader2, 
   Palette, Shapes, PaintBucket, Bell, Smartphone, Cpu, Download, 
-  LogOut, ChevronDown, ChevronRight 
+  LogOut, ChevronDown, ChevronRight, Globe 
 } from 'lucide-react';
 import BloubMascot from '@/components/BloubMascot';
 import { COLORS } from '@/lib/bot/skins';
 import type { Category } from '@/types/todo';
 import { maskApiKey } from '@/lib/ai/quiz';
+import { useLanguage } from '@/lib/i18n/useLanguage';
 
 export const THEMES = [
   { id: 'bg-[#080d2a]', name: 'Dark Blue', color: '#080d2a' },
@@ -84,6 +85,7 @@ export default function SettingsModal({
   sendTestPush,
   onSignOut
 }: SettingsModalProps) {
+  const { locale, setLocale, t, isRTL } = useLanguage();
   const isDark = bgTheme.includes('900') || bgTheme.includes('950') || bgTheme.includes('dark');
 
   const storageKey = `${userId}_geminiApiKey`;
@@ -264,6 +266,42 @@ export default function SettingsModal({
         </div>
 
         <div className="space-y-5">
+          {/* Language Selection */}
+          <div className={`p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800/40 border-slate-700/60' : 'bg-gray-50 border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-300">
+                <Globe size={14} className="text-blue-400" /> {t('language')}
+              </span>
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400">
+                {locale === 'ar' ? 'العربية' : 'English'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLocale('en')}
+                className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
+                  locale === 'en'
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
+                    : isDark ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' : 'bg-white border-gray-200 text-gray-600'
+                }`}
+              >
+                🇬🇧 English
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale('ar')}
+                className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all active:scale-95 font-arabic ${
+                  locale === 'ar'
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
+                    : isDark ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' : 'bg-white border-gray-200 text-gray-600'
+                }`}
+              >
+                🇸🇦 العربية (فصحى عصرية)
+              </button>
+            </div>
+          </div>
+
           {/* Section 1: AI & Gemini API Key Settings */}
           <div className={`p-4 rounded-2xl border transition-all ${isDark ? 'bg-purple-950/20 border-purple-900/40' : 'bg-purple-50/60 border-purple-100'}`}>
             <button 

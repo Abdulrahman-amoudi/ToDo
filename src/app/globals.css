@@ -5,7 +5,13 @@
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
   --font-display: var(--font-bricolage), sans-serif;
   --font-serif: var(--font-instrument-serif), Georgia, serif;
+  --font-arabic: var(--font-lemonada), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
+
+[dir="rtl"], body.font-arabic {
+  font-family: var(--font-arabic), var(--font-sans);
+}
+
 
 /* ==========================================================================
    FLUID / PLAYFUL SPATIAL DESIGN TOKENS & SURFACES

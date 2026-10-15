@@ -9,8 +9,9 @@ import {
   PaintBucket, LogOut, Download, Smartphone, Repeat, Bell, Monitor, Flame, 
   Cpu, AlertCircle, Mic, Camera, GraduationCap, BookOpen, Sparkles, Brain, 
   CheckSquare, Layers, FileText, Smile, ArrowLeft, Database, Target, Zap, 
-  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown, ExternalLink 
+  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown, ExternalLink, Globe, Languages 
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/useLanguage';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
 import { COLORS } from '@/lib/bot/skins';
@@ -105,6 +106,7 @@ const SHAPE_LABELS: Record<string, string> = {
 };
 
 export default function Home() {
+  const { locale, setLocale, t: tLang, isRTL } = useLanguage();
   const supabase = createClient();
   const [session, setSession] = useState<any>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -2320,11 +2322,53 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Language Selection Section */}
+              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 mb-6 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe size={15} className="text-[var(--theme-primary,#3b82f6)]" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                      {tLang('language')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 border border-[var(--theme-primary,#3b82f6)]/30 text-[var(--theme-primary,#3b82f6)]">
+                    {locale === 'ar' ? 'العربية' : 'English'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLocale('en')}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] ${
+                      locale === 'en'
+                        ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/25'
+                        : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocale('ar')}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] font-arabic ${
+                      locale === 'ar'
+                        ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/25'
+                        : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span>🇸🇦 العربية (فصحى عصرية)</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-zinc-400 leading-relaxed">
+                  {tLang('languageDesc')}
+                </p>
+              </div>
+
               {/* Shape Section */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    <Shapes size={14} /> Shape
+                    <Shapes size={14} /> {tLang('shape')}
                   </span>
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
                     {SHAPE_LABELS[targetShape] || targetShape}
@@ -2360,7 +2404,7 @@ export default function Home() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-white">Reactive Auto-Mood</span>
+                      <span className="text-xs font-bold text-white">{tLang('autoMood')}</span>
                       {autoMoodEnabled && (
                         <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/20 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/30">
                           Active
@@ -2368,7 +2412,7 @@ export default function Home() {
                       )}
                     </div>
                     <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
-                      Bloub dynamically reacts to study workspace, 100% completions, and pending tasks
+                      {tLang('autoMoodDesc')}
                     </p>
                   </div>
                 </div>
@@ -2384,7 +2428,7 @@ export default function Home() {
                     className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
                       autoMoodEnabled ? 'translate-x-5' : 'translate-x-0'
                     }`} 
-                  />
+                    />
                 </button>
               </div>
 
@@ -2392,7 +2436,7 @@ export default function Home() {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    <Smile size={14} /> Expression
+                    <Smile size={14} /> {tLang('expression')}
                   </span>
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
                     {targetExpr} {autoMoodEnabled && '(Auto-Reactive)'}
@@ -2423,7 +2467,7 @@ export default function Home() {
               {/* Color Section */}
               <div className="mb-6">
                 <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                  <PaintBucket size={14} /> Colour
+                  <PaintBucket size={14} /> {tLang('colour')}
                 </span>
                 <div className="flex flex-wrap gap-3">
                   {COLORS.map(c => (
@@ -2452,7 +2496,7 @@ export default function Home() {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                    <Palette size={14} className="text-[var(--theme-primary,#3b82f6)]" /> Theme Studio
+                    <Palette size={14} className="text-[var(--theme-primary,#3b82f6)]" /> {tLang('themeStudio')}
                   </span>
                   <span className="text-[10px] font-mono text-[var(--theme-primary,#3b82f6)] uppercase tracking-wider font-bold">
                     {THEMES.find(t => t.id === bgTheme)?.name || 'Default'}
@@ -2537,8 +2581,8 @@ export default function Home() {
                       <Bell size={16} />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-sm font-semibold text-white tracking-tight block">Push Notifications</span>
-                      <span className="text-xs text-zinc-400 truncate block">Get daily task reminders & study nudges</span>
+                      <span className="text-sm font-semibold text-white tracking-tight block">{tLang('pushNotifications')}</span>
+                      <span className="text-xs text-zinc-400 truncate block">{tLang('pushNotificationsDesc')}</span>
                     </div>
                   </div>
                   <button
@@ -2563,7 +2607,7 @@ export default function Home() {
                     className="w-full mt-2 py-2 text-xs font-semibold text-[var(--theme-primary,#3b82f6)] hover:opacity-80 transition-opacity flex items-center justify-center gap-1.5"
                   >
                     <Smartphone size={12} />
-                    Send Test Push Notification
+                    {tLang('sendTestPush')}
                   </button>
                 )}
               </div>
@@ -2575,16 +2619,16 @@ export default function Home() {
                 <div className="p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-300">
-                      <Sparkles size={14} className="text-[var(--theme-primary,#3b82f6)]" /> NOTEBOOKLM API
+                      <Sparkles size={14} className="text-[var(--theme-primary,#3b82f6)]" /> {tLang('notebookLmApi')}
                     </span>
                     {geminiApiKey ? (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Key Active
+                        {tLang('keyActive')}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-white/5 border border-white/10 text-zinc-400">
-                        No Key
+                        {tLang('noKey')}
                       </span>
                     )}
                   </div>
@@ -2592,7 +2636,7 @@ export default function Home() {
                     <div className="relative flex-1">
                       <input
                         type={showApiKey ? "text" : "password"}
-                        placeholder="Paste your Gemini API Key..."
+                        placeholder={tLang('apiKeyPlaceholder')}
                         value={geminiApiKey}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -2622,11 +2666,11 @@ export default function Home() {
                           : 'bg-[var(--theme-primary,#3b82f6)] text-white hover:opacity-90'
                       }`}
                     >
-                      {apiKeySaved ? 'Saved ✓' : 'Save'}
+                      {apiKeySaved ? tLang('saved') : tLang('save')}
                     </button>
                   </div>
                   <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">
-                    Powered by <strong className="text-zinc-200 font-semibold">Gemini 3.8 Flash</strong> &amp; 2.5 Flash for high-speed AI quizzes, document Q&amp;A, and tutoring. Free keys available at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[var(--theme-primary,#3b82f6)] hover:underline">aistudio.google.com</a>.
+                    {tLang('apiKeyDesc')}
                   </p>
                 </div>
     
@@ -3786,7 +3830,7 @@ export default function Home() {
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'lists' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
                 style={{ color: activeTab === 'lists' ? activeColorHex : undefined }}>
                 <ListTodo size={18} />
-                <span className="text-[10px] font-mono tracking-wider">Lists</span>
+                <span className="text-[10px] font-mono tracking-wider">{tLang('navLists')}</span>
               </button>
               
               <button 
@@ -3794,7 +3838,7 @@ export default function Home() {
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'today' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
                 style={{ color: activeTab === 'today' ? activeColorHex : undefined }}>
                 <Calendar size={18} />
-                <span className="text-[10px] font-mono tracking-wider">Today</span>
+                <span className="text-[10px] font-mono tracking-wider">{tLang('today')}</span>
               </button>
 
               <button 
@@ -3802,7 +3846,7 @@ export default function Home() {
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'stats' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
                 style={{ color: activeTab === 'stats' ? activeColorHex : undefined }}>
                 <BarChart3 size={18} />
-                <span className="text-[10px] font-mono tracking-wider">Stats</span>
+                <span className="text-[10px] font-mono tracking-wider">{tLang('navStats')}</span>
               </button>
 
               <button 
@@ -3810,7 +3854,7 @@ export default function Home() {
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'settings' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
                 style={{ color: activeTab === 'settings' ? activeColorHex : undefined }}>
                 <Settings size={18} />
-                <span className="text-[10px] font-mono tracking-wider">Settings</span>
+                <span className="text-[10px] font-mono tracking-wider">{tLang('navSettings')}</span>
               </button>
             </div>
           </nav>

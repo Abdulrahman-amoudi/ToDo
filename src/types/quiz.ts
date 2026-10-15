@@ -24,6 +24,7 @@ export interface QuizConfig {
   questionCount?: number;
   difficulty?: QuizDifficulty;
   types?: QuestionType[];
+  language?: string;
 }
 
 export interface QuizGenerateRequest {
@@ -33,6 +34,7 @@ export interface QuizGenerateRequest {
   noteContent: string;
   config?: QuizConfig;
   useMock?: boolean;
+  language?: string;
 }
 
 export interface QuizResponse {
@@ -68,6 +70,7 @@ export interface HintRequest {
   noteContext: string;
   model?: string;
   useMock?: boolean;
+  language?: string;
 }
 
 export interface HintResponse {
@@ -82,6 +85,7 @@ export interface EvaluateRequest {
   noteContext?: string;
   model?: string;
   useMock?: boolean;
+  language?: string;
 }
 
 export interface EvaluationResponse {

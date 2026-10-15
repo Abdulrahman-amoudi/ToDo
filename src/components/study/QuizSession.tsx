@@ -5,6 +5,7 @@ import { Loader2, ArrowLeft, CheckCircle2, XCircle, Sparkles, Brain, Lightbulb, 
 import type { ParsedObsidianNote } from '@/types/obsidian';
 import type { QuizResponse, QuizQuestion, EvaluationResponse } from '@/types/quiz';
 import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
+import { useLanguage } from '@/lib/i18n/useLanguage';
 
 interface QuizSessionProps {
   note: ParsedObsidianNote;
@@ -15,6 +16,7 @@ interface QuizSessionProps {
 }
 
 export default function QuizSession({ note, apiKey, isDark = true, onClose, triggerMascot }: QuizSessionProps) {
+  const { locale, t, isRTL } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quizData, setQuizData] = useState<QuizResponse | null>(null);
@@ -48,7 +50,8 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           apiKey,
           noteTitle: note.title,
           noteContent: fallbackContent,
-          config: { questionCount: 8 }
+          config: { questionCount: 8 },
+          language: locale
         })
       });
       
@@ -101,7 +104,8 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           question: currentQ.question,
           userAnswer: text,
           expectedAnswer: currentQ.correctAnswerText,
-          noteContent: fallbackContent
+          noteContent: fallbackContent,
+          language: locale
         })
       });
       
@@ -138,7 +142,8 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           action: 'hint',
           apiKey,
           question: currentQ.question,
-          noteContent: fallbackContent
+          noteContent: fallbackContent,
+          language: locale
         })
       });
       const data = await res.json();
@@ -288,7 +293,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
                       className="px-6 py-3 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white font-bold rounded-xl flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 shadow-md"
                     >
                       {isEvaluating ? <Loader2 className="animate-spin" size={18} /> : <Brain size={18} />}
-                      Submit Answer
+                      {t('submitAnswer')}
                     </button>
                   )}
                 </form>
@@ -300,7 +305,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
               <div className="mt-8">
                 <button onClick={getHint} disabled={isGettingHint} className="text-xs font-semibold text-[var(--theme-primary)] flex items-center gap-1.5 opacity-75 hover:opacity-100 transition-opacity">
                   {isGettingHint ? <Loader2 size={14} className="animate-spin" /> : <Lightbulb size={14} />}
-                  Need a hint?
+                  {t('needHint')}
                 </button>
               </div>
             )}
@@ -309,7 +314,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
             {hint && !currentAnswer && (
               <div className={`mt-6 p-4 rounded-xl border border-dashed ${isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
                 <div className="flex items-center gap-2 mb-2 font-bold text-xs uppercase tracking-wider">
-                  <Lightbulb size={14} /> AI Hint
+                  <Lightbulb size={14} /> {t('bloubHint')}
                 </div>
                 <p className="text-sm font-medium">{hint}</p>
               </div>
@@ -322,14 +327,14 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
                   <div>
                     <h4 className={`text-lg font-bold mb-2 flex items-center gap-2 ${currentAnswer.isCorrect ? 'text-green-500' : 'text-red-500'}`}>
                       {currentAnswer.isCorrect ? <CheckCircle2 /> : <XCircle />}
-                      {currentAnswer.isCorrect ? 'Correct!' : 'Not quite right.'}
+                      {currentAnswer.isCorrect ? (locale === 'ar' ? 'إجابة صحيحة!' : 'Correct!') : (locale === 'ar' ? 'ليست دقيقة تماماً' : 'Not quite right.')}
                     </h4>
                     <div dir="auto" className="text-sm leading-relaxed opacity-90 text-start [unicode-bidi:plaintext]">
                       <StudyMarkdownRenderer content={currentAnswer.feedback || ''} />
                     </div>
                   </div>
                   <button onClick={nextQuestion} className={`flex items-center gap-1 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap ${currentAnswer.isCorrect ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20' : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20'}`}>
-                    {currentIdx === total - 1 ? 'Finish' : 'Next'} <ChevronRight size={18} />
+                    {currentIdx === total - 1 ? (locale === 'ar' ? 'إنهاء' : 'Finish') : t('nextQuestion')} <ChevronRight size={18} />
                   </button>
                 </div>
               </div>

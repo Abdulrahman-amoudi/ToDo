@@ -72,6 +72,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   document.documentElement.classList.remove('dark');
                   document.documentElement.removeAttribute('data-theme');
                 }
+
+                let lang = localStorage.getItem('vibe_language');
+                if (lang === 'ar' || (!lang && (navigator.language || '').toLowerCase().startsWith('ar'))) {
+                  document.documentElement.setAttribute('dir', 'rtl');
+                  document.documentElement.setAttribute('lang', 'ar');
+                  document.body && document.body.classList.add('font-arabic');
+                } else {
+                  document.documentElement.setAttribute('dir', 'ltr');
+                  document.documentElement.setAttribute('lang', 'en');
+                  document.body && document.body.classList.remove('font-arabic');
+                }
               } catch (e) {}
             `,
           }}

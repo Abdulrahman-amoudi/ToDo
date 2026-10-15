@@ -14,6 +14,8 @@ interface QuizRouteRequestBody {
   expectedAnswer?: string;
   config?: QuizConfig;
   useMock?: boolean;
+  language?: string;
+  locale?: string;
 }
 
 interface CustomHttpError extends Error {
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const action = body.action || 'generate';
+    const language = body.language || body.locale || body.config?.language;
 
     // Socratic Hint Action
     if (action === 'hint') {
@@ -65,7 +68,8 @@ export async function POST(req: NextRequest) {
         model: body.model,
         question: body.question,
         noteContext: body.noteContext || body.noteContent || '',
-        useMock: body.useMock
+        useMock: body.useMock,
+        language
       });
 
       return NextResponse.json(
@@ -97,7 +101,8 @@ export async function POST(req: NextRequest) {
         userAnswer: body.userAnswer || '',
         expectedAnswer: body.expectedAnswer,
         noteContext: body.noteContext || body.noteContent,
-        useMock: body.useMock
+        useMock: body.useMock,
+        language
       });
 
       return NextResponse.json(
@@ -141,8 +146,12 @@ export async function POST(req: NextRequest) {
       model: body.model || 'gemini-3.8-flash',
       noteTitle: body.noteTitle || 'Study Note',
       noteContent,
-      config: body.config,
-      useMock: body.useMock
+      config: {
+        ...body.config,
+        language: language || body.config?.language
+      },
+      useMock: body.useMock,
+      language
     });
 
     return NextResponse.json(

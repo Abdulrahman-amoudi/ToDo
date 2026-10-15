@@ -30,6 +30,7 @@ import {
 import type { QuizResponse } from '@/types/quiz';
 import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
 import { BloubMascot } from '@/components/BloubMascot';
+import { useLanguage } from '@/lib/i18n/useLanguage';
 
 export interface NoteData {
   text: string;
@@ -97,6 +98,7 @@ export const NotesPanel = React.memo(function NotesPanel({
   isBookMinimized = false,
   onToggleBook
 }: NotesPanelProps) {
+  const { locale, t, isRTL } = useLanguage();
   const getDraftKey = useCallback((pg: number) => `note_draft_${docId}_${pg}`, [docId]);
 
   const [activeTab, setActiveTab] = useState<PanelTab>(initialTab || 'ai');
@@ -307,6 +309,7 @@ export const NotesPanel = React.memo(function NotesPanel({
           pageNumber,
           pageContent,
           mode: summaryMode || 'summary',
+          language: locale,
           chatHistory: messages.map(m => ({ role: m.role, text: m.text }))
         })
       });
@@ -322,12 +325,15 @@ export const NotesPanel = React.memo(function NotesPanel({
 
       if (actionType === 'summarize') {
         const s = data.data;
-        responseText = `### ${s.title || 'Summary'}\n\n${s.summary}\n\n#### Key Takeaways:\n` +
+        const summaryTitle = s.title || (locale === 'ar' ? 'ملخص ذكي' : 'Summary');
+        const takeawaysLabel = locale === 'ar' ? 'أبرز النقاط:' : 'Key Takeaways:';
+        const conceptsLabel = locale === 'ar' ? 'المفاهيم الجوهرية:' : 'Core Concepts:';
+        responseText = `### ${summaryTitle}\n\n${s.summary}\n\n#### ${takeawaysLabel}\n` +
           (s.keyPoints || []).map((kp: string) => `- ${kp}`).join('\n');
         if (s.concepts && s.concepts.length > 0) {
-          responseText += '\n\n#### Core Concepts:\n' + s.concepts.map((c: any) => `- **${c.term}**: ${c.definition}`).join('\n');
+          responseText += `\n\n#### ${conceptsLabel}\n` + s.concepts.map((c: any) => `- **${c.term}**: ${c.definition}`).join('\n');
         }
-        citations = [`Page ${pageNumber}`];
+        citations = [locale === 'ar' ? `صفحة ${pageNumber}` : `Page ${pageNumber}`];
       } else {
         responseText = data.answer;
         citations = data.citations || [];
@@ -374,7 +380,8 @@ export const NotesPanel = React.memo(function NotesPanel({
           model: 'gemini-3.8-flash',
           noteTitle: `${docTitle} (Pg. ${pageNumber})`,
           noteContent: noteContentForQuiz || 'Study document content',
-          config: { questionCount: quizQuestionCount || 8, difficulty: 'medium' }
+          config: { questionCount: quizQuestionCount || 8, difficulty: 'medium' },
+          language: locale
         })
       });
 
@@ -632,48 +639,74 @@ export const NotesPanel = React.memo(function NotesPanel({
       <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-[var(--theme-surface-elevated)]/60 backdrop-blur-md relative z-10">
         <button
           type="button"
-          onClick={() => handleAskAi(`Build a Visual Concept Tree and Step-by-Step Study Roadmap for Page ${pageNumber}. Break down: 1) What foundational concepts to start with first, 2) Core mechanisms, rules, or formulas to learn, 3) Mastery summary and connection nodes. Format with visual node branches, flow arrows, and hierarchy.`, 'ask')}
+          onClick={() => handleAskAi(
+            locale === 'ar'
+              ? `ابنِ شجرة مفاهيم وخارطة مذاكرة تدريجية للصفحة ${pageNumber}. وضّح: 1) المفاهيم التأسيسية التي نبدأ بها، 2) القواعد والآليات أو القوانين الجوهرية، 3) ملخص الربط النهائي بأسلوب فروع ومسارات واضحة.`
+              : `Build a Visual Concept Tree and Step-by-Step Study Roadmap for Page ${pageNumber}. Break down: 1) What foundational concepts to start with first, 2) Core mechanisms, rules, or formulas to learn, 3) Mastery summary and connection nodes. Format with visual node branches, flow arrows, and hierarchy.`,
+            'ask'
+          )}
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
           <Workflow size={12} className="text-purple-400" />
-          <span>Concept Tree</span>
+          <span>{t('conceptTree')}</span>
         </button>
         <button
           type="button"
-          onClick={() => handleAskAi(`Transform the events, concepts, and people on Page ${pageNumber} into a vivid, memorable story narrative. Make it engaging, historically contextual, and easy to retain for exams while remaining 100% grounded in the text.`, 'ask')}
+          onClick={() => handleAskAi(
+            locale === 'ar'
+              ? `حوّل الأحداث والمفاهيم في الصفحة ${pageNumber} إلى سرد قصصي ممتع ومشوّق يسهل تذكّره وتثبيته في الاختبارات مع الالتزام التام بنص الملاحظات.`
+              : `Transform the events, concepts, and people on Page ${pageNumber} into a vivid, memorable story narrative. Make it engaging, historically contextual, and easy to retain for exams while remaining 100% grounded in the text.`,
+            'ask'
+          )}
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
           <ScrollText size={12} className="text-amber-400" />
-          <span>Story Mode</span>
+          <span>{t('storyMode')}</span>
         </button>
         <button
           type="button"
-          onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
+          onClick={() => handleAskAi(
+            locale === 'ar'
+              ? `لخّص صفحة ${pageNumber} من هذا المستند مع استخراج أبرز النقاط والتعريفات الأساسية بأسلوب واضح ومباشر.`
+              : `Summarize page ${pageNumber} of this document with key takeaways and definitions.`,
+            'summarize'
+          )}
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
           <Zap size={12} className="text-sky-400" />
-          <span>Summarize Page</span>
+          <span>{t('summarizePage')}</span>
         </button>
         <button
           type="button"
-          onClick={() => handleAskAi(`Extract key takeaways from page ${pageNumber}.`, 'summarize', 'key_takeaways')}
+          onClick={() => handleAskAi(
+            locale === 'ar'
+              ? `استخرج أبرز النقاط والمفاهيم الجوهرية من صفحة ${pageNumber}.`
+              : `Extract key takeaways from page ${pageNumber}.`,
+            'summarize',
+            'key_takeaways'
+          )}
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
           <Lightbulb size={12} className="text-yellow-400" />
-          <span>Key Takeaways</span>
+          <span>{t('keyTakeaways')}</span>
         </button>
         <button
           type="button"
-          onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply with practical examples.`, 'ask')}
+          onClick={() => handleAskAi(
+            locale === 'ar'
+              ? `اشرح المفهوم الأساسي أو المعادلة في صفحة ${pageNumber} بأسلوب سهل وبسيط مع أمثلة تطبيقية.`
+              : `Explain the core concept or formula on page ${pageNumber} simply with practical examples.`,
+            'ask'
+          )}
           disabled={isAiLoading}
           className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
         >
           <Search size={12} className="text-emerald-400" />
-          <span>Explain Concepts</span>
+          <span>{t('explainConcepts')}</span>
         </button>
       </div>
 
@@ -700,13 +733,13 @@ export const NotesPanel = React.memo(function NotesPanel({
             <div className="space-y-1.5 max-w-sm">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30">
                 <Sparkles size={11} />
-                <span>Gemini 3.8 Flash • Study Studio</span>
+                <span>{locale === 'ar' ? 'Gemini 3.8 Flash • مساحة المذاكرة' : 'Gemini 3.8 Flash • Study Studio'}</span>
               </div>
               <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                What would you like to master on Pg. {pageNumber}?
+                {locale === 'ar' ? `وش تحب نراجع في صفحة ${pageNumber}؟` : `What would you like to master on Pg. ${pageNumber}?`}
               </h3>
               <p className="text-xs text-[var(--theme-text-muted)] leading-relaxed">
-                Grounded 100% in this document. Ask questions, construct concept trees, or turn lessons into stories.
+                {locale === 'ar' ? 'مستند حصراً ومباشرة إلى هذا المستند. اسأل عن أي نقطة، ابنِ شجرة مفاهيم، أو حوّل الدرس لقصة.' : 'Grounded 100% in this document. Ask questions, construct concept trees, or turn lessons into stories.'}
               </p>
             </div>
 
@@ -714,7 +747,12 @@ export const NotesPanel = React.memo(function NotesPanel({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md pt-1 text-left">
               <button
                 type="button"
-                onClick={() => handleAskAi(`Build a Visual Concept Tree and Step-by-Step Study Roadmap for Page ${pageNumber}. Break down: 1) What foundational concepts to start with first, 2) Core mechanisms, rules, or formulas to learn, 3) Mastery summary and connection nodes. Format with visual node branches, flow arrows, and hierarchy.`, 'ask')}
+                onClick={() => handleAskAi(
+                  locale === 'ar'
+                    ? `ابنِ شجرة مفاهيم وخارطة مذاكرة تدريجية للصفحة ${pageNumber}. وضّح: 1) المفاهيم التأسيسية التي نبدأ بها، 2) القواعد والآليات أو القوانين الجوهرية، 3) ملخص الربط النهائي بأسلوب فروع ومسارات واضحة.`
+                    : `Build a Visual Concept Tree and Step-by-Step Study Roadmap for Page ${pageNumber}. Break down: 1) What foundational concepts to start with first, 2) Core mechanisms, rules, or formulas to learn, 3) Mastery summary and connection nodes. Format with visual node branches, flow arrows, and hierarchy.`,
+                  'ask'
+                )}
                 disabled={isAiLoading}
                 className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
               >
@@ -722,14 +760,21 @@ export const NotesPanel = React.memo(function NotesPanel({
                   <Workflow size={16} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-[var(--theme-primary)] transition-colors">Concept Map Tree</h4>
-                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Visual roadmap of what concepts to start with first</p>
+                  <h4 className="text-xs font-bold text-white group-hover:text-[var(--theme-primary)] transition-colors">{t('conceptTree')}</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">
+                    {locale === 'ar' ? 'خارطة بصرية ترتّب المفاهيم وما تبدأ به أولاً' : 'Visual roadmap of what concepts to start with first'}
+                  </p>
                 </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleAskAi(`Transform the events, concepts, and people on Page ${pageNumber} into a vivid, memorable story narrative. Make it engaging, historically contextual, and easy to retain for exams while remaining 100% grounded in the text.`, 'ask')}
+                onClick={() => handleAskAi(
+                  locale === 'ar'
+                    ? `حوّل الأحداث والمفاهيم في الصفحة ${pageNumber} إلى سرد قصصي ممتع ومشوّق يسهل تذكّره وتثبيته في الاختبارات مع الالتزام التام بنص الملاحظات.`
+                    : `Transform the events, concepts, and people on Page ${pageNumber} into a vivid, memorable story narrative. Make it engaging, historically contextual, and easy to retain for exams while remaining 100% grounded in the text.`,
+                  'ask'
+                )}
                 disabled={isAiLoading}
                 className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
               >
@@ -737,14 +782,21 @@ export const NotesPanel = React.memo(function NotesPanel({
                   <ScrollText size={16} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">Storytelling Mode</h4>
-                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Turn historical events & facts into a vivid tale</p>
+                  <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">{t('storyMode')}</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">
+                    {locale === 'ar' ? 'تحويل الأحداث والمعادلات لقصة مشوقة لا تُنسى' : 'Turn historical events & facts into a vivid tale'}
+                  </p>
                 </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleAskAi(`Summarize page ${pageNumber} of this document with key takeaways and definitions.`, 'summarize')}
+                onClick={() => handleAskAi(
+                  locale === 'ar'
+                    ? `لخّص صفحة ${pageNumber} من هذا المستند مع استخراج أبرز النقاط والتعريفات الأساسية بأسلوب واضح ومباشر.`
+                    : `Summarize page ${pageNumber} of this document with key takeaways and definitions.`,
+                  'summarize'
+                )}
                 disabled={isAiLoading}
                 className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
               >
@@ -752,14 +804,21 @@ export const NotesPanel = React.memo(function NotesPanel({
                   <Zap size={16} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-sky-300 transition-colors">Summarize Page</h4>
-                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Extract core takeaways and main bullet points</p>
+                  <h4 className="text-xs font-bold text-white group-hover:text-sky-300 transition-colors">{t('summarizePage')}</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">
+                    {locale === 'ar' ? 'استخراج الفكرة العامة وأهم النقاط المركزة' : 'Extract core takeaways and main bullet points'}
+                  </p>
                 </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleAskAi(`Explain the core concept or formula on page ${pageNumber} simply with practical examples.`, 'ask')}
+                onClick={() => handleAskAi(
+                  locale === 'ar'
+                    ? `اشرح المفهوم الأساسي أو المعادلة في صفحة ${pageNumber} بأسلوب سهل وبسيط مع أمثلة تطبيقية.`
+                    : `Explain the core concept or formula on page ${pageNumber} simply with practical examples.`,
+                  'ask'
+                )}
                 disabled={isAiLoading}
                 className="p-3.5 rounded-2xl bg-[var(--theme-surface-elevated)]/85 hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] hover:border-[var(--theme-primary)]/50 transition-all active:scale-[0.98] group flex flex-col gap-2 shadow-sm text-start"
               >
@@ -767,8 +826,10 @@ export const NotesPanel = React.memo(function NotesPanel({
                   <Search size={16} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Formulas & Concepts</h4>
-                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">Break down equations, terms, and scientific laws</p>
+                  <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">{t('explainConcepts')}</h4>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] leading-snug mt-0.5">
+                    {locale === 'ar' ? 'تبسيط القوانين والمفاهيم مع أمثلة تطبيقية' : 'Break down equations, terms, and scientific laws'}
+                  </p>
                 </div>
               </button>
             </div>
@@ -894,7 +955,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             type="text"
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
-            placeholder={`Ask Gemini about ${docTitle || 'document'}...`}
+            placeholder={locale === 'ar' ? 'اسأل بلوب عن أي نقطة في المستند...' : `Ask Gemini about ${docTitle || 'document'}...`}
             disabled={isAiLoading}
             dir="auto"
             className="flex-1 bg-transparent text-xs text-white placeholder:text-[var(--theme-text-muted)] outline-none font-sans"
