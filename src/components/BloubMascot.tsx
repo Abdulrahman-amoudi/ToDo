@@ -634,103 +634,100 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: typingDotsLevitate 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.35s infinite;
         }
 
-        @keyframes typingDotWave {
-          0%, 60%, 100% {
-            transform: translateY(0px);
+        /* Iconic Grok 3-dot Typing Wave Keyframes */
+        @keyframes grokDotWave {
+          0%, 100% {
+            transform: translateY(0px) scale(0.85);
             opacity: 0.45;
           }
-          30% {
-            transform: translateY(-4px);
+          50% {
+            transform: translateY(-13px) scale(1.15);
             opacity: 1;
-            filter: drop-shadow(0 0 5px var(--mascot-glow-mid, rgba(255, 255, 255, 0.6)));
+            filter: drop-shadow(0 0 12px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75)));
           }
         }
-        .typing-dot-wave-1 {
-          animation: typingDotWave 1.1s ease-in-out infinite;
+        .grok-dot-1 {
+          animation: grokDotWave 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
         }
-        .typing-dot-wave-2 {
-          animation: typingDotWave 1.1s ease-in-out 0.18s infinite;
+        .grok-dot-2 {
+          animation: grokDotWave 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s infinite;
         }
-        .typing-dot-wave-3 {
-          animation: typingDotWave 1.1s ease-in-out 0.36s infinite;
+        .grok-dot-3 {
+          animation: grokDotWave 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.30s infinite;
         }
       `}</style>
 
-      {/* Layer 0: Typing Dots Animation - Rendered for ALL shapes ONLY when typing */}
-      {activeTyping && (
+      {/* Grok Typing Dots: Rendered for ALL shapes ONLY when typing */}
+      {activeTyping ? (
         <g
-          className="mascot-typing-dots-layer"
+          className="grok-typing-dots-container"
           style={{
             pointerEvents: 'none',
             transformOrigin: '50% 50%',
           }}
         >
-          {/* Ambient levitating energy particles around the mascot */}
+          {/* Ambient subtle levitating dots */}
           <circle
             cx="18"
-            cy="22"
-            r="2.2"
+            cy="24"
+            r="2.5"
             className="typing-dot-ambient-1"
             fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
           />
           <circle
             cx="82"
-            cy="20"
-            r="2.6"
+            cy="22"
+            r="2.5"
             className="typing-dot-ambient-2"
             fill="var(--mascot-glow-mid, rgba(255,255,255,0.65))"
           />
           <circle
             cx="14"
-            cy="62"
-            r="1.8"
+            cy="60"
+            r="2"
             className="typing-dot-ambient-3"
             fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
           />
           <circle
             cx="86"
-            cy="64"
-            r="2.0"
+            cy="62"
+            r="2"
             className="typing-dot-ambient-4"
             fill="var(--mascot-glow-soft, rgba(255,255,255,0.45))"
           />
-          <circle
-            cx="50"
-            cy="10"
-            r="2.4"
-            className="typing-dot-ambient-5"
-            fill="var(--mascot-glow-intense, rgba(255,255,255,0.85))"
-          />
 
-          {/* Rhythmic typing dots wave cluster floating on upper shoulder */}
-          <g className="typing-dots-cluster" transform="translate(0, 0)">
+          {/* Iconic Grok 3-dot typing rhythm wave */}
+          <g className="grok-dots-cluster">
             <circle
-              cx="72"
-              cy="16"
-              r="2.8"
-              className="typing-dot-wave-1"
+              cx="26"
+              cy="50"
+              r="8"
+              className="grok-dot-1"
               fill={bodyHex}
+              style={{ transformOrigin: '26px 50px' }}
             />
             <circle
-              cx="80"
-              cy="16"
-              r="2.8"
-              className="typing-dot-wave-2"
+              cx="50"
+              cy="50"
+              r="8"
+              className="grok-dot-2"
               fill={bodyHex}
+              style={{ transformOrigin: '50px 50px' }}
             />
             <circle
-              cx="88"
-              cy="16"
-              r="2.8"
-              className="typing-dot-wave-3"
+              cx="74"
+              cy="50"
+              r="8"
+              className="grok-dot-3"
               fill={bodyHex}
+              style={{ transformOrigin: '74px 50px' }}
             />
           </g>
         </g>
-      )}
-
-      {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
-      <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
+      ) : (
+        <>
+          {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
+          <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
         <g style={{ transformOrigin: '50% 50%' }}>
           {renderUnderlay ? (
             renderUnderlay(bodyHex)
@@ -855,6 +852,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           {renderExpression(eyeColor, isLight)}
         </g>
       </g>
+      </>
+      )}
     </svg>
   );
 });
