@@ -133,7 +133,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   useEffect(() => {
     if (state === 'orbit' || state === 'wide') {
       setIsBouncingState(true);
-      const timer = setTimeout(() => setIsBouncingState(false), 850);
+      const timer = setTimeout(() => setIsBouncingState(false), 1250);
       return () => clearTimeout(timer);
     }
   }, [state]);
@@ -289,7 +289,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         setTimeout(() => {
           setIsInteracting(false);
           setIsBouncingState(false);
-        }, 850);
+        }, 1250);
       }
     },
     [onInteract, isStatic, animated]
@@ -324,67 +324,73 @@ export const BloubMascot = React.memo(function BloubMascot({
       }}
     >
       <style>{`
-        /* 1. Universal Tactile Mochi Squish & Hop for non-sun shapes */
+        /* 1. Universal Tactile Mochi Squish & Hop for non-sun shapes (Extended 1.25s) */
         @keyframes mascotSquishPop {
           0% { transform: scale(1) translateY(0); }
-          16% { transform: scale(1.14, 0.86) translateY(2px); }
-          45% { transform: scale(0.92, 1.10) translateY(-7px); }
-          70% { transform: scale(1.04, 0.97) translateY(1px); }
-          86% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          15% { transform: scale(1.15, 0.85) translateY(2.5px); }
+          42% { transform: scale(0.92, 1.12) translateY(-9px); }
+          68% { transform: scale(1.05, 0.96) translateY(2px); }
+          85% { transform: scale(0.99, 1.01) translateY(-0.5px); }
           100% { transform: scale(1) translateY(0); }
         }
         .mascot-squish-active {
-          animation: mascotSquishPop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: mascotSquishPop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* 2. Unique Sun Tactile Elastic Hop (Mascot stays right-side-up, leaps with buoyant warmth) */
+        /* 2. Unique Sun Tactile Elastic Hop (Extended 1.25s with floaty apex hang-time) */
         @keyframes sunTapBounce {
           0% { transform: scale(1) translateY(0); }
-          16% { transform: scale(1.12, 0.88) translateY(2px); }
-          42% { transform: scale(0.94, 1.10) translateY(-8px); }
-          68% { transform: scale(1.05, 0.97) translateY(1.5px); }
-          86% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          14% { transform: scale(1.14, 0.86) translateY(2.5px); }
+          38% { transform: scale(0.92, 1.12) translateY(-10px); }
+          56% { transform: scale(1.01, 0.99) translateY(-7.5px); }
+          74% { transform: scale(1.06, 0.95) translateY(2px); }
+          88% { transform: scale(0.99, 1.01) translateY(-0.5px); }
           100% { transform: scale(1) translateY(0); }
         }
         .sun-tap-bounce {
-          animation: sunTapBounce 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: sunTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* 3. Unique Sun Rays Elastic Twirl (Spins smoothly 60deg to the next symmetrical ray pair with golden shimmer) */
+        /* 3. Unique Sun Rays Elastic Twirl (Smooth silky 90deg ray twirl with soft golden shimmer) */
         @keyframes sunRaysTwirl {
           0% {
             transform: rotate(0deg) scale(1);
           }
-          18% {
-            transform: rotate(10deg) scale(1.04);
-            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.5));
+          15% {
+            transform: rotate(12deg) scale(1.03);
+            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
           }
-          48% {
-            transform: rotate(70deg) scale(1.14);
+          45% {
+            transform: rotate(75deg) scale(1.14);
             filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.75));
           }
-          74% {
-            transform: rotate(57deg) scale(0.98);
-            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.35));
+          65% {
+            transform: rotate(96deg) scale(1.08);
+            filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.6));
+          }
+          82% {
+            transform: rotate(88deg) scale(0.98);
+            filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.3));
           }
           100% {
-            transform: rotate(60deg) scale(1);
+            transform: rotate(90deg) scale(1);
             filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
           }
         }
         .sun-rays-twirl {
-          animation: sunRaysTwirl 0.75s cubic-bezier(0.22, 1.35, 0.36, 1) forwards;
+          animation: sunRaysTwirl 1.25s cubic-bezier(0.25, 1.25, 0.35, 1) forwards;
         }
 
-        /* 4. Cute Joyful Face Hop (Matches the body hop, smiling brightly at you) */
+        /* 4. Cute Joyful Face Hop (Synchronized with the floaty apex) */
         @keyframes sunFacePop {
           0% { transform: scale(1) translateY(0); }
-          42% { transform: scale(1.08) translateY(-2px); }
-          75% { transform: scale(0.98) translateY(0.5px); }
+          38% { transform: scale(1.10) translateY(-3.5px); }
+          60% { transform: scale(1.04) translateY(-2px); }
+          80% { transform: scale(0.98) translateY(0.5px); }
           100% { transform: scale(1) translateY(0); }
         }
         .sun-face-pop {
-          animation: sunFacePop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: sunFacePop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         /* 5. Ambient Sun Typing Energy Glow */
