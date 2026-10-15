@@ -75,10 +75,20 @@ export const BloubMascot = React.memo(function BloubMascot({
   const faceGroupRef = useRef<SVGGElement>(null);
   const bodyGroupRef = useRef<SVGGElement>(null);
 
-  // Normalize shape and expression through the single source-of-truth registry
+  // Normalization and blink gating: closed/sunglasses expressions never blink
   const normShape = normalizeShape(shape);
   const normExpr = normalizeExpression(expression);
   const isSun = normShape === 'soleil';
+  const CLOSED_EXPRESSIONS = new Set([
+    'hilare',
+    'excite',
+    'fier',
+    'somnolent',
+    'sleep',
+    'sleepy',
+    'blase',
+  ]);
+  const canBlink = !CLOSED_EXPRESSIONS.has(normExpr);
 
   // Look coordinates (normalized -1 to 1)
   const targetLook = useRef({ x: 0, y: 0 });
@@ -134,12 +144,12 @@ export const BloubMascot = React.memo(function BloubMascot({
     if (resolved) {
       targetLook.current = {
         x: Math.max(-1, Math.min(1, resolved.yaw / 35)),
-        y: Math.max(-1, Math.min(1, -resolved.pitch / 25)),
+        y: Math.min(0, Math.max(-1, -resolved.pitch / 25)), // never allow downward pitch
       };
     }
   }, [gaze]);
 
-  // Window-wide pointer follow
+  // Window-wide pointer follow (horizontal tracking only, strictly zero downward ground gaze)
   useEffect(() => {
     if (isStatic || !animated) return;
 
@@ -151,10 +161,11 @@ export const BloubMascot = React.memo(function BloubMascot({
 
       // Distance from mascot center normalized with max range
       const maxDistanceX = Math.max(window.innerWidth / 2, 280);
-      const maxDistanceY = Math.max(window.innerHeight / 2, 280);
-
       const dx = Math.max(-1, Math.min(1, (e.clientX - mascotCenterX) / maxDistanceX));
-      const dy = Math.max(-1, Math.min(1, (e.clientY - mascotCenterY) / maxDistanceY));
+
+      // Strictly zero downward gaze: mascot looks forward at the user, never at the ground!
+      const rawDy = e.clientY - mascotCenterY;
+      const dy = rawDy < 0 ? Math.max(-1, rawDy / 240) : 0;
 
       targetLook.current = { x: dx, y: dy };
     };
@@ -190,36 +201,38 @@ export const BloubMascot = React.memo(function BloubMascot({
       currentLook.current.x += (targetLook.current.x - currentLook.current.x) * lerpFactor;
       currentLook.current.y += (targetLook.current.y - currentLook.current.y) * lerpFactor;
 
-      // 2. Organic breathing bob & idle float
-      const floatY = Math.sin(t * 2.2) * 2.0;
-      const breathScaleX = 1 + Math.sin(t * 2.2) * 0.015;
-      const breathScaleY = 1 - Math.sin(t * 2.2) * 0.015;
+      // 2. Gentle organic breathing bob (subtle 0.6px float to prevent downward droop)
+      const floatY = Math.sin(t * 1.8) * 0.6;
+      const breathScaleX = 1 + Math.sin(t * 1.8) * 0.012;
+      const breathScaleY = 1 - Math.sin(t * 1.8) * 0.012;
 
-      // 3. Natural eye blink (every ~4.2 seconds) centered around eye horizon Y=48
-      blinkTimerRef.current += dt;
-      if (blinkTimerRef.current > 4.2) {
-        isBlinkingRef.current = true;
-        blinkProgressRef.current = 0;
-        blinkTimerRef.current = Math.random() * 0.8;
-      }
-
+      // 3. Natural eye blink (only for open-eye expressions; closed/laughing eyes never blink)
       let eyeScaleY = 1;
-      if (isBlinkingRef.current) {
-        blinkProgressRef.current += dt * 11;
-        if (blinkProgressRef.current >= Math.PI) {
-          isBlinkingRef.current = false;
-          eyeScaleY = 1;
-        } else {
-          eyeScaleY = Math.max(0.08, 1 - Math.sin(blinkProgressRef.current) * 0.92);
+      if (canBlink) {
+        blinkTimerRef.current += dt;
+        if (blinkTimerRef.current > 4.2) {
+          isBlinkingRef.current = true;
+          blinkProgressRef.current = 0;
+          blinkTimerRef.current = Math.random() * 0.8;
+        }
+
+        if (isBlinkingRef.current) {
+          blinkProgressRef.current += dt * 11;
+          if (blinkProgressRef.current >= Math.PI) {
+            isBlinkingRef.current = false;
+            eyeScaleY = 1;
+          } else {
+            eyeScaleY = Math.max(0.08, 1 - Math.sin(blinkProgressRef.current) * 0.92);
+          }
         }
       }
 
-      // 4. Coordinates for gaze, tilt, and head motion (soften downward gaze to avoid droop/nod)
-      const clampedY = currentLook.current.y > 0 ? currentLook.current.y * 0.35 : currentLook.current.y * 0.75;
-      const faceX = currentLook.current.x * 5.5;
-      const faceY = activeTyping ? -0.8 : (clampedY * 3.8);
-      const headTilt = currentLook.current.x * 2.8;
-      const bodyTilt = currentLook.current.x * 1.5;
+      // 4. Coordinates for gaze, tilt, and head motion (strictly zero downward pitch)
+      const upwardY = Math.min(0, currentLook.current.y * 0.6);
+      const faceX = currentLook.current.x * 3.8;
+      const faceY = activeTyping ? -0.8 : (upwardY * 2.2);
+      const headTilt = currentLook.current.x * 2.2;
+      const bodyTilt = currentLook.current.x * 1.2;
 
       // 5. Sun turbine spin physics while typing
       if (isSun) {
