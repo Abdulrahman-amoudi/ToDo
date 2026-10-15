@@ -89,6 +89,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   const normShape = normalizeShape(shape);
   const normExpr = normalizeExpression(expression);
   const isSun = normShape === 'soleil';
+  const isHexagon = normShape === 'hexagone';
   const CLOSED_EXPRESSIONS = new Set([
     'hilare',
     'excite',
@@ -322,9 +323,19 @@ export const BloubMascot = React.memo(function BloubMascot({
         isBouncing
           ? isSun
             ? 'sun-tap-bounce'
+            : isHexagon
+            ? 'hexagon-tap-bounce'
             : 'mascot-squish-active'
           : ''
-      } ${activeTyping && isSun ? 'sun-typing-glow' : ''} ${
+      } ${
+        activeTyping
+          ? isSun
+            ? 'sun-typing-glow'
+            : isHexagon
+            ? 'hexagon-typing-glow'
+            : ''
+          : ''
+      } ${
         isThinking ? '-rotate-6 scale-105' : ''
       } ${className}`}
       style={{
@@ -337,7 +348,7 @@ export const BloubMascot = React.memo(function BloubMascot({
       }}
     >
       <style>{`
-        /* 1. Universal Tactile Mochi Squish & Hop for non-sun shapes (Extended 1.25s) */
+        /* 1. Universal Tactile Mochi Squish & Hop for non-specialized shapes (Extended 1.25s) */
         @keyframes mascotSquishPop {
           0% { transform: scale(1) translateY(0); }
           15% { transform: scale(1.15, 0.85) translateY(2.5px); }
@@ -394,7 +405,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: sunRaysTwirl 1.25s cubic-bezier(0.25, 1.25, 0.35, 1) forwards;
         }
 
-        /* 4. Cute Joyful Face Hop (Synchronized with the floaty apex) */
+        /* 4. Sun Joyful Face Hop (Synchronized with the floaty apex) */
         @keyframes sunFacePop {
           0% { transform: scale(1) translateY(0); }
           38% { transform: scale(1.10) translateY(-3.5px); }
@@ -418,12 +429,104 @@ export const BloubMascot = React.memo(function BloubMascot({
         .sun-typing-glow {
           animation: sunTypingGlow 1.2s ease-in-out infinite;
         }
+
+        /* 6. Unique Hexagon Tactile Spring Bounce (Extended 1.25s with floaty apex) */
+        @keyframes hexagonTapBounce {
+          0% { transform: scale(1) translateY(0); }
+          14% { transform: scale(1.14, 0.86) translateY(2.5px); }
+          38% { transform: scale(0.92, 1.12) translateY(-10px); }
+          56% { transform: scale(1.01, 0.99) translateY(-7.5px); }
+          74% { transform: scale(1.06, 0.95) translateY(2px); }
+          88% { transform: scale(0.99, 1.01) translateY(-0.5px); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        .hexagon-tap-bounce {
+          animation: hexagonTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 7. Unique Hexagon 60-degree Prism Twirl with Theme Glow Shimmer */
+        @keyframes hexagonPrismTwirl {
+          0% {
+            transform: rotate(0deg) scale(1);
+          }
+          15% {
+            transform: rotate(8deg) scale(1.04);
+            filter: drop-shadow(0 0 8px var(--mascot-glow-soft, rgba(59, 130, 246, 0.45)));
+          }
+          45% {
+            transform: rotate(50deg) scale(1.14);
+            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(59, 130, 246, 0.75)));
+          }
+          65% {
+            transform: rotate(66deg) scale(1.08);
+            filter: drop-shadow(0 0 14px var(--mascot-glow-mid, rgba(59, 130, 246, 0.6)));
+          }
+          82% {
+            transform: rotate(59deg) scale(0.98);
+            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(59, 130, 246, 0.3)));
+          }
+          100% {
+            transform: rotate(60deg) scale(1);
+            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18));
+          }
+        }
+        .hexagon-prism-twirl {
+          animation: hexagonPrismTwirl 1.25s cubic-bezier(0.25, 1.35, 0.35, 1) forwards;
+        }
+
+        /* 8. Hexagon Joyful Face Hop (Synchronized and upright) */
+        @keyframes hexagonFacePop {
+          0% { transform: scale(1) translateY(0); }
+          38% { transform: scale(1.10) translateY(-3.5px); }
+          60% { transform: scale(1.04) translateY(-2px); }
+          80% { transform: scale(0.98) translateY(0.5px); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        .hexagon-face-pop {
+          animation: hexagonFacePop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* 9. Hexagon Crystalline Typing Energy Glow */
+        @keyframes hexagonTypingGlow {
+          0%, 100% {
+            filter: drop-shadow(0 0 5px var(--mascot-glow-soft, rgba(59, 130, 246, 0.4)));
+          }
+          50% {
+            filter: drop-shadow(0 0 16px var(--mascot-glow-mid, rgba(59, 130, 246, 0.75)));
+          }
+        }
+        .hexagon-typing-glow {
+          animation: hexagonTypingGlow 1.1s ease-in-out infinite;
+        }
+
+        /* 10. Hexagon Rhythmic Facet Pulse while typing */
+        @keyframes hexagonFacetPulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.035);
+          }
+        }
+        .hexagon-facet-pulse {
+          animation: hexagonFacetPulse 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
       `}</style>
 
       {/* Layer 1: Unified Mascot Body (Cushion Depth + Silhouette + Extras breathe and float together) */}
       <g ref={bodyGroupRef} style={{ transformOrigin: '50% 50%' }}>
         <g
-          className={isBouncing && isSun ? 'sun-rays-twirl' : ''}
+          className={
+            isBouncing
+              ? isSun
+                ? 'sun-rays-twirl'
+                : isHexagon
+                ? 'hexagon-prism-twirl'
+                : ''
+              : activeTyping && isHexagon
+              ? 'hexagon-facet-pulse'
+              : ''
+          }
           style={{ transformOrigin: '50% 50%' }}
         >
           {renderUnderlay ? (
@@ -460,7 +563,15 @@ export const BloubMascot = React.memo(function BloubMascot({
       {/* Layer 2: Mascot Expression with Per-Shape Center Transform & In-Place Gaze/Blink */}
       <g
         ref={faceGroupRef}
-        className={`mascot-face-group ${isBouncing && isSun ? 'sun-face-pop' : ''}`}
+        className={`mascot-face-group ${
+          isBouncing
+            ? isSun
+              ? 'sun-face-pop'
+              : isHexagon
+              ? 'hexagon-face-pop'
+              : ''
+            : ''
+        }`}
         style={{
           transformOrigin: '50% 50%',
           opacity: isSleeping ? 0.45 : 1,
