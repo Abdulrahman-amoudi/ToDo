@@ -267,7 +267,12 @@ Rules:
 3. For true_false questions, options must be ["True", "False"], correctAnswerIndex must be 0 for True or 1 for False.
 4. For short_answer questions, include correctAnswerText explaining the ideal student response.
 5. Include a precise explanation citing the specific section or quote from the note in sourceCitation.
-6. Output MUST be valid JSON adhering exactly to the requested schema.`;
+6. Output MUST be valid JSON adhering exactly to the requested schema.
+7. Language and Mixed Bidirectional Formatting (Arabic + English / Math / Science):
+   - Always match the primary language of the source document (e.g. if the note is in Arabic, write questions, options, and explanations in Arabic).
+   - In Arabic questions and explanations containing Latin variables, scientific units, or math equations (e.g. W, J, V, Hz, N, kg, m/s, P_max, P_avg, 2 × 75 = 150):
+     * Always enclose mathematical formulas, equations, and standalone units inside inline backticks (e.g. \`P_avg = 0.5 * P_max\` or \`75 W\` or \`W\`). This guarantees perfect bidirectional rendering without inverted numbers or misplaced punctuation.
+   - For multiple choice options with numbers and units, write them clearly with spacing, e.g. "75 W", "150 W", "200 W", "250 W".`;
 
     const userPrompt = `Generate a ${difficulty} difficulty quiz with ${questionCount} questions based on the following note.
 

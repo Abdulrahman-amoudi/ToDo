@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, ArrowLeft, CheckCircle2, XCircle, Sparkles, Brain, Lightbulb, ChevronRight, Award } from 'lucide-react';
 import type { ParsedObsidianNote } from '@/types/obsidian';
 import type { QuizResponse, QuizQuestion, EvaluationResponse } from '@/types/quiz';
+import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
 
 interface QuizSessionProps {
   note: ParsedObsidianNote;
@@ -235,12 +236,12 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
             </div>
 
             {/* Question Text */}
-            <h3 className="text-2xl md:text-3xl font-bold leading-snug mb-8">
-              {currentQ.question}
-            </h3>
+            <div dir="auto" className="text-2xl md:text-3xl font-bold leading-snug mb-8 text-start [unicode-bidi:plaintext]">
+              <StudyMarkdownRenderer content={currentQ.question} />
+            </div>
 
             {/* Options or Text Input */}
-            <div className="space-y-4">
+            <div className="space-y-4" dir="auto">
               {currentQ.type === 'multiple_choice' || currentQ.type === 'true_false' ? (
                 currentQ.options?.map((opt, idx) => {
                   const isSelected = currentAnswer?.selectedIdx === idx;
@@ -259,11 +260,14 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
                       key={idx}
                       onClick={() => handleMultipleChoice(idx)}
                       disabled={!!currentAnswer}
-                      className={`w-full text-left p-5 rounded-2xl border-2 transition-all font-medium text-sm md:text-base flex items-center justify-between ${stateClass}`}
+                      dir="auto"
+                      className={`w-full text-start p-5 rounded-2xl border-2 transition-all font-medium text-sm md:text-base flex items-center justify-between gap-3 ${stateClass}`}
                     >
-                      <span>{opt}</span>
-                      {currentAnswer && isCorrectAnswer && <CheckCircle2 className="text-green-500" />}
-                      {currentAnswer && isSelected && !currentAnswer.isCorrect && <XCircle className="text-red-500" />}
+                      <div className="flex-1 min-w-0 [unicode-bidi:isolate] text-start" dir="auto">
+                        <StudyMarkdownRenderer content={opt} />
+                      </div>
+                      {currentAnswer && isCorrectAnswer && <CheckCircle2 className="text-green-500 shrink-0" />}
+                      {currentAnswer && isSelected && !currentAnswer.isCorrect && <XCircle className="text-red-500 shrink-0" />}
                     </button>
                   );
                 })
@@ -318,7 +322,9 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
                       {currentAnswer.isCorrect ? <CheckCircle2 /> : <XCircle />}
                       {currentAnswer.isCorrect ? 'Correct!' : 'Not quite right.'}
                     </h4>
-                    <p className="text-sm leading-relaxed opacity-90">{currentAnswer.feedback}</p>
+                    <div dir="auto" className="text-sm leading-relaxed opacity-90 text-start [unicode-bidi:plaintext]">
+                      <StudyMarkdownRenderer content={currentAnswer.feedback || ''} />
+                    </div>
                   </div>
                   <button onClick={nextQuestion} className={`flex items-center gap-1 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap ${currentAnswer.isCorrect ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20' : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20'}`}>
                     {currentIdx === total - 1 ? 'Finish' : 'Next'} <ChevronRight size={18} />

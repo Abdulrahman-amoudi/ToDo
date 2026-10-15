@@ -912,12 +912,12 @@ export const NotesPanel = React.memo(function NotesPanel({
               </button>
             </div>
 
-            <h4 className="text-sm font-bold text-white leading-snug">
-              {currentQ.question}
-            </h4>
+            <div dir="auto" className="text-sm sm:text-base font-bold text-white leading-relaxed [unicode-bidi:plaintext] text-start">
+              <StudyMarkdownRenderer content={currentQ.question} />
+            </div>
 
             {currentQ.type === 'multiple_choice' && currentQ.options && (
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2 pt-1" dir="auto">
                 {currentQ.options.map((opt, idx) => {
                   const isSelected = currentAnswer?.selectedIdx === idx;
                   const isCorrectAnswer = idx === currentQ.correctAnswerIndex;
@@ -937,10 +937,13 @@ export const NotesPanel = React.memo(function NotesPanel({
                       type="button"
                       disabled={!!currentAnswer}
                       onClick={() => handleQuizAnswer(currentQ.id, idx, currentQ.correctAnswerIndex ?? 0, currentQ.explanation || '')}
-                      className={`w-full text-left p-3 rounded-xl border text-xs transition-all active:scale-[0.99] flex items-center justify-between ${btnStyle}`}
+                      dir="auto"
+                      className={`w-full text-start p-3.5 rounded-xl border text-xs sm:text-sm transition-all active:scale-[0.99] flex items-center justify-between gap-3 ${btnStyle}`}
                     >
-                      <span>{opt}</span>
-                      {currentAnswer && isCorrectAnswer && <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />}
+                      <div className="flex-1 min-w-0 [unicode-bidi:isolate] text-start" dir="auto">
+                        <StudyMarkdownRenderer content={opt} />
+                      </div>
+                      {currentAnswer && isCorrectAnswer && <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />}
                     </button>
                   );
                 })}
@@ -948,13 +951,27 @@ export const NotesPanel = React.memo(function NotesPanel({
             )}
 
             {currentAnswer && (
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1.5 animate-in fade-in">
-                <span className={`font-bold ${currentAnswer.isCorrect ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {currentAnswer.isCorrect ? 'Correct!' : 'Incorrect'}
-                </span>
-                <p className="text-zinc-300 leading-relaxed">{currentAnswer.feedback}</p>
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-2 animate-in fade-in" dir="auto">
+                <div className="flex items-center gap-1.5 font-bold">
+                  {currentAnswer.isCorrect ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 size={14} />
+                      <span>Correct!</span>
+                    </span>
+                  ) : (
+                    <span className="text-amber-400 flex items-center gap-1">
+                      <AlertCircle size={14} />
+                      <span>Incorrect</span>
+                    </span>
+                  )}
+                </div>
+                <div className="text-zinc-200 leading-relaxed text-start [unicode-bidi:plaintext]" dir="auto">
+                  <StudyMarkdownRenderer content={currentAnswer.feedback} />
+                </div>
                 {currentQ.sourceCitation && (
-                  <p className="text-[10px] text-zinc-400 italic">Citation: {currentQ.sourceCitation}</p>
+                  <p className="text-[10px] text-zinc-400 italic text-start pt-1.5 border-t border-white/5" dir="auto">
+                    <span className="font-semibold text-zinc-300">Citation:</span> <bdi className="[unicode-bidi:isolate]">{currentQ.sourceCitation}</bdi>
+                  </p>
                 )}
               </div>
             )}

@@ -13,6 +13,40 @@ function isArabicText(text: string): boolean {
   return arabicRegex.test(text);
 }
 
+// Helper to isolate embedded math equations, quantities with units, formulas, and Latin symbols in Arabic/mixed text
+function renderBiDiText(text: string): React.ReactNode[] {
+  if (!text) return [];
+  // If text does not contain any Latin letters or math symbols, return as is
+  if (!/[A-Za-z\=\×\*\/\+\-\^]/.test(text)) {
+    return [text];
+  }
+
+  // Matches:
+  // 1. Parenthesized formulas e.g. (P_avg = 0.5 * P_max)
+  // 2. Math expressions e.g. 2 × 75 = 150 W or W = 150 W
+  // 3. Numbers with units e.g. 75 W, 10 m/s, 220 V
+  // 4. Latin variables or abbreviations e.g. P_max, P_avg, W, V, Hz
+  const bidiPattern = /(\([A-Za-z0-9_\.\s\=\×\*\/\+\-\^]+\)|(?:[A-Za-z0-9_\.]+\s*[\=\×\*\/\+\-\^]\s*)+[A-Za-z0-9_\.\s]+|\b\d+(?:\.\d+)?\s*[A-Za-z]+(?:\/[A-Za-z]+)?\b|\b[A-Za-z]+(?:_[A-Za-z0-9]+)?\b)/g;
+
+  const parts = text.split(bidiPattern);
+  return parts.map((p, idx) => {
+    if (!p) return null;
+    const isFormulaOrLatin = /^[A-Za-z0-9_\.\s\=\×\*\/\+\-\^\(\)]+$/.test(p.trim()) && /[A-Za-z\=\×\*\/\+\-\^]/.test(p);
+    if (isFormulaOrLatin) {
+      return (
+        <bdi
+          key={`bdi-${idx}`}
+          dir="ltr"
+          className="inline-block font-sans [unicode-bidi:isolate] font-semibold text-zinc-100 mx-0.5"
+        >
+          {p}
+        </bdi>
+      );
+    }
+    return <span key={`txt-${idx}`}>{p}</span>;
+  });
+}
+
 // Parse inline formatting: **bold**, *italic*, `code`, [Page X]
 function renderInlineFormatting(text: string): React.ReactNode[] {
   // Regex pattern matching:
@@ -30,7 +64,8 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
       return (
         <code
           key={idx}
-          className="font-mono text-[11px] bg-white/10 text-amber-300 px-1.5 py-0.5 rounded border border-white/10 mx-0.5"
+          dir="ltr"
+          className="font-mono text-[11px] bg-white/10 text-amber-300 px-1.5 py-0.5 rounded border border-white/10 mx-0.5 inline-block [unicode-bidi:isolate]"
         >
           {part.slice(1, -1)}
         </code>
@@ -41,7 +76,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
       const boldText = part.slice(2, -2).trim();
       return (
         <strong key={idx} className="font-bold text-white tracking-wide">
-          {boldText}
+          {renderBiDiText(boldText)}
         </strong>
       );
     }
@@ -49,7 +84,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
     if (part.startsWith('*') && part.endsWith('*')) {
       return (
         <em key={idx} className="italic text-zinc-300">
-          {part.slice(1, -1)}
+          {renderBiDiText(part.slice(1, -1))}
         </em>
       );
     }
@@ -58,14 +93,14 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
       return (
         <span
           key={idx}
-          className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[var(--theme-primary,#6366f1)]/15 border border-[var(--theme-primary,#6366f1)]/30 text-[var(--theme-primary,#818cf8)] font-mono text-[10px] font-semibold mx-1 select-none"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[var(--theme-primary,#6366f1)]/15 border border-[var(--theme-primary,#6366f1)]/30 text-[var(--theme-primary,#818cf8)] font-mono text-[10px] font-semibold mx-1 select-none [unicode-bidi:isolate]"
         >
           {part.slice(1, -1)}
         </span>
       );
     }
 
-    return <span key={idx}>{part}</span>;
+    return <span key={idx}>{renderBiDiText(part)}</span>;
   });
 }
 
@@ -241,7 +276,7 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
       <p
         key={`p-${index}`}
         dir={isAr ? 'rtl' : 'ltr'}
-        className={`text-xs text-zinc-200 leading-relaxed ${
+        className={`text-xs text-zinc-200 leading-relaxed [unicode-bidi:plaintext] ${
           isAr ? 'text-right font-sans' : 'text-left'
         }`}
       >
