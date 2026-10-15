@@ -166,22 +166,40 @@ export class GeminiClient {
     }
 
     if (!res.ok) {
-      // Automatic failover/retry on 503 high-demand spikes
-      if (res.status === 503 && selectedModel === 'gemini-3.8-flash') {
+      // Automatic retry & multi-model fallback on 503 high-demand or 429 rate limit spikes
+      if (res.status === 503 || res.status === 429) {
+        // Step 1: Immediate short backoff and retry on primary model
+        await new Promise(r => setTimeout(r, 600));
         try {
-          const fallbackUrl = `${GEMINI_API_BASE}/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-          const fallbackRes = await fetch(fallbackUrl, {
+          const retryRes = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bodyPayload)
           });
-          if (fallbackRes.ok) {
-            const fbData = (await fallbackRes.json()) as GeminiResponseBody;
-            const fbText = fbData?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (fbText) return fbText;
+          if (retryRes.ok) {
+            const data = (await retryRes.json()) as GeminiResponseBody;
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
           }
-        } catch {
-          // continue to normal error handling
+        } catch {}
+
+        // Step 2: Fallback cascade across verified active operational models
+        const fallbackModels = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+        for (const fbModel of fallbackModels) {
+          if (fbModel === selectedModel) continue;
+          try {
+            const fbUrl = `${GEMINI_API_BASE}/${fbModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const fbRes = await fetch(fbUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(bodyPayload)
+            });
+            if (fbRes.ok) {
+              const fbData = (await fbRes.json()) as GeminiResponseBody;
+              const fbText = fbData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (fbText) return fbText;
+            }
+          } catch {}
         }
       }
 

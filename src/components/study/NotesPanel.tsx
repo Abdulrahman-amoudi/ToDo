@@ -117,6 +117,11 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [queryInput, setQueryInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [lastFailedRequest, setLastFailedRequest] = useState<{
+    prompt?: string;
+    actionType: 'ask' | 'summarize';
+    summaryMode?: string;
+  } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
@@ -324,8 +329,10 @@ export const NotesPanel = React.memo(function NotesPanel({
       };
 
       setMessages(prev => [...prev, botMsg]);
+      setLastFailedRequest(null);
       triggerMascot?.('orbit', 'heureux');
     } catch (err: any) {
+      setLastFailedRequest({ prompt: q, actionType, summaryMode });
       setAiError(err.message || 'Error communicating with Gemini 3.8 Flash.');
       triggerMascot?.('idle', 'triste');
     } finally {
@@ -674,9 +681,33 @@ export const NotesPanel = React.memo(function NotesPanel({
         )}
 
         {aiError && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs flex items-center gap-2">
-            <AlertCircle size={14} className="shrink-0" />
-            <span>{aiError}</span>
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs flex flex-col gap-2.5 animate-in fade-in duration-150">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle size={15} className="shrink-0 text-red-400 mt-0.5" />
+              <div className="flex-1 leading-relaxed">
+                {aiError.includes('503') || aiError.toLowerCase().includes('high demand') ? (
+                  <>
+                    <p className="font-semibold text-red-200">Gemini servers are momentarily busy</p>
+                    <p className="text-[11px] text-red-300/80 mt-0.5">Free-tier models experience high traffic spikes. Our fallback cascade is ready to retry immediately.</p>
+                  </>
+                ) : (
+                  <p className="text-red-200">{aiError}</p>
+                )}
+              </div>
+            </div>
+            {lastFailedRequest && (
+              <div className="flex justify-end pt-1 border-t border-red-500/20">
+                <button
+                  type="button"
+                  onClick={() => handleAskAi(lastFailedRequest.prompt, lastFailedRequest.actionType, lastFailedRequest.summaryMode)}
+                  disabled={isAiLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/30 text-xs font-semibold active:scale-95 transition-all"
+                >
+                  <RotateCcw size={12} className={isAiLoading ? 'animate-spin' : ''} />
+                  <span>Retry Request</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -786,9 +817,31 @@ export const NotesPanel = React.memo(function NotesPanel({
         )}
 
         {quizError && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs mb-3 flex items-center gap-2">
-            <AlertCircle size={14} className="shrink-0" />
-            <span>{quizError}</span>
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-xs mb-3 flex flex-col gap-2.5 animate-in fade-in duration-150">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle size={15} className="shrink-0 text-red-400 mt-0.5" />
+              <div className="flex-1 leading-relaxed">
+                {quizError.includes('503') || quizError.toLowerCase().includes('high demand') ? (
+                  <>
+                    <p className="font-semibold text-red-200">Gemini is momentarily experiencing high demand</p>
+                    <p className="text-[11px] text-red-300/80 mt-0.5">Please tap retry to re-generate the quiz using our resilient multi-model failover.</p>
+                  </>
+                ) : (
+                  <p className="text-red-200">{quizError}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end pt-1 border-t border-red-500/20">
+              <button
+                type="button"
+                onClick={handleGenerateInPanelQuiz}
+                disabled={quizLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/30 text-xs font-semibold active:scale-95 transition-all"
+              >
+                <RotateCcw size={12} className={quizLoading ? 'animate-spin' : ''} />
+                <span>Retry Quiz</span>
+              </button>
+            </div>
           </div>
         )}
 
