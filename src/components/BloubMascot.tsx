@@ -52,6 +52,16 @@ export function resolveGaze(
   return GAZE_PRESETS[g] ?? null;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith('#')) return `rgba(251, 191, 36, ${alpha})`;
+  const clean = hex.replace('#', '');
+  if (clean.length < 6) return `rgba(251, 191, 36, ${alpha})`;
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export const BloubMascot = React.memo(function BloubMascot({
   size = 120,
   state = 'idle',
@@ -266,7 +276,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [isStatic, animated, normShape, isSun, activeTyping]);
+  }, [isStatic, animated, normShape, isSun, activeTyping, canBlink]);
 
   // Resolve body and high-contrast eye colors
   const bodyHex = resolveColor(color);
@@ -320,6 +330,9 @@ export const BloubMascot = React.memo(function BloubMascot({
       style={{
         cursor: onInteract || (!isStatic && animated) ? 'pointer' : 'default',
         transformOrigin: '50% 50%',
+        ['--mascot-glow-soft' as any]: hexToRgba(bodyHex, 0.45),
+        ['--mascot-glow-mid' as any]: hexToRgba(bodyHex, 0.65),
+        ['--mascot-glow-intense' as any]: hexToRgba(bodyHex, 0.85),
         ...style,
       }}
     >
@@ -351,26 +364,26 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: sunTapBounce 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* 3. Unique Sun Rays Elastic Twirl (Smooth silky 90deg ray twirl with soft golden shimmer) */
+        /* 3. Unique Sun Rays Elastic Twirl (Smooth silky 90deg ray twirl with dynamic matching color shimmer) */
         @keyframes sunRaysTwirl {
           0% {
             transform: rotate(0deg) scale(1);
           }
           15% {
             transform: rotate(12deg) scale(1.03);
-            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+            filter: drop-shadow(0 0 8px var(--mascot-glow-soft, rgba(251, 191, 36, 0.45)));
           }
           45% {
             transform: rotate(75deg) scale(1.14);
-            filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.75));
+            filter: drop-shadow(0 0 18px var(--mascot-glow-intense, rgba(251, 191, 36, 0.75)));
           }
           65% {
             transform: rotate(96deg) scale(1.08);
-            filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.6));
+            filter: drop-shadow(0 0 14px var(--mascot-glow-mid, rgba(251, 191, 36, 0.6)));
           }
           82% {
             transform: rotate(88deg) scale(0.98);
-            filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.3));
+            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(251, 191, 36, 0.3)));
           }
           100% {
             transform: rotate(90deg) scale(1);
@@ -393,13 +406,13 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: sunFacePop 1.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* 5. Ambient Sun Typing Energy Glow */
+        /* 5. Ambient Sun Typing Energy Glow with dynamic matching color */
         @keyframes sunTypingGlow {
           0%, 100% {
-            filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4));
+            filter: drop-shadow(0 0 6px var(--mascot-glow-soft, rgba(251, 191, 36, 0.4)));
           }
           50% {
-            filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.75));
+            filter: drop-shadow(0 0 16px var(--mascot-glow-mid, rgba(251, 191, 36, 0.75)));
           }
         }
         .sun-typing-glow {
