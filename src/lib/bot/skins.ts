@@ -60,8 +60,8 @@ const droplet = normalize(
 const capsule = profileFromPolygon(hullOfCircles(-0.42, 0, 0.62, 0.42, 0, 0.62), 0, 0)
 
 const sun = normalize(
-  ANGLES.map((a) => 1 + 0.14 * Math.cos(10 * a)),
-  1.15
+  ANGLES.map((a) => 1 + 0.28 * Math.cos(10 * a)),
+  1.18
 )
 
 const cheese = normalize(

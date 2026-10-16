@@ -58,6 +58,21 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
+  squircle: { duration: 1150 },
+  cercle: { duration: 1180 },
+  soleil: { duration: 1200 },
+  livre: { duration: 1150 },
+  hexagone: { duration: 1150 },
+  nuage: { duration: 1200 },
+  goutte: { duration: 1180 },
+  galet: { duration: 1150 },
+  capsule: { duration: 1180 },
+  triangle: { duration: 1150 },
+  oeuf: { duration: 1150 },
+  fromage: { duration: 1180 },
+};
+
 export const BloubMascot = React.memo(function BloubMascot({
   size = 120,
   state = 'idle',
@@ -353,17 +368,18 @@ export const BloubMascot = React.memo(function BloubMascot({
   }, [color, normShape, normExpr, isVisible, isStatic, ink]);
 
   const [tapCount, setTapCount] = useState(0);
+  const currentDuration = SHAPE_ANIMATIONS[normShape]?.duration || 1200;
 
   useEffect(() => {
-    if (!isStatic && animated !== false && normShape === 'soleil') {
+    if (!isStatic && animated !== false) {
       setIsTapping(true);
       setTapCount((c) => c + 1);
       const timer = setTimeout(() => {
         setIsTapping(false);
-      }, 1200);
+      }, currentDuration);
       return () => clearTimeout(timer);
     }
-  }, [normShape, isStatic, animated]);
+  }, [normShape, isStatic, animated, currentDuration]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -374,35 +390,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         setIsTapping(true);
         setTapCount((c) => c + 1);
 
-        if (normShape === 'soleil') {
-          if (animTimerRef.current) clearTimeout(animTimerRef.current);
-          animTimerRef.current = setTimeout(() => {
-            setIsTapping(false);
-          }, 1200);
-        } else if (engineRef.current) {
-          engineRef.current.setState('orbit', clockRef.current);
-          stateRef.current = 'idle';
-
-          if (animTimerRef.current) clearTimeout(animTimerRef.current);
-          animTimerRef.current = setTimeout(() => {
-            if (engineRef.current && engineRef.current.state === 'orbit') {
-              engineRef.current.setState('idle', clockRef.current);
-              stateRef.current = 'idle';
-              const target = resolveGaze(gazeRef.current);
-              if (target) {
-                engineRef.current.setLook(
-                  { yaw: target.yaw, pitch: target.pitch, mix: 0.7, spin: 0, wander: 0.15 },
-                  clockRef.current,
-                  0.3
-                );
-              }
-            }
-            setIsTapping(false);
-          }, 3400);
-        }
+        if (animTimerRef.current) clearTimeout(animTimerRef.current);
+        animTimerRef.current = setTimeout(() => {
+          setIsTapping(false);
+        }, currentDuration);
       }
     },
-    [onClick, onInteract, isStatic, animated, normShape]
+    [onClick, onInteract, isStatic, animated, currentDuration]
   );
 
   const isThinking = state === 'thinking';
@@ -477,113 +471,501 @@ export const BloubMascot = React.memo(function BloubMascot({
           animation: typingDotsLevitate 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s infinite;
         }
 
-        /* ── Soleil (Sun) Kinetic Engine: Calm, Radiant & Slow ── */
-        @keyframes idleSoleil {
-          0% {
-            transform: scale(1) rotate(0deg) translateY(0);
-          }
-          50% {
-            transform: scale(1.06) rotate(18deg) translateY(-5px);
-          }
-          100% {
-            transform: scale(1) rotate(36deg) translateY(0);
-          }
-        }
+        /* ═════════════════════════════════════════════════════════════════════
+           RELAXED KINETIC PHYSICS ENGINE (ALL 12 SHAPES)
+           • Idle: 4.8s – 5.5s smooth sine waves (ease-in-out)
+           • Tap Bursts: 1100ms – 1200ms luxurious deceleration (cubic-bezier(0.16, 1, 0.3, 1))
+           • Secondary Motion: Face & reactive ground shadow lag smoothly by 80ms
+           • 0% harsh snaps, 0% fast jitter
+           ═════════════════════════════════════════════════════════════════════ */
 
-        @keyframes idleShadowSoleil {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 0.3;
-          }
-          50% {
-            transform: scale(0.90);
-            opacity: 0.2;
-          }
-        }
-
-        @keyframes tapBurstSoleil {
-          0% {
-            transform: scale(1) rotate(0deg) translateY(0);
-          }
-          18% {
-            transform: scale(0.92) rotate(-10deg) translateY(4px);
-          }
-          50% {
-            transform: scale(1.12) rotate(36deg) translateY(-18px);
-          }
-          80% {
-            transform: scaleX(1.06) scaleY(0.96) rotate(36deg) translateY(2px);
-          }
-          100% {
-            transform: scale(1) rotate(36deg) translateY(0);
-          }
-        }
-
-        @keyframes tapShadowSoleil {
-          0% {
-            transform: scale(1);
-            opacity: 0.3;
-          }
-          18% {
-            transform: scale(1.10);
-            opacity: 0.38;
-          }
-          50% {
-            transform: scale(0.72);
-            opacity: 0.15;
-          }
-          80% {
-            transform: scale(1.05);
-            opacity: 0.32;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 0.3;
-          }
-        }
-
-        @keyframes tapFaceSoleil {
-          0% {
-            transform: scale(1) rotate(0deg) translateY(0);
-          }
-          18% {
-            transform: scale(0.94) rotate(-6deg) translateY(2px);
-          }
-          50% {
-            transform: scale(1.08) rotate(28deg) translateY(-12px);
-          }
-          80% {
-            transform: scale(1.02) rotate(34deg) translateY(1px);
-          }
-          100% {
-            transform: scale(1) rotate(36deg) translateY(0);
-          }
-        }
-
-        .idle-soleil {
-          animation: idleSoleil 5.2s ease-in-out infinite;
-          transform-origin: 0px 0px;
-        }
-        .tap-burst-soleil {
-          animation: tapBurstSoleil 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform-origin: 0px 0px;
-        }
-        .idle-shadow-soleil {
-          animation: idleShadowSoleil 5.2s ease-in-out infinite;
-          transform-origin: 0px 114px;
-        }
-        .tap-shadow-soleil {
-          animation: tapShadowSoleil 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform-origin: 0px 114px;
-        }
+        /* ── Common Rig Classes ── */
         .mascot-face-rig {
           transition: transform 80ms cubic-bezier(0.16, 1, 0.3, 1);
           transform-origin: 0px 0px;
         }
-        .tap-face-soleil {
-          animation: tapFaceSoleil 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform-origin: 0px 0px;
+        .mascot-shadow-rig {
+          transform-origin: 0px 114px;
         }
+
+        /* ── 1. SQUIRCLE: Elegant 3D Floating Isometric Drift ── */
+        @keyframes idleSquircle {
+          0% {
+            transform: perspective(600px) rotateX(0deg) rotateY(0deg) translateY(0);
+          }
+          30% {
+            transform: perspective(600px) rotateY(-6deg) rotateZ(-2deg) translateY(-8px);
+          }
+          70% {
+            transform: perspective(600px) rotateY(6deg) rotateZ(2deg) translateY(-5px);
+          }
+          100% {
+            transform: perspective(600px) rotateX(0deg) rotateY(0deg) translateY(0);
+          }
+        }
+        @keyframes idleShadowSquircle {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          30% { transform: scale(0.88); opacity: 0.2; }
+          70% { transform: scale(0.92); opacity: 0.24; }
+        }
+        @keyframes tapBurstSquircle {
+          0% {
+            transform: perspective(600px) rotateY(0deg) translateY(0) scale(1);
+          }
+          18% {
+            transform: perspective(600px) translateY(5px) scaleX(1.08) scaleY(0.92);
+          }
+          45% {
+            transform: perspective(600px) translateY(-22px) rotateY(180deg) scale(1.04);
+          }
+          75% {
+            transform: perspective(600px) translateY(3px) rotateY(360deg) scaleX(1.06) scaleY(0.95);
+          }
+          100% {
+            transform: perspective(600px) translateY(0) rotateY(360deg) scale(1);
+          }
+        }
+        @keyframes tapShadowSquircle {
+          0% { transform: scale(1); opacity: 0.3; }
+          18% { transform: scale(1.12); opacity: 0.4; }
+          45% { transform: scale(0.70); opacity: 0.15; }
+          75% { transform: scale(1.06); opacity: 0.35; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceSquircle {
+          0% { transform: perspective(600px) translateX(0) translateY(0); }
+          18% { transform: perspective(600px) translateY(2px) scaleY(0.85); }
+          45% { transform: perspective(600px) translateY(-14px) rotateY(180deg) scale(0.95); }
+          75% { transform: perspective(600px) translateY(1px) rotateY(360deg); }
+          100% { transform: perspective(600px) translateY(0) rotateY(360deg); }
+        }
+        .idle-squircle { animation: idleSquircle 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-squircle { animation: idleShadowSquircle 5.0s ease-in-out infinite; }
+        .tap-burst-squircle { animation: tapBurstSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-squircle { animation: tapShadowSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-squircle { animation: tapFaceSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 2. CERCLE: Slow Marshmallow Bounce ── */
+        @keyframes idleCercle {
+          0%, 100% { transform: scale(1) translateY(0); }
+          50% { transform: scaleX(0.98) scaleY(1.03) translateY(-6px); }
+        }
+        @keyframes idleShadowCercle {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.90); opacity: 0.22; }
+        }
+        @keyframes tapBurstCercle {
+          0% { transform: scale(1) translateY(0); }
+          18% { transform: scaleX(1.14) scaleY(0.88) translateY(6px); }
+          46% { transform: scale(1.02) translateY(-20px); }
+          72% { transform: scaleX(1.08) scaleY(0.94) translateY(3px); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        @keyframes tapShadowCercle {
+          0% { transform: scale(1); opacity: 0.3; }
+          18% { transform: scale(1.14); opacity: 0.42; }
+          46% { transform: scale(0.68); opacity: 0.14; }
+          72% { transform: scale(1.08); opacity: 0.35; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceCercle {
+          0% { transform: translateY(0); }
+          18% { transform: translateY(3px) scaleY(0.82); }
+          46% { transform: translateY(-12px); }
+          72% { transform: translateY(1px); }
+          100% { transform: translateY(0); }
+        }
+        .idle-cercle { animation: idleCercle 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-cercle { animation: idleShadowCercle 5.0s ease-in-out infinite; }
+        .tap-burst-cercle { animation: tapBurstCercle 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-cercle { animation: tapShadowCercle 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-cercle { animation: tapFaceCercle 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 3. SOLEIL: Luminous Warm Pulse & Gentle Scallop Drift ── */
+        @keyframes idleSoleil {
+          0%, 100% { transform: scale(1) rotate(0deg) translateY(0); }
+          33% { transform: scale(1.05) rotate(-5deg) translateY(-6px); }
+          66% { transform: scale(1.02) rotate(4deg) translateY(-3px); }
+        }
+        @keyframes idleShadowSoleil {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          33% { transform: scale(0.88); opacity: 0.2; }
+          66% { transform: scale(0.94); opacity: 0.24; }
+        }
+        @keyframes tapBurstSoleil {
+          0% { transform: scale(1) rotate(0deg) translateY(0); }
+          14% { transform: scaleX(1.10) scaleY(0.90) rotate(-10deg) translateY(4px); }
+          38% { transform: scale(1.10) rotate(120deg) translateY(-22px); }
+          62% { transform: scale(1.04) rotate(260deg) translateY(-10px); }
+          82% { transform: scaleX(1.18) scaleY(0.88) rotate(360deg) translateY(3px); }
+          100% { transform: scale(1) rotate(360deg) translateY(0); }
+        }
+        @keyframes tapShadowSoleil {
+          0% { transform: scale(1); opacity: 0.3; }
+          14% { transform: scale(1.14); opacity: 0.42; }
+          38% { transform: scale(0.66); opacity: 0.14; }
+          62% { transform: scale(0.78); opacity: 0.18; }
+          82% { transform: scale(1.18); opacity: 0.38; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceSoleil {
+          0% { transform: rotate(0deg) translateY(0); }
+          14% { transform: rotate(-8deg) translateY(2px) scaleY(0.85); }
+          38% { transform: rotate(120deg) translateY(-14px) scale(1.05); }
+          62% { transform: rotate(260deg) translateY(-6px); }
+          82% { transform: rotate(360deg) translateY(2px) scaleX(1.1) scaleY(0.9); }
+          100% { transform: rotate(360deg) translateY(0); }
+        }
+        .idle-soleil { animation: idleSoleil 4.8s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-soleil { animation: idleShadowSoleil 4.8s ease-in-out infinite; }
+        .tap-burst-soleil { animation: tapBurstSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-soleil { animation: tapShadowSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-soleil { animation: tapFaceSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 4. LIVRE: Graceful Storybook Page Turn ── */
+        @keyframes idleLivre {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-5px) rotate(1deg); }
+        }
+        @keyframes idleShadowLivre {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.91); opacity: 0.22; }
+        }
+        @keyframes tapBurstLivre {
+          0% { transform: rotate(0deg) translateY(0) scale(1); }
+          18% { transform: rotate(-3deg) translateY(-4px); }
+          48% { transform: rotate(4deg) translateY(-16px) scale(1.03); }
+          75% { transform: rotate(-1deg) translateY(2px) scaleX(1.04) scaleY(0.97); }
+          100% { transform: rotate(0deg) translateY(0) scale(1); }
+        }
+        @keyframes tapShadowLivre {
+          0% { transform: scale(1); opacity: 0.3; }
+          18% { transform: scale(1.04) rotate(-3deg); opacity: 0.34; }
+          48% { transform: scale(0.74); opacity: 0.16; }
+          75% { transform: scale(1.05); opacity: 0.33; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceLivre {
+          0% { transform: rotate(0deg) translateY(0); }
+          18% { transform: rotate(-2deg) translateY(-2px); }
+          48% { transform: rotate(3deg) translateY(-10px); }
+          75% { transform: translateY(1px); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        @keyframes livrePageTurn {
+          0% { transform: scaleX(1); }
+          45% { transform: scaleX(0.05); }
+          65% { transform: scaleX(0.85); }
+          100% { transform: scaleX(1); }
+        }
+        @keyframes livreRibbonSway {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(12deg); }
+          55% { transform: rotate(-10deg); }
+          80% { transform: rotate(4deg); }
+        }
+        .idle-livre { animation: idleLivre 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-livre { animation: idleShadowLivre 5.0s ease-in-out infinite; }
+        .tap-burst-livre { animation: tapBurstLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-livre { animation: tapShadowLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-livre { animation: tapFaceLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .livre-page-turn { animation: livrePageTurn 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .livre-ribbon-sway { animation: livreRibbonSway 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* ── 5. HEXAGONE: Heavy Tumbled River-Stone ── */
+        @keyframes idleHexagone {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-4px) scale(1.02); }
+        }
+        @keyframes idleShadowHexagone {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.92); opacity: 0.23; }
+        }
+        @keyframes tapBurstHexagone {
+          0% { transform: translateY(0) rotate(0deg) scale(1); }
+          30% { transform: translateY(-10px) rotate(15deg) scale(1.03); }
+          55% { transform: translateY(-14px) rotate(42deg) scale(1.02); }
+          78% { transform: translateY(2px) rotate(60deg) scaleX(1.05) scaleY(0.95); }
+          100% { transform: translateY(0) rotate(60deg) scale(1); }
+        }
+        @keyframes tapShadowHexagone {
+          0% { transform: scale(1); opacity: 0.3; }
+          30% { transform: scale(0.85); opacity: 0.22; }
+          55% { transform: scale(0.76); opacity: 0.18; }
+          78% { transform: scale(1.06); opacity: 0.36; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceHexagone {
+          0% { transform: translateY(0) rotate(0deg); }
+          30% { transform: translateY(-6px) rotate(10deg); }
+          55% { transform: translateY(-9px) rotate(32deg); }
+          78% { transform: translateY(1px) rotate(60deg); }
+          100% { transform: translateY(0) rotate(60deg); }
+        }
+        .idle-hexagone { animation: idleHexagone 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-hexagone { animation: idleShadowHexagone 5.0s ease-in-out infinite; }
+        .tap-burst-hexagone { animation: tapBurstHexagone 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-hexagone { animation: tapShadowHexagone 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-hexagone { animation: tapFaceHexagone 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 6. NUAGE: Slow Atmospheric Drift ── */
+        @keyframes idleNuage {
+          0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+          33% { transform: translateY(-5px) translateX(-4px) scale(1.02); }
+          66% { transform: translateY(-3px) translateX(4px) scale(1.03); }
+        }
+        @keyframes idleShadowNuage {
+          0%, 100% { transform: scale(1) translateX(0); opacity: 0.28; }
+          33% { transform: scale(0.92) translateX(-3px); opacity: 0.22; }
+          66% { transform: scale(0.94) translateX(3px); opacity: 0.23; }
+        }
+        @keyframes tapBurstNuage {
+          0% { transform: scale(1) translateY(0) translateX(0); }
+          35% { transform: scale(1.10) translateY(-14px) translateX(-2px); }
+          62% { transform: scale(1.06) translateY(-8px) translateX(6px); }
+          85% { transform: scale(1.02) translateY(1px) translateX(1px); }
+          100% { transform: scale(1) translateY(0) translateX(0); }
+        }
+        @keyframes tapShadowNuage {
+          0% { transform: scale(1); opacity: 0.28; }
+          35% { transform: scale(0.78); opacity: 0.17; }
+          62% { transform: scale(0.88) translateX(4px); opacity: 0.22; }
+          85% { transform: scale(1.03); opacity: 0.30; }
+          100% { transform: scale(1); opacity: 0.28; }
+        }
+        @keyframes tapFaceNuage {
+          0% { transform: translateY(0) translateX(0); }
+          35% { transform: translateY(-8px) scale(1.04); }
+          62% { transform: translateY(-4px) translateX(4px); }
+          85% { transform: translateY(0) translateX(1px); }
+          100% { transform: translateY(0) translateX(0); }
+        }
+        .idle-nuage { animation: idleNuage 5.4s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-nuage { animation: idleShadowNuage 5.4s ease-in-out infinite; }
+        .tap-burst-nuage { animation: tapBurstNuage 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-nuage { animation: tapShadowNuage 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-nuage { animation: tapFaceNuage 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 7. GOUTTE: Viscous Honey/Water Ripple ── */
+        @keyframes idleGoutte {
+          0%, 100% { transform: scale(1) translateY(0); }
+          50% { transform: scaleX(0.97) scaleY(1.03) translateY(-5px); }
+        }
+        @keyframes idleShadowGoutte {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.90); opacity: 0.22; }
+        }
+        @keyframes tapBurstGoutte {
+          0% { transform: scale(1) translateY(0); }
+          30% { transform: translateY(-16px) scaleX(0.91) scaleY(1.10); }
+          60% { transform: translateY(0px) scaleX(1.04) scaleY(0.96); }
+          78% { transform: translateY(4px) scaleX(1.12) scaleY(0.90); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        @keyframes tapShadowGoutte {
+          0% { transform: scale(1); opacity: 0.3; }
+          30% { transform: scale(0.72); opacity: 0.16; }
+          60% { transform: scale(0.98); opacity: 0.30; }
+          78% { transform: scale(1.14); opacity: 0.38; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceGoutte {
+          0% { transform: translateY(0); }
+          30% { transform: translateY(-11px) scaleX(0.94) scaleY(1.06); }
+          60% { transform: translateY(-2px); }
+          78% { transform: translateY(2px) scaleY(0.88); }
+          100% { transform: translateY(0); }
+        }
+        .idle-goutte { animation: idleGoutte 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-goutte { animation: idleShadowGoutte 5.0s ease-in-out infinite; }
+        .tap-burst-goutte { animation: tapBurstGoutte 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-goutte { animation: tapShadowGoutte 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-goutte { animation: tapFaceGoutte 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 8. GALET: Slow Riverbed Rocking ── */
+        @keyframes idleGalet {
+          0%, 100% { transform: rotate(0deg) translateY(0); }
+          35% { transform: rotate(-2deg) translateY(-3px); }
+          70% { transform: rotate(2deg) translateY(-2px); }
+        }
+        @keyframes idleShadowGalet {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          35% { transform: scale(0.94); opacity: 0.24; }
+          70% { transform: scale(0.96); opacity: 0.25; }
+        }
+        @keyframes tapBurstGalet {
+          0% { transform: rotate(0deg) translateY(0); }
+          24% { transform: rotate(-8deg) translateY(-5px); }
+          52% { transform: rotate(6deg) translateY(-3px); }
+          76% { transform: rotate(-2deg) translateY(1px); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        @keyframes tapShadowGalet {
+          0% { transform: scale(1); opacity: 0.3; }
+          24% { transform: scale(0.92) rotate(-6deg); opacity: 0.25; }
+          52% { transform: scale(0.94) rotate(4deg); opacity: 0.26; }
+          76% { transform: scale(1.02); opacity: 0.32; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceGalet {
+          0% { transform: rotate(0deg) translateY(0); }
+          24% { transform: rotate(-6deg) translateY(-3px); }
+          52% { transform: rotate(4deg) translateY(-2px); }
+          76% { transform: rotate(-1.5deg); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        .idle-galet { animation: idleGalet 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-galet { animation: idleShadowGalet 5.0s ease-in-out infinite; }
+        .tap-burst-galet { animation: tapBurstGalet 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-galet { animation: tapShadowGalet 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-galet { animation: tapFaceGalet 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 9. CAPSULE: Gentle Weeble-Wobble ── */
+        @keyframes idleCapsule {
+          0%, 100% { transform: rotate(0deg) translateY(0); }
+          50% { transform: rotate(1.5deg) translateY(-5px); }
+        }
+        @keyframes idleShadowCapsule {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.92); opacity: 0.22; }
+        }
+        @keyframes tapBurstCapsule {
+          0% { transform: rotate(0deg) translateY(0); }
+          25% { transform: rotate(-14deg) translateY(2px); }
+          55% { transform: rotate(10deg) translateY(-3px); }
+          78% { transform: rotate(-3deg) translateY(1px); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        @keyframes tapShadowCapsule {
+          0% { transform: scale(1); opacity: 0.3; }
+          25% { transform: scale(1.08) rotate(-10deg); opacity: 0.36; }
+          55% { transform: scale(0.95) rotate(8deg); opacity: 0.26; }
+          78% { transform: scale(1.02); opacity: 0.32; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceCapsule {
+          0% { transform: rotate(0deg) translateY(0); }
+          25% { transform: rotate(-10deg) translateY(1px); }
+          55% { transform: rotate(8deg) translateY(-2px); }
+          78% { transform: rotate(-2deg); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        .idle-capsule { animation: idleCapsule 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-capsule { animation: idleShadowCapsule 5.0s ease-in-out infinite; }
+        .tap-burst-capsule { animation: tapBurstCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-capsule { animation: tapShadowCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-capsule { animation: tapFaceCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 10. TRIANGLE: Soft Onigiri Corner Sway ── */
+        @keyframes idleTriangle {
+          0%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
+          50% { transform: translateY(-4px) scale(1.02); }
+        }
+        @keyframes idleShadowTriangle {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.92); opacity: 0.22; }
+        }
+        @keyframes tapBurstTriangle {
+          0% { transform: rotate(0deg) translateY(0) scale(1); }
+          26% { transform: rotate(-10deg) translateY(-5px); }
+          54% { transform: rotate(8deg) translateY(-4px); }
+          78% { transform: rotate(0deg) translateY(2px) scaleX(1.06) scaleY(0.95); }
+          100% { transform: rotate(0deg) translateY(0) scale(1); }
+        }
+        @keyframes tapShadowTriangle {
+          0% { transform: scale(1); opacity: 0.3; }
+          26% { transform: scale(0.95) rotate(-8deg); opacity: 0.26; }
+          54% { transform: scale(0.96) rotate(6deg); opacity: 0.27; }
+          78% { transform: scale(1.08); opacity: 0.36; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceTriangle {
+          0% { transform: rotate(0deg) translateY(0); }
+          26% { transform: rotate(-7deg) translateY(-3px); }
+          54% { transform: rotate(6deg) translateY(-2px); }
+          78% { transform: translateY(1px) scaleY(0.92); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        .idle-triangle { animation: idleTriangle 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-triangle { animation: idleShadowTriangle 5.0s ease-in-out infinite; }
+        .tap-burst-triangle { animation: tapBurstTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-triangle { animation: tapShadowTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-triangle { animation: tapFaceTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 11. OEUF: Gentle Cradle Rock ── */
+        @keyframes idleOeuf {
+          0%, 100% { transform: scale(1) translateY(0); }
+          50% { transform: scaleX(0.99) scaleY(1.02) translateY(-4px); }
+        }
+        @keyframes idleShadowOeuf {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.92); opacity: 0.22; }
+        }
+        @keyframes tapBurstOeuf {
+          0% { transform: rotate(0deg) translateY(0); }
+          22% { transform: rotate(-8deg) translateY(-2px); }
+          48% { transform: rotate(8deg) translateY(-2px); }
+          70% { transform: rotate(-4deg) translateY(-1px); }
+          84% { transform: rotate(0deg) translateY(-6px) scale(1.02); }
+          100% { transform: rotate(0deg) translateY(0) scale(1); }
+        }
+        @keyframes tapShadowOeuf {
+          0% { transform: scale(1); opacity: 0.3; }
+          22% { transform: scale(0.96) rotate(-6deg); opacity: 0.28; }
+          48% { transform: scale(0.96) rotate(6deg); opacity: 0.28; }
+          70% { transform: scale(0.98); opacity: 0.29; }
+          84% { transform: scale(0.86); opacity: 0.20; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceOeuf {
+          0% { transform: rotate(0deg) translateY(0); }
+          22% { transform: rotate(-6deg) translateY(-1px); }
+          48% { transform: rotate(6deg) translateY(-1px); }
+          70% { transform: rotate(-3deg); }
+          84% { transform: translateY(-4px); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        .idle-oeuf { animation: idleOeuf 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-oeuf { animation: idleShadowOeuf 5.0s ease-in-out infinite; }
+        .tap-burst-oeuf { animation: tapBurstOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-oeuf { animation: tapShadowOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-oeuf { animation: tapFaceOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+
+        /* ── 12. FROMAGE: Playful Cheese Tilt ── */
+        @keyframes idleFromage {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-4px) scale(1.02); }
+        }
+        @keyframes idleShadowFromage {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(0.92); opacity: 0.23; }
+        }
+        @keyframes tapBurstFromage {
+          0% { transform: rotate(0deg) translateY(0); }
+          32% { transform: rotate(12deg) translateY(-6px); }
+          58% { transform: rotate(10deg) translateY(-4px); }
+          80% { transform: rotate(-3deg) translateY(2px) scaleX(1.04) scaleY(0.97); }
+          100% { transform: rotate(0deg) translateY(0) scale(1); }
+        }
+        @keyframes tapShadowFromage {
+          0% { transform: scale(1); opacity: 0.3; }
+          32% { transform: scale(0.88) rotate(8deg); opacity: 0.22; }
+          58% { transform: scale(0.92) rotate(6deg); opacity: 0.24; }
+          80% { transform: scale(1.05); opacity: 0.34; }
+          100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes tapFaceFromage {
+          0% { transform: rotate(0deg) translateY(0); }
+          32% { transform: rotate(9deg) translateY(-4px); }
+          58% { transform: rotate(7deg) translateY(-2px); }
+          80% { transform: translateY(1px); }
+          100% { transform: rotate(0deg) translateY(0); }
+        }
+        .idle-fromage { animation: idleFromage 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-fromage { animation: idleShadowFromage 5.0s ease-in-out infinite; }
+        .tap-burst-fromage { animation: tapBurstFromage 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-fromage { animation: tapShadowFromage 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-fromage { animation: tapFaceFromage 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
       `}</style>
 
       <defs>
@@ -595,15 +977,22 @@ export const BloubMascot = React.memo(function BloubMascot({
           width={VB * 2}
           height={VB * 2}
         >
-          {/* White body shape — fills the mask */}
-          <path data-mask-body="" fill="#fff" />
-          {/* Black eye holes — cut through the body */}
           <g
-            data-mask-eyes=""
-            className={`mascot-face-rig ${
-              normShape === 'soleil' && isTapping ? 'tap-face-soleil' : ''
+            key={`${normShape}-${tapCount}-mask`}
+            className={`mascot-mask-sync ${
+              isTapping ? `tap-burst-${normShape}` : isStatic ? '' : `idle-${normShape}`
             }`}
-          />
+          >
+            {/* White body shape — fills the mask */}
+            <path data-mask-body="" fill="#fff" />
+            {/* Black eye holes — cut through the body */}
+            <g
+              data-mask-eyes=""
+              className={`mascot-face-rig ${
+                isTapping ? `tap-face-${normShape}` : ''
+              }`}
+            />
+          </g>
         </mask>
       </defs>
 
@@ -613,7 +1002,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         style={{
           pointerEvents: 'none',
           opacity: activeTyping ? 1 : 0,
-          transform: activeTyping ? 'scale(1)' : 'scale(0.82)',
+          transform: activeTyping ? 'scale(0.82)' : 'scale(1)',
           transition:
             'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
@@ -684,31 +1073,31 @@ export const BloubMascot = React.memo(function BloubMascot({
         rx="48"
         ry="9"
         fill="#000"
-        className={
-          normShape === 'soleil'
-            ? isTapping
-              ? 'tap-shadow-soleil'
-              : isStatic
-              ? ''
-              : 'idle-shadow-soleil'
-            : ''
-        }
+        className={`mascot-shadow-rig ${
+          isTapping
+            ? `tap-shadow-${normShape}`
+            : isStatic
+            ? ''
+            : `idle-shadow-${normShape}`
+        }`}
         style={{
           pointerEvents: 'none',
-          display: normShape === 'soleil' && !activeTyping ? 'block' : 'none',
+          display: activeTyping ? 'none' : 'block',
         }}
       />
 
       {/* Mascot Main Layer */}
       <g
-        key={normShape === 'soleil' ? `soleil-${tapCount}` : undefined}
-        className={`mascot-main-group ${
-          normShape === 'soleil'
-            ? `mascot-tap-rig ${isTapping ? 'tap-burst-soleil' : isStatic ? '' : 'idle-soleil'}`
-            : ''
+        key={`${normShape}-${tapCount}`}
+        className={`mascot-main-group mascot-tap-rig ${
+          isTapping
+            ? `tap-burst-${normShape}`
+            : isStatic
+            ? ''
+            : `idle-${normShape}`
         }`}
         onAnimationEnd={() => {
-          if (normShape === 'soleil' && isTapping) {
+          if (isTapping) {
             setIsTapping(false);
           }
         }}
@@ -720,6 +1109,9 @@ export const BloubMascot = React.memo(function BloubMascot({
             'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
+        {/* Dark backing disc for eye holes so eyes are always crisp, dark, and never see-through */}
+        <circle cx="0" cy="0" r="50" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
+
         {/* Dots rendered BEHIND body */}
         <g data-dots-behind="" />
 
@@ -733,19 +1125,54 @@ export const BloubMascot = React.memo(function BloubMascot({
           }}
         />
 
-        {/* Soleil inner core disc + kawaii blush cheeks */}
+        {/* Soleil inner core disc + kawaii blush cheeks + smiling mouth */}
         {normShape === 'soleil' && (
-          <g className="soleil-core-disc" style={{ pointerEvents: 'none' }}>
-            {/* Subtle inner core disc depth */}
-            <circle cx="0" cy="0" r="42" fill="#fff" opacity="0.12" />
-            {/* Kawaii blush cheeks */}
-            <circle cx="-32" cy="12" r="8" fill="#ff8a80" opacity={isTapping ? 0.65 : 0.45} />
-            <circle cx="32" cy="12" r="8" fill="#ff8a80" opacity={isTapping ? 0.65 : 0.45} />
+          <g className="soleil-core-rig" style={{ pointerEvents: 'none' }}>
+            {/* Sunny Core Disc */}
+            <circle
+              cx="0"
+              cy="0"
+              r="54"
+              fill="#fde047"
+              stroke="#f59e0b"
+              strokeWidth="2.5"
+              mask={`url(#${maskId})`}
+              style={{
+                filter: 'drop-shadow(0 2px 6px rgba(245, 158, 11, 0.4))',
+              }}
+            />
+            {/* Inner Core Soft Glow Accent */}
+            <circle cx="0" cy="0" r="48" fill="#fef08a" opacity="0.35" />
+            {/* Rosy Kawaii Blush Cheeks */}
+            <circle
+              cx="-32"
+              cy="14"
+              r="8.5"
+              fill="#fb7185"
+              opacity={isTapping ? 0.8 : 0.55}
+              style={{ transition: 'opacity 0.2s ease' }}
+            />
+            <circle
+              cx="32"
+              cy="14"
+              r="8.5"
+              fill="#fb7185"
+              opacity={isTapping ? 0.8 : 0.55}
+              style={{ transition: 'opacity 0.2s ease' }}
+            />
+            {/* Cute Smiling Mouth Curve */}
+            <path
+              d={isTapping ? "M -9,16 Q 0,27 9,16" : "M -7,15 Q 0,22 7,15"}
+              stroke="#854d0e"
+              strokeWidth="3"
+              strokeLinecap="round"
+              fill={isTapping ? "#e11d48" : "none"}
+            />
           </g>
         )}
 
         {/* Cheese holes rendered on top of the body so they look indented, not like eyes */}
-        {shape === 'fromage' && isBaseBodyActive && !isTapping && (
+        {(normShape === 'fromage' || shape === 'fromage') && isBaseBodyActive && (
           <g fill="#000" opacity="0.14" style={{ pointerEvents: 'none' }}>
             <circle cx="-35" cy="-25" r="10" />
             <circle cx="45" cy="20" r="8" />
@@ -755,7 +1182,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         )}
 
         {/* Sprout leaf on top left for fromage */}
-        {shape === 'fromage' && isBaseBodyActive && !isTapping && (
+        {(normShape === 'fromage' || shape === 'fromage') && isBaseBodyActive && (
           <g style={{ pointerEvents: 'none' }}>
             <path
               d="M -10,-53 Q -15,-80 -5,-95"
@@ -770,10 +1197,15 @@ export const BloubMascot = React.memo(function BloubMascot({
         )}
 
         {/* Book pages, center binding crease, and bookmark ribbon for livre */}
-        {(normShape === 'livre' || shape === 'livre') && isBaseBodyActive && !isTapping && (
+        {(normShape === 'livre' || shape === 'livre') && isBaseBodyActive && (
           <g style={{ pointerEvents: 'none' }}>
             {/* Bookmark ribbon hanging from bottom center */}
-            <path d="M -5,40 L -8,68 L 4,65 L 2,40 Z" fill="#ef4444" />
+            <path
+              d="M -5,40 L -8,68 L 4,65 L 2,40 Z"
+              fill="#ef4444"
+              className={isTapping ? 'livre-ribbon-sway' : ''}
+              style={{ transformOrigin: '0px 40px' }}
+            />
             {/* Open book pages background */}
             <path
               d="M -42,-42 C -20,-38 0,-42 0,-42 C 0,-42 20,-38 42,-42 L 42,42 C 20,46 0,42 0,42 C 0,42 -20,46 -42,42 Z"
@@ -782,6 +1214,8 @@ export const BloubMascot = React.memo(function BloubMascot({
               stroke="#000"
               strokeWidth="1.5"
               strokeOpacity="0.08"
+              className={isTapping ? 'livre-page-turn' : ''}
+              style={{ transformOrigin: '0px 0px' }}
             />
             {/* Book center binding crease */}
             <path
