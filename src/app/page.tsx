@@ -1649,7 +1649,7 @@ export default function Home() {
           {/* Framed Mascot Hero - Cloud mascot with vibrant indigo fill & happy expression */}
           <div className="relative mb-5 flex items-center justify-center">
             <div className="w-24 h-24 rounded-2xl bg-indigo-50/80 border border-indigo-100 p-3 flex items-center justify-center shadow-sm">
-              <BloubMascot size={80} state="idle" expression="happy" shape="cloud" color="#6366F1" isStatic={false} />
+              <BloubMascot size={80} state="idle" expression="happy" shape="cloud" color="#6366F1" isStatic={false} isTyping={false} />
             </div>
           </div>
 

@@ -192,7 +192,7 @@ export const BloubMascot = React.memo(function BloubMascot({
     };
   }, [isStatic, animated]);
 
-  const activeTyping = propIsTyping ?? internalTyping;
+  const activeTyping = propIsTyping !== undefined ? propIsTyping : internalTyping;
 
   // Visibility Observer
   useEffect(() => {
@@ -547,10 +547,8 @@ export const BloubMascot = React.memo(function BloubMascot({
               <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             ) : (
               <>
-                <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
-                {/* Top-left subtle specular gleam matching UI border highlights */}
-                <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
-                <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
+                <rect x="-6" y="-13" width="12" height="26" rx="4" fill="#12111A" />
+                <circle cx="1.5" cy="-6" r="1.8" fill="#fff" />
               </>
             )}
           </g>
@@ -589,10 +587,8 @@ export const BloubMascot = React.memo(function BloubMascot({
               <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             ) : (
               <>
-                <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
-                {/* Top-left subtle specular gleam matching UI border highlights */}
-                <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
-                <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
+                <rect x="-6" y="-13" width="12" height="26" rx="4" fill="#12111A" />
+                <circle cx="1.5" cy="-6" r="1.8" fill="#fff" />
               </>
             )}
           </g>
@@ -2067,7 +2063,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         />
 
         {/* ── 1. SOLEIL: Dual-Tone Sunflower + Scalloped Petals + Amber Core Disc + Dynamic Bloom Aura ── */}
-        {(normShape === 'soleil' || normShape === 'spark') && (
+        {normShape === 'soleil' && (
           <g className="soleil-sun-rig" style={{ pointerEvents: 'none' }}>
             {/* Radiant Bloom Aura matching dynamic shape color */}
             <circle
@@ -2144,6 +2140,42 @@ export const BloubMascot = React.memo(function BloubMascot({
           </g>
         )}
 
+        {/* ── SPARK: Chubby Kawaii Scalloped Star / Puffy Blossom (Single Solid Color, Zero Brown/Orange Rings) ── */}
+        {normShape === 'spark' && (
+          <g className="soleil-sun-rig" style={{ pointerEvents: 'none' }}>
+            {/* Radiant Bloom Aura matching dynamic shape color */}
+            <circle
+              cx="0"
+              cy="20"
+              r="72"
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
+              style={{ filter: 'blur(14px)' }}
+            />
+
+            <g transform="scale(1.75) translate(-50, -50)">
+              {/* Bottom Depth Rim (shifted +3.5px down) */}
+              <g transform="translate(0, 3.5)" opacity="0.22" fill="#000000">
+                <rect x="20" y="20" width="60" height="60" rx="18" />
+                <rect x="20" y="20" width="60" height="60" rx="18" transform="rotate(30 50 50)" />
+                <rect x="20" y="20" width="60" height="60" rx="18" transform="rotate(60 50 50)" />
+              </g>
+              {/* Main Puffy Scalloped Star Body (100% Unified bodyColor — NO brown/orange inner rings!) */}
+              <g fill={bodyHex === '#0a0a0c' ? '#fbbf24' : bodyHex} style={{ filter: 'drop-shadow(0 3px 8px rgba(0, 0, 0, 0.22))' }}>
+                <rect x="20" y="20" width="60" height="60" rx="18" />
+                <rect x="20" y="20" width="60" height="60" rx="18" transform="rotate(30 50 50)" />
+                <rect x="20" y="20" width="60" height="60" rx="18" transform="rotate(60 50 50)" />
+                <circle cx="50" cy="50" r="30" />
+              </g>
+            </g>
+
+            {/* Live Dynamic Kawaii Face with Non-Clipping Center Anchor (scale 0.85) */}
+            <g transform="scale(0.85)">
+              {renderLiveFace(false)}
+            </g>
+          </g>
+        )}
+
         {/* ── 2. CERCLE: Smooth Marshmallow Body + Specular Highlight + Dynamic Live Face ── */}
         {normShape === 'cercle' && (
           <g className="cercle-marshmallow-rig" style={{ pointerEvents: 'none' }}>
@@ -2212,83 +2244,45 @@ export const BloubMascot = React.memo(function BloubMascot({
             {/* Subtle Depth Shadow */}
             <rect x="-86" y="-80" width="172" height="172" rx="56" ry="56" fill="#000" opacity="0.08" />
 
-            {/* Glossy top-left specular highlight */}
-            <ellipse
-              cx="-38"
-              cy="-42"
-              rx="22"
-              ry="10"
-              transform="rotate(-38 -38 -42)"
-              fill="#fff"
-              opacity="0.45"
-            />
-            <circle cx="-20" cy="-56" r="4.5" fill="#fff" opacity="0.5" />
-
             {/* Live Dynamic Kawaii Face */}
             {renderLiveFace(false)}
           </g>
         )}
 
-        {/* ── 4. NUAGE: Atmospheric Cumulus Cloud Body + Inner Creases + Dynamic Live Face ── */}
+        {/* ── 4. NUAGE: Perfect Symmetrical Puffy Cloud Body (Union of Circles + Pill Base) ── */}
         {(normShape === 'nuage' || normShape === 'cloud') && (
           <g className="nuage-fluffy-rig" style={{ pointerEvents: 'none' }}>
             {/* Dynamic radiant aura matching shape color */}
             <circle
               cx="0"
-              cy="30"
+              cy="25"
               r="62"
               fill={auraColor}
               className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
 
-            {/* Layer 1: Subtle Depth Shadow beneath base */}
-            <path
-              d="M -75,33 C -98,33 -102,1 -80,-15 C -84,-39 -52,-55 -30,-39 C -16,-69 28,-69 44,-41 C 68,-53 96,-29 86,-1 C 104,21 86,45 64,41 C 38,49 -38,49 -75,33 Z"
-              fill="#000"
-              opacity="0.08"
-            />
+            <g transform="scale(1.75) translate(-50, -50)">
+              {/* Subtle Bottom Depth Rim (shifted +3.5px down, darkened) */}
+              <g transform="translate(0, 3.5)" opacity="0.20">
+                <rect x="14" y="46" width="72" height="30" rx="15" fill="#000000" />
+                <circle cx="31" cy="49" r="16" fill="#000000" />
+                <circle cx="50" cy="38" r="20" fill="#000000" />
+                <circle cx="69" cy="49" r="16" fill="#000000" />
+              </g>
+              {/* Main Symmetrical Puffy Cloud Body (Single Unified Color) */}
+              <g fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex} style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.14))' }}>
+                <rect x="14" y="46" width="72" height="30" rx="15" />
+                <circle cx="31" cy="49" r="16" />
+                <circle cx="50" cy="38" r="20" />
+                <circle cx="69" cy="49" r="16" />
+              </g>
+            </g>
 
-            {/* Layer 2: Puffy Cloud Body */}
-            <path
-              d="M -75,28 C -98,28 -102,-4 -80,-20 C -84,-44 -52,-60 -30,-44 C -16,-74 28,-74 44,-46 C 68,-58 96,-34 86,-6 C 104,16 86,40 64,36 C 38,44 -38,44 -75,28 Z"
-              fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex}
-              style={{
-                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.16))',
-              }}
-            />
-
-            {/* Glossy top-left specular highlight */}
-            <ellipse
-              cx="-34"
-              cy="-34"
-              rx="16"
-              ry="8"
-              transform="rotate(-28 -34 -34)"
-              fill="#fff"
-              opacity="0.45"
-            />
-
-            {/* Layer 3: Inner Creases (delicate puff divisions) */}
-            <path
-              d="M -30,-24 C -28,-6 -36,12 -48,18"
-              stroke="#000"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.07"
-            />
-            <path
-              d="M 30,-28 C 34,-6 42,10 52,18"
-              stroke="#000"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.07"
-            />
-
-            {/* Live Dynamic Kawaii Face */}
-            {renderLiveFace(false)}
+            {/* Live Dynamic Kawaii Face (shifted slightly down into center of fluffy cloud belly) */}
+            <g transform="translate(0, 4)">
+              {renderLiveFace(false)}
+            </g>
           </g>
         )}
 
@@ -2696,50 +2690,29 @@ export const BloubMascot = React.memo(function BloubMascot({
           <g className="nuage-fluffy-rig" style={{ pointerEvents: 'none' }}>
             <circle
               cx="0"
-              cy="30"
+              cy="25"
               r="62"
               fill={auraColor}
               className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
-            <path
-              d="M -75,33 C -98,33 -102,1 -80,-15 C -84,-39 -52,-55 -30,-39 C -16,-69 28,-69 44,-41 C 68,-53 96,-29 86,-1 C 104,21 86,45 64,41 C 38,49 -38,49 -75,33 Z"
-              fill="#000"
-              opacity="0.08"
-            />
-            <path
-              d="M -75,28 C -98,28 -102,-4 -80,-20 C -84,-44 -52,-60 -30,-44 C -16,-74 28,-74 44,-46 C 68,-58 96,-34 86,-6 C 104,16 86,40 64,36 C 38,44 -38,44 -75,28 Z"
-              fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex}
-              style={{
-                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.16))',
-              }}
-            />
-            <ellipse
-              cx="-34"
-              cy="-34"
-              rx="16"
-              ry="8"
-              transform="rotate(-28 -34 -34)"
-              fill="#fff"
-              opacity="0.45"
-            />
-            <path
-              d="M -30,-24 C -28,-6 -36,12 -48,18"
-              stroke="#000"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.07"
-            />
-            <path
-              d="M 30,-28 C 34,-6 42,10 52,18"
-              stroke="#000"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.07"
-            />
-            {renderLiveFace(false)}
+            <g transform="scale(1.75) translate(-50, -50)">
+              <g transform="translate(0, 3.5)" opacity="0.20">
+                <rect x="14" y="46" width="72" height="30" rx="15" fill="#000000" />
+                <circle cx="31" cy="49" r="16" fill="#000000" />
+                <circle cx="50" cy="38" r="20" fill="#000000" />
+                <circle cx="69" cy="49" r="16" fill="#000000" />
+              </g>
+              <g fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex} style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.14))' }}>
+                <rect x="14" y="46" width="72" height="30" rx="15" />
+                <circle cx="31" cy="49" r="16" />
+                <circle cx="50" cy="38" r="20" />
+                <circle cx="69" cy="49" r="16" />
+              </g>
+            </g>
+            <g transform="translate(0, 4)">
+              {renderLiveFace(false)}
+            </g>
           </g>
         )}
 

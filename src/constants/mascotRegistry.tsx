@@ -382,10 +382,10 @@ export const EXPRESSION_RENDERERS: Record<
   // 1. neutral ("Focused")
   neutral: (eyeColor = '#12111A') => (
     <g>
-      <rect className="eye-blink" x="31" y="42" width="7" height="14" rx="3.5" fill={eyeColor} />
-      <rect className="eye-blink" x="62" y="42" width="7" height="14" rx="3.5" fill={eyeColor} />
-      <circle cx="33.5" cy="45.5" r="1.8" fill="#FFFFFF" />
-      <circle cx="64.5" cy="45.5" r="1.8" fill="#FFFFFF" />
+      <rect className="eye-blink" x="32" y="44" width="8" height="15" rx="4" fill={eyeColor} />
+      <rect className="eye-blink" x="60" y="44" width="8" height="15" rx="4" fill={eyeColor} />
+      <circle cx="37" cy="48" r="1.5" fill="#FFFFFF" />
+      <circle cx="65" cy="48" r="1.5" fill="#FFFFFF" />
     </g>
   ),
 
