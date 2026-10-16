@@ -20,7 +20,7 @@ import {
 } from '@/lib/i18n/translations';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
-import { normalizeExpression, normalizeShape } from '@/constants/mascotRegistry';
+import { normalizeExpression, normalizeShape, resolveShape, resolveExpression } from '@/constants/mascotRegistry';
 import { COLORS } from '@/lib/bot/skins';
 import { createClient } from '@/lib/supabase/client';
 import { VAPID_PUBLIC_KEY } from '@/lib/push-config';
@@ -1646,10 +1646,10 @@ export default function Home() {
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-md bg-white border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.08)] rounded-3xl p-8 relative z-10 text-center flex flex-col items-center"
         >
-          {/* Framed Mascot Hero - Cloud mascot with soft indigo/blue fill & happy expression */}
+          {/* Framed Mascot Hero - Cloud mascot with vibrant indigo fill & happy expression */}
           <div className="relative mb-5 flex items-center justify-center">
-            <div className="w-24 h-24 rounded-2xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shadow-sm">
-              <BloubMascot size={80} state="idle" expression="happy" shape="cloud" color="#3B82F6" isStatic={false} />
+            <div className="w-24 h-24 rounded-2xl bg-indigo-50/80 border border-indigo-100 p-3 flex items-center justify-center shadow-sm">
+              <BloubMascot size={80} state="idle" expression="happy" shape="cloud" color="#6366F1" isStatic={false} />
             </div>
           </div>
 
@@ -2316,7 +2316,7 @@ export default function Home() {
               <div className="w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
                 <BloubMascot size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 <div className="mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
-                  <span className="font-bold text-white capitalize">{getLocalizedShape(targetShape, locale) || targetShape}</span>
+                  <span className="font-bold text-white capitalize">{getLocalizedShape(resolveShape(targetShape), locale) || targetShape}</span>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400 capitalize">{getLocalizedExpression(targetExpr, locale) || targetExpr}</span>
                 </div>
@@ -2421,7 +2421,7 @@ export default function Home() {
                     <Shapes size={14} /> {tLang('shape')}
                   </span>
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
-                    {getLocalizedShape(targetShape, locale) || targetShape}
+                    {getLocalizedShape(resolveShape(targetShape), locale) || targetShape}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">

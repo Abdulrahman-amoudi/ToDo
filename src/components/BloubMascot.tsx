@@ -9,6 +9,8 @@ import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import {
   normalizeShape,
   normalizeExpression,
+  resolveShape,
+  resolveExpression,
   resolveColor,
   FACE_CONFIGS,
   SHAPE_PATHS,
@@ -95,9 +97,12 @@ const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   squircle: { duration: 1150 },
   cercle: { duration: 1150 },
   soleil: { duration: 1150 },
+  spark: { duration: 1150 },
   livre: { duration: 1150 },
+  book: { duration: 1150 },
   hexagone: { duration: 1150 },
   nuage: { duration: 1150 },
+  cloud: { duration: 1150 },
   goutte: { duration: 1150 },
   galet: { duration: 1150 },
   capsule: { duration: 1150 },
@@ -327,11 +332,14 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'cercle' ||
         normShape === 'squircle' ||
         normShape === 'soleil' ||
+        normShape === 'spark' ||
         normShape === 'nuage' ||
+        normShape === 'cloud' ||
         normShape === 'triangle' ||
         normShape === 'hexagone' ||
         normShape === 'goutte' ||
         normShape === 'livre' ||
+        normShape === 'book' ||
         normShape === 'oeuf' ||
         normShape === 'fromage' ||
         normShape === 'galet' ||
@@ -366,7 +374,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         const ty0 = clampedCenterY;
         const ty1 = clampedCenterY;
 
-        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : normShape === 'oeuf' ? 14 : normShape === 'fromage' ? 4 : (normShape === 'galet' || normShape === 'capsule') ? 2 : 0;
+        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : (normShape === 'livre' || normShape === 'book') ? -4 : normShape === 'oeuf' ? 14 : normShape === 'fromage' ? 4 : (normShape === 'galet' || normShape === 'capsule') ? 2 : 0;
         const ey0 = ty0 + shapeYOffset;
         const ey1 = ty1 + shapeYOffset;
 
@@ -503,7 +511,7 @@ export const BloubMascot = React.memo(function BloubMascot({
   const renderLiveFace = (isLowerBelly = false) => {
     const initEyeY = isLowerBelly
       ? 28
-      : normShape === 'livre'
+      : (normShape === 'livre' || normShape === 'book')
       ? -4
       : normShape === 'oeuf'
       ? 14
@@ -1919,6 +1927,22 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-burst-fromage { animation: tapBurstFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 40px; }
         .tap-shadow-fromage { animation: tapShadowFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-fromage { animation: tapFaceFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 40px; }
+
+        /* Canonical shape alias animations */
+        .idle-spark { animation: idleSoleil 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .tap-burst-spark { animation: tapBurstSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-shadow-spark { animation: idleShadowSoleil 5.2s ease-in-out infinite; transform-origin: 0px 110px; }
+        .tap-shadow-spark { animation: tapShadowSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 110px; }
+
+        .idle-cloud { animation: idleNuage 5.2s ease-in-out infinite; transform-origin: 0px 10px; }
+        .tap-burst-cloud { animation: tapBurstNuage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 10px; }
+        .idle-shadow-cloud { animation: idleShadowNuage 5.2s ease-in-out infinite; transform-origin: 0px 110px; }
+        .tap-shadow-cloud { animation: tapShadowNuage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 110px; }
+
+        .idle-book { animation: idleLivre 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .tap-burst-book { animation: tapBurstLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-shadow-book { animation: idleShadowLivre 5.2s ease-in-out infinite; transform-origin: 0px 110px; }
+        .tap-shadow-book { animation: tapShadowLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 110px; }
       `}</style>
 
       {/* Grok Typing Dots: Smooth Cross-fade and Spring Scale */}
@@ -2043,7 +2067,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         />
 
         {/* ── 1. SOLEIL: Dual-Tone Sunflower + Scalloped Petals + Amber Core Disc + Dynamic Bloom Aura ── */}
-        {normShape === 'soleil' && (
+        {(normShape === 'soleil' || normShape === 'spark') && (
           <g className="soleil-sun-rig" style={{ pointerEvents: 'none' }}>
             {/* Radiant Bloom Aura matching dynamic shape color */}
             <circle
@@ -2206,7 +2230,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         )}
 
         {/* ── 4. NUAGE: Atmospheric Cumulus Cloud Body + Inner Creases + Dynamic Live Face ── */}
-        {normShape === 'nuage' && (
+        {(normShape === 'nuage' || normShape === 'cloud') && (
           <g className="nuage-fluffy-rig" style={{ pointerEvents: 'none' }}>
             {/* Dynamic radiant aura matching shape color */}
             <circle
@@ -2424,7 +2448,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         )}
 
         {/* ── 8. LIVRE: Clean White Pages + Dynamic Cover Frame + Storybook Flap Rig ── */}
-        {normShape === 'livre' && (
+        {(normShape === 'livre' || normShape === 'book') && (
           <g className="livre-storybook-rig" style={{ pointerEvents: 'none' }}>
             <circle
               cx="0"
@@ -2656,6 +2680,66 @@ export const BloubMascot = React.memo(function BloubMascot({
             <g className={isTapping ? 'tap-face-capsule' : ''} transform="translate(0, 2)">
               {renderLiveFace(false)}
             </g>
+          </g>
+        )}
+
+        {/* ── 13. BULLETPROOF FALLBACK: Never let mascot body disappear into an empty shadow ── */}
+        {!(
+          normShape === 'soleil' || normShape === 'spark' ||
+          normShape === 'cercle' || normShape === 'squircle' ||
+          normShape === 'nuage' || normShape === 'cloud' ||
+          normShape === 'triangle' || normShape === 'hexagone' ||
+          normShape === 'goutte' || normShape === 'livre' || normShape === 'book' ||
+          normShape === 'oeuf' || normShape === 'fromage' ||
+          normShape === 'galet' || normShape === 'capsule'
+        ) && (
+          <g className="nuage-fluffy-rig" style={{ pointerEvents: 'none' }}>
+            <circle
+              cx="0"
+              cy="30"
+              r="62"
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+            <path
+              d="M -75,33 C -98,33 -102,1 -80,-15 C -84,-39 -52,-55 -30,-39 C -16,-69 28,-69 44,-41 C 68,-53 96,-29 86,-1 C 104,21 86,45 64,41 C 38,49 -38,49 -75,33 Z"
+              fill="#000"
+              opacity="0.08"
+            />
+            <path
+              d="M -75,28 C -98,28 -102,-4 -80,-20 C -84,-44 -52,-60 -30,-44 C -16,-74 28,-74 44,-46 C 68,-58 96,-34 86,-6 C 104,16 86,40 64,36 C 38,44 -38,44 -75,28 Z"
+              fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex}
+              style={{
+                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.16))',
+              }}
+            />
+            <ellipse
+              cx="-34"
+              cy="-34"
+              rx="16"
+              ry="8"
+              transform="rotate(-28 -34 -34)"
+              fill="#fff"
+              opacity="0.45"
+            />
+            <path
+              d="M -30,-24 C -28,-6 -36,12 -48,18"
+              stroke="#000"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.07"
+            />
+            <path
+              d="M 30,-28 C 34,-6 42,10 52,18"
+              stroke="#000"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.07"
+            />
+            {renderLiveFace(false)}
           </g>
         )}
 

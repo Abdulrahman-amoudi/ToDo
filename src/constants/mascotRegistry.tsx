@@ -57,6 +57,16 @@ export function normalizeShape(shape: string | undefined | null): string {
   return SHAPE_ALIASES[norm] || 'cloud';
 }
 
+export type CanonicalShape = 'cloud' | 'book' | 'squircle' | 'spark';
+
+export function resolveShape(raw?: string | null): CanonicalShape {
+  const norm = normalizeShape(raw);
+  if (norm === 'book' || norm === 'livre') return 'book';
+  if (norm === 'squircle') return 'squircle';
+  if (norm === 'spark' || norm === 'soleil') return 'spark';
+  return 'cloud';
+}
+
 export const EXPRESSION_ALIASES: Record<string, string> = {
   // 1. neutral ("Focused")
   neutral: 'neutral',
@@ -125,6 +135,18 @@ export function normalizeExpression(expr: string | undefined | null): string {
   return EXPRESSION_ALIASES[norm] || 'neutral';
 }
 
+export type CanonicalExpression = 'neutral' | 'happy' | 'excited' | 'chill' | 'shy' | 'sleepy';
+
+export function resolveExpression(raw?: string | null): CanonicalExpression {
+  const norm = normalizeExpression(raw);
+  if (norm === 'happy' || norm === 'heureux' || norm === 'proud') return 'happy';
+  if (norm === 'excited' || norm === 'hyped' || norm === 'hilare' || norm === 'surpris') return 'excited';
+  if (norm === 'chill' || norm === 'blase' || norm === 'mefiant') return 'chill';
+  if (norm === 'shy' || norm === 'timide' || norm === 'sad' || norm === 'triste' || norm === 'effraye') return 'shy';
+  if (norm === 'sleepy' || norm === 'somnolent') return 'sleepy';
+  return 'neutral';
+}
+
 /**
  * Complete, valid 100x100 SVG paths for all shapes.
  */
@@ -143,15 +165,21 @@ export const SHAPE_PATHS: Record<string, string> = {
     'M 41.34 13 C 46.10 10.25 53.90 10.25 58.66 13 L 77.71 24 C 82.48 26.75 86.37 33.50 86.37 39 L 86.37 61 C 86.37 66.50 82.48 73.25 77.71 76 L 58.66 87 C 53.90 89.75 46.10 89.75 41.34 87 L 22.29 76 C 17.52 73.25 13.63 66.50 13.63 61 L 13.63 39 C 13.63 33.50 17.52 26.75 22.29 24 Z',
   nuage:
     'M 32 76 C 21 76 13 67 13 56 C 13 46 20 38 30 37 C 33 26 43 19 50 19 C 57 19 67 26 70 37 C 80 38 87 46 87 56 C 87 67 79 76 68 76 C 58 76 42 76 32 76 Z',
+  cloud:
+    'M 32 76 C 21 76 13 67 13 56 C 13 46 20 38 30 37 C 33 26 43 19 50 19 C 57 19 67 26 70 37 C 80 38 87 46 87 56 C 87 67 79 76 68 76 C 58 76 42 76 32 76 Z',
   goutte:
     'M50 12 C50 12 82 46 82 66 C82 82 68 90 50 90 C32 90 18 82 18 66 C18 46 50 12 50 12 Z',
   oeuf:
     'M50 13 C69 13 83 39 83 61 C83 79 69 88 50 88 C31 88 17 79 17 61 C17 39 31 13 50 13 Z',
   soleil:
     'M 50.00 9.00 C 52.93 9.00 55.38 16.24 58.80 17.16 C 62.22 18.07 67.96 13.03 70.50 14.49 C 73.04 15.96 71.54 23.46 74.04 25.96 C 76.54 28.46 84.04 26.96 85.51 29.50 C 86.97 32.04 81.93 37.78 82.84 41.20 C 83.76 44.62 91.00 47.07 91.00 50.00 C 91.00 52.93 83.76 55.38 82.84 58.80 C 81.93 62.22 86.97 67.96 85.51 70.50 C 84.04 73.04 76.54 71.54 74.04 74.04 C 71.54 76.54 73.04 84.04 70.50 85.51 C 67.96 86.97 62.22 81.93 58.80 82.84 C 55.38 83.76 52.93 91.00 50.00 91.00 C 47.07 91.00 44.62 83.76 41.20 82.84 C 37.78 81.93 32.04 86.97 29.50 85.51 C 26.96 84.04 28.46 76.54 25.96 74.04 C 23.46 71.54 15.96 73.04 14.49 70.50 C 13.03 67.96 18.07 62.22 17.16 58.80 C 16.24 55.38 9.00 52.93 9.00 50.00 C 9.00 47.07 16.24 44.62 17.16 41.20 C 18.07 37.78 13.03 32.04 14.49 29.50 C 15.96 26.96 23.46 28.46 25.96 25.96 C 28.46 23.46 26.96 15.96 29.50 14.49 C 32.04 13.03 37.78 18.07 41.20 17.16 C 44.62 16.24 47.07 9.00 50.00 9.00 Z',
+  spark:
+    'M 50.00 9.00 C 52.93 9.00 55.38 16.24 58.80 17.16 C 62.22 18.07 67.96 13.03 70.50 14.49 C 73.04 15.96 71.54 23.46 74.04 25.96 C 76.54 28.46 84.04 26.96 85.51 29.50 C 86.97 32.04 81.93 37.78 82.84 41.20 C 83.76 44.62 91.00 47.07 91.00 50.00 C 91.00 52.93 83.76 55.38 82.84 58.80 C 81.93 62.22 86.97 67.96 85.51 70.50 C 84.04 73.04 76.54 71.54 74.04 74.04 C 71.54 76.54 73.04 84.04 70.50 85.51 C 67.96 86.97 62.22 81.93 58.80 82.84 C 55.38 83.76 52.93 91.00 50.00 91.00 C 47.07 91.00 44.62 83.76 41.20 82.84 C 37.78 81.93 32.04 86.97 29.50 85.51 C 26.96 84.04 28.46 76.54 25.96 74.04 C 23.46 71.54 15.96 73.04 14.49 70.50 C 13.03 67.96 18.07 62.22 17.16 58.80 C 16.24 55.38 9.00 52.93 9.00 50.00 C 9.00 47.07 16.24 44.62 17.16 41.20 C 18.07 37.78 13.03 32.04 14.49 29.50 C 15.96 26.96 23.46 28.46 25.96 25.96 C 28.46 23.46 26.96 15.96 29.50 14.49 C 32.04 13.03 37.78 18.07 41.20 17.16 C 44.62 16.24 47.07 9.00 50.00 9.00 Z',
   fromage:
     'M16 68 C14 42 22 28 32 24 C44 20 66 32 84 54 C88 59 88 65 82 69 C68 76 34 76 16 68 Z',
   livre:
+    'M14 24 C14 19 18 15 24 15 C35 15 45 18 50 23 C55 18 65 15 76 15 C82 15 86 19 86 24 L86 70 C86 75 82 78 76 78 C65 78 55 76 50 81 C45 76 35 78 24 78 C18 78 14 75 14 70 Z',
+  book:
     'M14 24 C14 19 18 15 24 15 C35 15 45 18 50 23 C55 18 65 15 76 15 C82 15 86 19 86 24 L86 70 C86 75 82 78 76 78 C65 78 55 76 50 81 C45 76 35 78 24 78 C18 78 14 75 14 70 Z',
 };
 
@@ -169,11 +197,14 @@ export const FACE_CONFIGS: Record<string, FaceConfig> = {
   triangle: { dx: 0, dy: 8, scale: 0.78 },
   hexagone: { dx: 0, dy: 0, scale: 0.90 },
   nuage:    { dx: 0, dy: 1, scale: 0.92 },
+  cloud:    { dx: 0, dy: 1, scale: 0.92 },
   goutte:   { dx: 0, dy: 7, scale: 0.80 },
   oeuf:     { dx: 0, dy: 7, scale: 0.86 },
   soleil:   { dx: 0, dy: 0, scale: 0.85 },
+  spark:    { dx: 0, dy: 0, scale: 0.85 },
   fromage:  { dx: -2, dy: 4, scale: 0.88 },
   livre:    { dx: 0, dy: -2, scale: 0.95 },
+  book:     { dx: 0, dy: -2, scale: 0.95 },
 };
 
 /**
@@ -200,11 +231,14 @@ export const FACE_TRANSFORMS: Record<string, string> = {
   triangle: getFaceTransform('triangle'),
   hexagone: getFaceTransform('hexagone'),
   nuage:    getFaceTransform('nuage'),
+  cloud:    getFaceTransform('cloud'),
   goutte:   getFaceTransform('goutte'),
   oeuf:     getFaceTransform('oeuf'),
   soleil:   getFaceTransform('soleil'),
+  spark:    getFaceTransform('spark'),
   fromage:  getFaceTransform('fromage'),
   livre:    getFaceTransform('livre'),
+  book:     getFaceTransform('book'),
 };
 
 /**
@@ -225,6 +259,25 @@ export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNod
         fill={bodyHex}
       />
       {/* Layer 2: Swallowtail Ribbon Bookmark Tail (Bottom Spine) */}
+      <path
+        d="M45 76 L55 76 L55 92 L50 87 L45 92 Z"
+        fill="#ef4444"
+        strokeLinejoin="round"
+      />
+    </g>
+  ),
+  book: (bodyHex: string) => (
+    <g style={{ pointerEvents: 'none' }}>
+      <path
+        d="M10 26 C10 20 15 17 22 17 C34 17 45 20 50 25 C55 20 66 17 78 17 C85 17 90 20 90 26 L90 74 C90 80 85 83 78 83 C66 83 55 80 50 85 C45 80 34 83 22 83 C15 83 10 80 10 74 Z"
+        fill={bodyHex}
+        filter="brightness(0.82)"
+        transform="translate(0, 3)"
+      />
+      <path
+        d="M10 26 C10 20 15 17 22 17 C34 17 45 20 50 25 C55 20 66 17 78 17 C85 17 90 20 90 26 L90 74 C90 80 85 83 78 83 C66 83 55 80 50 85 C45 80 34 83 22 83 C15 83 10 80 10 74 Z"
+        fill={bodyHex}
+      />
       <path
         d="M45 76 L55 76 L55 92 L50 87 L45 92 Z"
         fill="#ef4444"
