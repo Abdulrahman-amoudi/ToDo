@@ -82,6 +82,9 @@ function generateSunburstPath(rays = 12, outerR = 98, innerR = 66): string {
 
 const SUNBURST_PATH = generateSunburstPath(12, 98, 66);
 
+const HEXAGONE_PATH =
+  'M 29.0,-77.9 Q 45.0,-77.9 53.0,-64.1 L 82.0,-13.9 Q 90.0,0.0 82.0,13.9 L 53.0,64.1 Q 45.0,77.9 29.0,77.9 L -29.0,77.9 Q -45.0,77.9 -53.0,64.1 L -82.0,13.9 Q -90.0,0.0 -82.0,-13.9 L -53.0,-64.1 Q -45.0,-77.9 -29.0,-77.9 Z';
+
 const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   squircle: { duration: 1150 },
   cercle: { duration: 1150 },
@@ -310,13 +313,14 @@ export const BloubMascot = React.memo(function BloubMascot({
       svg.querySelector('[data-body]')?.setAttribute('opacity', String(frame.bodyAlpha));
       svg.querySelector('[data-mask-body]')?.setAttribute('d', frame.bodyPath);
 
-      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle)
+      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle, hexagone)
       const isCustomShape =
         normShape === 'cercle' ||
         normShape === 'squircle' ||
         normShape === 'soleil' ||
         normShape === 'nuage' ||
-        normShape === 'triangle';
+        normShape === 'triangle' ||
+        normShape === 'hexagone';
 
       if (isCustomShape && svg) {
         let tx0 = -24, ty0 = -6, tx1 = 24, ty1 = -6;
@@ -373,7 +377,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           normShape !== 'squircle' &&
           normShape !== 'soleil' &&
           normShape !== 'nuage' &&
-          normShape !== 'triangle'
+          normShape !== 'triangle' &&
+          normShape !== 'hexagone'
         ) {
           for (const eye of frame.eyes) {
             const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -961,38 +966,118 @@ export const BloubMascot = React.memo(function BloubMascot({
         .livre-page-turn { animation: livrePageTurn 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .livre-ribbon-sway { animation: livreRibbonSway 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* ── 5. HEXAGONE: Heavy Tumbled River-Stone ── */
+        /* ── 5. HEXAGONE: Smooth Honeycomb Gem Breathe & Viscous Roll ── */
         @keyframes idleHexagone {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-4px) scale(1.02); }
+          0% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          25% {
+            transform: scale(1.08) translateY(-4px) rotate(0deg);
+          }
+          75% {
+            transform: scale(1.02) translateY(-1px) rotate(0deg);
+          }
+          100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
         }
         @keyframes idleShadowHexagone {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.92); opacity: 0.23; }
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          25% {
+            transform: scale(0.90);
+            opacity: 0.22;
+          }
+          75% {
+            transform: scale(0.96);
+            opacity: 0.26;
+          }
+        }
+        @keyframes hexFacetGlint {
+          0%, 100% {
+            opacity: 0.2;
+            transform: scale(0.8);
+          }
+          25% {
+            opacity: 0.9;
+            transform: scale(1.2);
+          }
+          75% {
+            opacity: 0.2;
+            transform: scale(0.8);
+          }
         }
         @keyframes tapBurstHexagone {
-          0% { transform: translateY(0) rotate(0deg) scale(1); }
-          30% { transform: translateY(-10px) rotate(15deg) scale(1.03); }
-          55% { transform: translateY(-14px) rotate(42deg) scale(1.02); }
-          78% { transform: translateY(2px) rotate(60deg) scaleX(1.05) scaleY(0.95); }
-          100% { transform: translateY(0) rotate(60deg) scale(1); }
+          0% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          17% {
+            transform: scaleX(1.12) scaleY(0.88) translateY(6px) rotate(0deg);
+          }
+          45% {
+            transform: scale(1.06) translateY(-20px) rotate(30deg);
+          }
+          74% {
+            transform: scale(1.04) translateY(-8px) rotate(60deg);
+          }
+          87% {
+            transform: scaleX(1.14) scaleY(0.90) translateY(4px) rotate(60deg);
+          }
+          100% {
+            transform: scale(1) translateY(0) rotate(60deg);
+          }
         }
         @keyframes tapShadowHexagone {
-          0% { transform: scale(1); opacity: 0.3; }
-          30% { transform: scale(0.85); opacity: 0.22; }
-          55% { transform: scale(0.76); opacity: 0.18; }
-          78% { transform: scale(1.06); opacity: 0.36; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          17% {
+            transform: scale(1.16);
+            opacity: 0.45;
+          }
+          45% {
+            transform: scale(0.65);
+            opacity: 0.12;
+          }
+          74% {
+            transform: scale(0.88);
+            opacity: 0.22;
+          }
+          87% {
+            transform: scale(1.15);
+            opacity: 0.40;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
         }
         @keyframes tapFaceHexagone {
-          0% { transform: translateY(0) rotate(0deg); }
-          30% { transform: translateY(-6px) rotate(10deg); }
-          55% { transform: translateY(-9px) rotate(32deg); }
-          78% { transform: translateY(1px) rotate(60deg); }
-          100% { transform: translateY(0) rotate(60deg); }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+          }
+          17% {
+            transform: translateY(3px) scaleY(0.88) rotate(0deg);
+          }
+          45% {
+            transform: translateY(-14px) scale(1.05) rotate(-12deg);
+          }
+          74% {
+            transform: translateY(-5px) rotate(-40deg);
+          }
+          87% {
+            transform: translateY(3px) scaleX(1.10) scaleY(0.92) rotate(-56deg);
+          }
+          100% {
+            transform: translate(0, 0) rotate(-60deg);
+          }
         }
-        .idle-hexagone { animation: idleHexagone 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-hexagone { animation: idleShadowHexagone 5.0s ease-in-out infinite; }
+        .idle-hexagone { animation: idleHexagone 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-hexagone { animation: idleShadowHexagone 5.2s ease-in-out infinite; }
+        .hex-facet-glint { transform-origin: 32px -46px; animation: hexFacetGlint 5.2s ease-in-out infinite; }
         .tap-burst-hexagone { animation: tapBurstHexagone 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-hexagone { animation: tapShadowHexagone 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-hexagone { animation: tapFaceHexagone 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
@@ -1478,7 +1563,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && (
+        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && (
           <>
             <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
             <path
@@ -1707,6 +1792,62 @@ export const BloubMascot = React.memo(function BloubMascot({
 
             {/* Live Dynamic Kawaii Face (positioned in wide belly) */}
             {renderLiveFace(true)}
+          </g>
+        )}
+
+        {/* ── 6. HEXAGONE: Smooth Honeycomb Gem + Facet Gleam + Dynamic Live Face ── */}
+        {normShape === 'hexagone' && (
+          <g className="hexagone-gem-rig" style={{ pointerEvents: 'none' }}>
+            {/* Golden radiant aura under airborne loft */}
+            <circle
+              cx="0"
+              cy="24"
+              r="60"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+
+            {/* Layer 1: Subtle Base Depth Shadow */}
+            <path
+              d={HEXAGONE_PATH}
+              transform="translate(0, 5)"
+              fill="#000"
+              opacity="0.08"
+            />
+
+            {/* Layer 2: Honeycomb Gem Body */}
+            <path
+              d={HEXAGONE_PATH}
+              fill={bodyHex === '#0a0a0c' ? '#3ecf8e' : bodyHex}
+              style={{
+                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))',
+              }}
+            />
+
+            {/* Layer 3: Top-left Glossy Glint */}
+            <ellipse
+              cx="-34"
+              cy="-44"
+              rx="18"
+              ry="8"
+              transform="rotate(-30 -34 -44)"
+              fill="#fff"
+              opacity="0.45"
+            />
+            <circle cx="-18" cy="-56" r="3.2" fill="#fff" opacity="0.5" />
+
+            {/* Top Facet Shine Sparkle */}
+            <path
+              d="M 32,-56 Q 32,-46 42,-46 Q 32,-46 32,-36 Q 32,-46 22,-46 Q 32,-46 32,-56 Z"
+              fill="#fff"
+              className="hex-facet-glint"
+            />
+
+            {/* Live Dynamic Kawaii Face */}
+            <g className={isTapping ? 'tap-face-hexagone' : ''}>
+              {renderLiveFace(false)}
+            </g>
           </g>
         )}
 
