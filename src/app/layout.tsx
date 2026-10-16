@@ -74,12 +74,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 }
 
                 let lang = localStorage.getItem('vibe_language');
+                document.documentElement.setAttribute('dir', 'ltr');
                 if (lang === 'ar' || (!lang && (navigator.language || '').toLowerCase().startsWith('ar'))) {
-                  document.documentElement.setAttribute('dir', 'rtl');
                   document.documentElement.setAttribute('lang', 'ar');
                   document.body && document.body.classList.add('font-arabic');
                 } else {
-                  document.documentElement.setAttribute('dir', 'ltr');
                   document.documentElement.setAttribute('lang', 'en');
                   document.body && document.body.classList.remove('font-arabic');
                 }

@@ -42,7 +42,8 @@ export function useLanguage() {
   const applyDocumentDirection = (loc: Locale) => {
     if (typeof document !== 'undefined') {
       const isArabic = loc === 'ar';
-      document.documentElement.setAttribute('dir', isArabic ? 'rtl' : 'ltr');
+      // User preference: Never flip layout from left to right; keep it strictly LTR as original
+      document.documentElement.setAttribute('dir', 'ltr');
       document.documentElement.setAttribute('lang', loc);
       if (isArabic) {
         document.body.classList.add('font-arabic');
@@ -93,7 +94,7 @@ export function useLanguage() {
     locale,
     setLocale,
     t,
-    isRTL: locale === 'ar',
+    isRTL: false,
   };
 }
 
