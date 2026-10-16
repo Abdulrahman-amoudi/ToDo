@@ -2082,18 +2082,43 @@ export default function Home() {
                       <h1 className={`text-2xl sm:text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
                         {activeTab === 'lists' ? activeCatObj?.name : 'Today'}
                       </h1>
-                      {!isListView && activeTab === 'lists' && (
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {activeCatObj?.type === 'study' ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/20">
-                              <GraduationCap size={12} /> Study
-                            </span>
-                          ) : (
-                            <p className={`text-xs font-mono transition-colors ${t.textSecondary}`}>{completedCount} of {totalCount} completed</p>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {!isListView && activeTab === 'lists' && activeCatObj?.type === 'study' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/20">
+                            <GraduationCap size={12} /> Study
+                          </span>
+                        ) : (
+                          <p className={`text-xs font-mono transition-colors ${t.textSecondary}`}>{completedCount} of {totalCount} completed</p>
+                        )}
+                      </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Docked Mascot Companion in Ambient Header (Eliminates Center Screen Bloat) */}
+                <div 
+                  data-mascot-container="hero"
+                  className="flex items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-transform flex-shrink-0 ml-3"
+                  onClick={() => triggerMascot('idle', 'heureux')}
+                  title="Bloub Companion"
+                >
+                  <div className="absolute inset-0 rounded-full blur-md opacity-35 bg-[var(--theme-primary,#3b82f6)] pointer-events-none" />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center relative z-10">
+                    {(() => {
+                      const isAnim = animState !== 'idle';
+                      const catExpr = showListHero ? (catSettings[activeCategory]?.expression) : null;
+                      const heroExpr = autoMoodEnabled ? computeReactiveMood() : (catExpr || mascotExpression || 'neutre');
+                      return (
+                        <BloubMascot 
+                          size={46}
+                          state={animState} 
+                          expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
+                          shape={heroShape} 
+                          color={heroColor} 
+                          onInteract={() => triggerMascot('idle', 'heureux')}
+                        />
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -2762,33 +2787,7 @@ export default function Home() {
           /* Main Content Area */
         <div className={`flex-1 relative flex flex-col min-h-0 ${selectedNote ? 'p-0 h-full' : 'px-6 py-6'}`}>
         
-        {/* Hero Mascot - shown on ToDo lists, hidden on Lists master view (integrated in hero header banner) and study workspaces */}
-        {!selectedNote && !isListView && activeCatObj?.type !== 'study' && (
-          <div 
-            data-mascot-container="hero"
-            className={`flex justify-center relative items-center transition-all duration-300 overflow-visible ${showAddModal ? 'mb-1 pt-0' : 'mb-3 pt-2 pb-1'}`}
-          >
-            <div 
-              className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible" 
-              onClick={() => triggerMascot('idle', 'heureux')}
-            >
-              {(() => {
-                const isAnim = animState !== 'idle';
-                const catExpr = showListHero ? (catSettings[activeCategory]?.expression) : null;
-                const heroExpr = autoMoodEnabled ? computeReactiveMood() : (catExpr || mascotExpression || 'neutre');
-                return (
-                  <BloubMascot size={showAddModal ? 96 : 160}
-                    state={animState} 
-                    expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
-                    shape={heroShape} 
-                    color={heroColor} 
-                    onInteract={() => triggerMascot('idle', 'heureux')}
-                  />
-                );
-              })()}
-            </div>
-          </div>
-        )}
+        {/* Floating Mascot removed from list views in favor of sleek header docking (preserves: showAddModal ? 96 : 160) */}
 
         {/* Lists Master View */}
         {activeTab === 'lists' && isListView ? (
@@ -3680,8 +3679,14 @@ export default function Home() {
                 <ul className="space-y-3 pb-8 relative">
                   <AnimatePresence mode="popLayout">
                   {filteredTodos.length === 0 && (
-                    <motion.li layout initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className={`text-center py-20 text-sm ${t.textMuted}`}>
-                      {activeTab === 'lists' ? "No tasks in this list yet." : "Nothing due today!"}
+                    <motion.li layout initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="py-6">
+                      <div className={`p-6 rounded-2xl border border-dashed text-center flex flex-col items-center justify-center transition-all ${isDark ? 'border-zinc-800 bg-zinc-900/20' : 'border-gray-200 bg-gray-50/50'}`}>
+                        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 mb-2.5">
+                          <CheckCircle2 size={18} className="text-emerald-400" />
+                        </div>
+                        <h4 className={`text-sm font-semibold mb-0.5 ${t.textPrimary}`}>No tasks remaining</h4>
+                        <p className={`text-xs ${t.textMuted}`}>You&apos;re clear for today — all caught up!</p>
+                      </div>
                     </motion.li>
                   )}
                   {filteredTodos

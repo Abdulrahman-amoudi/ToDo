@@ -327,20 +327,32 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'goutte';
 
       if (isCustomShape && svg) {
-        let tx0 = -24, ty0 = -6, tx1 = 24, ty1 = -6;
+        let rawTx0 = -28, rawTy0 = -6, rawTx1 = 28, rawTy1 = -6;
         let k0 = 1, k1 = 1;
         if (frame.eyes && frame.eyes.length >= 2) {
           const p0 = frame.eyes[0].matrix.slice(7, -1).split(',');
           const p1 = frame.eyes[1].matrix.slice(7, -1).split(',');
           if (p0.length >= 6 && p1.length >= 6) {
-            tx0 = parseFloat(p0[4]) || -24;
-            ty0 = parseFloat(p0[5]) || -6;
-            tx1 = parseFloat(p1[4]) || 24;
-            ty1 = parseFloat(p1[5]) || -6;
+            rawTx0 = parseFloat(p0[4]) || -28;
+            rawTy0 = parseFloat(p0[5]) || -6;
+            rawTx1 = parseFloat(p1[4]) || 28;
+            rawTy1 = parseFloat(p1[5]) || -6;
             k0 = Math.abs(parseFloat(p0[3])) || 1;
             k1 = Math.abs(parseFloat(p1[3])) || 1;
           }
         }
+
+        // Clamp face center displacement strictly so facial features never detach from the body
+        const rawCenterX = (rawTx0 + rawTx1) / 2;
+        const rawCenterY = (rawTy0 + rawTy1) / 2;
+        const clampedCenterX = Math.max(-14, Math.min(14, rawCenterX));
+        const clampedCenterY = Math.max(-10, Math.min(10, rawCenterY));
+
+        const baseSeparation = 28;
+        const tx0 = clampedCenterX - baseSeparation;
+        const tx1 = clampedCenterX + baseSeparation;
+        const ty0 = clampedCenterY;
+        const ty1 = clampedCenterY;
 
         const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : 0;
         const ey0 = ty0 + shapeYOffset;
@@ -356,18 +368,18 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
         const cheekLeftEl = svg.querySelector('[data-live-cheek-left]') as SVGCircleElement | null;
         if (cheekLeftEl) {
-          cheekLeftEl.setAttribute('cx', (tx0 - 13).toFixed(1));
-          cheekLeftEl.setAttribute('cy', (ey0 + 22).toFixed(1));
+          cheekLeftEl.setAttribute('cx', (tx0 - 10).toFixed(1));
+          cheekLeftEl.setAttribute('cy', (ey0 + 20).toFixed(1));
         }
         const cheekRightEl = svg.querySelector('[data-live-cheek-right]') as SVGCircleElement | null;
         if (cheekRightEl) {
-          cheekRightEl.setAttribute('cx', (tx1 + 13).toFixed(1));
-          cheekRightEl.setAttribute('cy', (ey1 + 22).toFixed(1));
+          cheekRightEl.setAttribute('cx', (tx1 + 10).toFixed(1));
+          cheekRightEl.setAttribute('cy', (ey1 + 20).toFixed(1));
         }
         const mouthEl = svg.querySelector('[data-live-mouth]') as SVGGElement | null;
         if (mouthEl) {
-          const mx = ((tx0 + tx1) / 2).toFixed(1);
-          const my = (((ey0 + ey1) / 2) + 20).toFixed(1);
+          const mx = clampedCenterX.toFixed(1);
+          const my = (clampedCenterY + shapeYOffset + 18).toFixed(1);
           mouthEl.setAttribute('transform', `translate(${mx}, ${my})`);
         }
       }
@@ -504,62 +516,83 @@ export const BloubMascot = React.memo(function BloubMascot({
     const initEyeY = isLowerBelly ? 20 : -6;
     const initCheekY = isLowerBelly ? 42 : 16;
     const initMouthY = isLowerBelly ? 40 : 14;
+    const isTimide = normExpr === 'timide';
 
     return (
       <g data-live-face="" className="mascot-live-face-rig">
-        {/* Left Eye Group */}
-        <g data-live-eye-left="" transform={`translate(-24, ${initEyeY}) scale(1, 1)`}>
-          {/* Normal upright pill eye */}
+        {/* Left Eye Group - Cyber-Kawaii Digital Visor Eye */}
+        <g data-live-eye-left="" transform={`translate(-28, ${initEyeY}) scale(1, 1)`}>
+          {/* Normal upright digital aperture eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            <rect x="-7" y="-13" width="14" height="26" rx="7" fill="#1e1b4b" />
-            <circle cx="-2.5" cy="-4.5" r="3.2" fill="#fff" />
-            <circle cx="2" cy="4" r="1.6" fill="#fff" opacity="0.8" />
+            <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
+            {/* Top-left subtle specular gleam matching UI border highlights */}
+            <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
+            <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
           </g>
           {/* Peaceful soft blink eye */}
           <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
-            <path d="M -8,-2 Q 0,4 8,-2" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" fill="none" />
+            <path d="M -8,-2 Q 0,4 8,-2" stroke="#12111A" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           </g>
           {/* Soft squint eye (> <) during squeeze & impact */}
           <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
-            <path d="M -8,-6 L 0,-1 L -8,4" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <path d="M -7,-5 L 0,-1 L -7,3" stroke="#12111A" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </g>
           {/* Star sparkles (✦) during loft */}
           <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
-            <path d="M 0,-10 Q 0,-2 6,-2 Q 0,-2 0,6 Q 0,-2 -6,-2 Q 0,-2 0,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
+            <path d="M 0,-9 Q 0,-2 5,-2 Q 0,-2 0,5 Q 0,-2 -5,-2 Q 0,-2 0,-9 Z" fill="#fff" stroke="#12111A" strokeWidth="1" />
           </g>
         </g>
 
-        {/* Right Eye Group */}
-        <g data-live-eye-right="" transform={`translate(24, ${initEyeY}) scale(1, 1)`}>
-          {/* Normal upright pill eye */}
+        {/* Right Eye Group - Cyber-Kawaii Digital Visor Eye */}
+        <g data-live-eye-right="" transform={`translate(28, ${initEyeY}) scale(1, 1)`}>
+          {/* Normal upright digital aperture eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            <rect x="-7" y="-13" width="14" height="26" rx="7" fill="#1e1b4b" />
-            <circle cx="-2.5" cy="-4.5" r="3.2" fill="#fff" />
-            <circle cx="2" cy="4" r="1.6" fill="#fff" opacity="0.8" />
+            <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
+            {/* Top-left subtle specular gleam matching UI border highlights */}
+            <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
+            <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
           </g>
           {/* Peaceful soft blink eye */}
           <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
-            <path d="M -8,-2 Q 0,4 8,-2" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" fill="none" />
+            <path d="M -8,-2 Q 0,4 8,-2" stroke="#12111A" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           </g>
           {/* Soft squint eye (> <) during squeeze & impact */}
           <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
-            <path d="M 8,-6 L 0,-1 L 8,4" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <path d="M 7,-5 L 0,-1 L 7,3" stroke="#12111A" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </g>
           {/* Star sparkles (✦) during loft */}
           <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
-            <path d="M 0,-10 Q 0,-2 6,-2 Q 0,-2 0,6 Q 0,-2 -6,-2 Q 0,-2 0,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
+            <path d="M 0,-9 Q 0,-2 5,-2 Q 0,-2 0,5 Q 0,-2 -5,-2 Q 0,-2 0,-9 Z" fill="#fff" stroke="#12111A" strokeWidth="1" />
           </g>
         </g>
 
-        {/* Rosy Kawaii Blush Cheeks */}
-        <circle data-live-cheek-left="" cx="-37" cy={initCheekY} r="9.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
-        <circle data-live-cheek-right="" cx="37" cy={initCheekY} r="9.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
+        {/* Subtle Cyber-Kawaii Blush (strictly for 'timide' expression, no clownish hot-pink) */}
+        {isTimide && (
+          <>
+            <circle
+              data-live-cheek-left=""
+              cx="-39"
+              cy={initCheekY}
+              r="8"
+              fill="rgba(255, 255, 255, 0.16)"
+              style={{ mixBlendMode: 'plus-lighter' }}
+            />
+            <circle
+              data-live-cheek-right=""
+              cx="39"
+              cy={initCheekY}
+              r="8"
+              fill="rgba(255, 255, 255, 0.16)"
+              style={{ mixBlendMode: 'plus-lighter' }}
+            />
+          </>
+        )}
 
         {/* Sweet centered smile */}
         <g data-live-mouth="" transform={`translate(0, ${initMouthY})`}>
           <path
             d="M -7,-2 Q 0,5 7,-2"
-            stroke="#1e1b4b"
+            stroke="#12111A"
             strokeWidth="2.8"
             strokeLinecap="round"
             fill="none"
@@ -572,7 +605,7 @@ export const BloubMascot = React.memo(function BloubMascot({
             rx="4.5"
             ry="5.5"
             fill="#e11d48"
-            stroke="#1e1b4b"
+            stroke="#12111A"
             strokeWidth="1.6"
             className={`mascot-mouth-open ${isTapping ? 'tap-mouth-open' : ''}`}
           />
