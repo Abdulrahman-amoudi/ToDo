@@ -316,7 +316,7 @@ export const BloubMascot = React.memo(function BloubMascot({
       svg.querySelector('[data-body]')?.setAttribute('opacity', String(frame.bodyAlpha));
       svg.querySelector('[data-mask-body]')?.setAttribute('d', frame.bodyPath);
 
-      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle, hexagone, goutte)
+      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle, hexagone, goutte, livre)
       const isCustomShape =
         normShape === 'cercle' ||
         normShape === 'squircle' ||
@@ -324,7 +324,8 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'nuage' ||
         normShape === 'triangle' ||
         normShape === 'hexagone' ||
-        normShape === 'goutte';
+        normShape === 'goutte' ||
+        normShape === 'livre';
 
       if (isCustomShape && svg) {
         let rawTx0 = -28, rawTy0 = -6, rawTx1 = 28, rawTy1 = -6;
@@ -354,7 +355,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         const ty0 = clampedCenterY;
         const ty1 = clampedCenterY;
 
-        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : 0;
+        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : 0;
         const ey0 = ty0 + shapeYOffset;
         const ey1 = ty1 + shapeYOffset;
 
@@ -395,7 +396,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           normShape !== 'nuage' &&
           normShape !== 'triangle' &&
           normShape !== 'hexagone' &&
-          normShape !== 'goutte'
+          normShape !== 'goutte' &&
+          normShape !== 'livre'
         ) {
           for (const eye of frame.eyes) {
             const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -954,55 +956,139 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-burst-soleil { animation: tapBurstSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-soleil { animation: tapShadowSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* ── 4. LIVRE: Graceful Storybook Page Turn ── */
+        /* ── 4. LIVRE: Storybook Calm Breathe & Gentle Page-Flutter ── */
         @keyframes idleLivre {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-5px) rotate(1deg); }
+          0% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          25% {
+            transform: scaleX(1.06) scaleY(1.04) translateY(-4px);
+          }
+          75% {
+            transform: scale(1.02) translateY(-1px);
+          }
+          100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
         }
         @keyframes idleShadowLivre {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.91); opacity: 0.22; }
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          25% {
+            transform: scale(0.90);
+            opacity: 0.22;
+          }
+          75% {
+            transform: scale(0.96);
+            opacity: 0.26;
+          }
+        }
+        @keyframes idleLivreRibbon {
+          0%, 100% {
+            transform: rotate(0deg);
+          }
+          25% {
+            transform: rotate(6deg);
+          }
+          75% {
+            transform: rotate(2deg);
+          }
         }
         @keyframes tapBurstLivre {
-          0% { transform: rotate(0deg) translateY(0) scale(1); }
-          18% { transform: rotate(-3deg) translateY(-4px); }
-          48% { transform: rotate(4deg) translateY(-16px) scale(1.03); }
-          75% { transform: rotate(-1deg) translateY(2px) scaleX(1.04) scaleY(0.97); }
-          100% { transform: rotate(0deg) translateY(0) scale(1); }
+          0% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          17% {
+            transform: scaleX(0.85) scaleY(0.85) translateY(4px);
+          }
+          45% {
+            transform: scaleX(1.12) scaleY(0.88) translateY(-20px) rotate(-4deg);
+          }
+          74% {
+            transform: scale(1.05) translateX(3px) translateY(-8px) skewX(-4deg);
+          }
+          87% {
+            transform: scaleX(1.14) scaleY(0.92) translateY(4px) rotate(0deg);
+          }
+          100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
         }
         @keyframes tapShadowLivre {
-          0% { transform: scale(1); opacity: 0.3; }
-          18% { transform: scale(1.04) rotate(-3deg); opacity: 0.34; }
-          48% { transform: scale(0.74); opacity: 0.16; }
-          75% { transform: scale(1.05); opacity: 0.33; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          17% {
+            transform: scale(1.14) translateX(0);
+            opacity: 0.45;
+          }
+          45% {
+            transform: scale(0.65) translateX(0);
+            opacity: 0.15;
+          }
+          74% {
+            transform: scale(0.90) translateX(3px);
+            opacity: 0.24;
+          }
+          87% {
+            transform: scale(1.16) translateX(0);
+            opacity: 0.40;
+          }
+          100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
         }
         @keyframes tapFaceLivre {
-          0% { transform: rotate(0deg) translateY(0); }
-          18% { transform: rotate(-2deg) translateY(-2px); }
-          48% { transform: rotate(3deg) translateY(-10px); }
-          75% { transform: translateY(1px); }
-          100% { transform: rotate(0deg) translateY(0); }
+          0% {
+            transform: translate(0, 0);
+          }
+          17% {
+            transform: translateY(2px) scale(0.85);
+          }
+          45% {
+            transform: translateY(-16px) scaleX(1.08) scaleY(0.94) rotate(4deg);
+          }
+          74% {
+            transform: translateX(2px) translateY(-6px) skewX(-3deg);
+          }
+          87% {
+            transform: translateY(3px) scaleX(1.10) scaleY(0.90);
+          }
+          100% {
+            transform: translate(0, 0);
+          }
         }
-        @keyframes livrePageTurn {
-          0% { transform: scaleX(1); }
-          45% { transform: scaleX(0.05); }
-          65% { transform: scaleX(0.85); }
-          100% { transform: scaleX(1); }
+        @keyframes tapLivreRibbon {
+          0% {
+            transform: rotate(0deg);
+          }
+          17% {
+            transform: rotate(0deg);
+          }
+          45% {
+            transform: rotate(-12deg);
+          }
+          74% {
+            transform: rotate(8deg);
+          }
+          87% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(0deg);
+          }
         }
-        @keyframes livreRibbonSway {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(12deg); }
-          55% { transform: rotate(-10deg); }
-          80% { transform: rotate(4deg); }
-        }
-        .idle-livre { animation: idleLivre 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-livre { animation: idleShadowLivre 5.0s ease-in-out infinite; }
+        .idle-livre { animation: idleLivre 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-livre { animation: idleShadowLivre 5.2s ease-in-out infinite; }
+        .idle-livre-ribbon { animation: idleLivreRibbon 5.2s ease-in-out infinite; transform-origin: 50px 76px; }
         .tap-burst-livre { animation: tapBurstLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-livre { animation: tapShadowLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-livre { animation: tapFaceLivre 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
-        .livre-page-turn { animation: livrePageTurn 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .livre-ribbon-sway { animation: livreRibbonSway 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-livre-ribbon { animation: tapLivreRibbon 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 50px 76px; }
 
         /* ── 5. HEXAGONE: Smooth Honeycomb Gem Breathe & Viscous Roll ── */
         @keyframes idleHexagone {
@@ -1666,7 +1752,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && (
+        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && normShape !== 'livre' && (
           <>
             <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
             <path
@@ -2007,6 +2093,65 @@ export const BloubMascot = React.memo(function BloubMascot({
           </g>
         )}
 
+        {/* ── 8. LIVRE: Clean White Pages + Dynamic Cover Frame + Storybook Flap Rig ── */}
+        {normShape === 'livre' && (
+          <g className="livre-storybook-rig" style={{ pointerEvents: 'none' }}>
+            <circle
+              cx="0"
+              cy="25"
+              r="60"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+            <g transform="scale(1.75) translate(-50, -50)">
+              {/* Layer 1: Outer Cover Frame (Dynamic Accent Color + Depth Rim) */}
+              <path
+                d="M10 26 C10 20 15 17 22 17 C34 17 45 20 50 25 C55 20 66 17 78 17 C85 17 90 20 90 26 L90 74 C90 80 85 83 78 83 C66 83 55 80 50 85 C45 80 34 83 22 83 C15 83 10 80 10 74 Z"
+                fill={bodyHex === '#0a0a0c' ? '#8b5cf6' : bodyHex}
+                filter="brightness(0.82)"
+                transform="translate(0, 3)"
+              />
+              <path
+                d="M10 26 C10 20 15 17 22 17 C34 17 45 20 50 25 C55 20 66 17 78 17 C85 17 90 20 90 26 L90 74 C90 80 85 83 78 83 C66 83 55 80 50 85 C45 80 34 83 22 83 C15 83 10 80 10 74 Z"
+                fill={bodyHex === '#0a0a0c' ? '#8b5cf6' : bodyHex}
+              />
+              {/* Layer 2: Swallowtail Ribbon Bookmark Tail (Bottom Spine) */}
+              <path
+                d="M45 76 L55 76 L55 92 L50 87 L45 92 Z"
+                fill="#FF4D6D"
+                data-ribbon="#ef4444"
+                strokeLinejoin="round"
+                className={isTapping ? 'tap-livre-ribbon' : isStatic ? '' : 'idle-livre-ribbon'}
+              />
+              {/* Layer 3: Puffy Open Book Pages (ALWAYS Clean White) */}
+              <path
+                d="M14 24 C14 19 18 15 24 15 C35 15 45 18 50 23 C55 18 65 15 76 15 C82 15 86 19 86 24 L86 70 C86 75 82 78 76 78 C65 78 55 76 50 81 C45 76 35 78 24 78 C18 78 14 75 14 70 Z"
+                fill="#FFFFFF"
+                style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.08))' }}
+              />
+              {/* Layer 4: Soft Spine Crease & Page Thickness Underlay */}
+              <path
+                d="M50 23 L50 80"
+                stroke="rgba(0, 0, 0, 0.12)"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <path
+                d="M18 73 C30 73 44 71 50 76 C56 71 70 73 82 73"
+                stroke="rgba(0, 0, 0, 0.08)"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </g>
+            {/* Live Dynamic Kawaii Face (centered over open pages) */}
+            <g className={isTapping ? 'tap-face-livre' : ''} transform="translate(0, -3)">
+              {renderLiveFace(false)}
+            </g>
+          </g>
+        )}
+
         {/* Cheese holes rendered on top of the body so they look indented, not like eyes */}
         {(normShape === 'fromage' || shape === 'fromage') && isBaseBodyActive && (
           <g fill="#000" opacity="0.14" style={{ pointerEvents: 'none' }}>
@@ -2029,39 +2174,6 @@ export const BloubMascot = React.memo(function BloubMascot({
             />
             <path d="M -5,-95 C -25,-105 -20,-125 10,-115 Z" fill="#15803d" />
             <path d="M -5,-95 C 5,-85 20,-95 10,-115 Z" fill="#4ade80" />
-          </g>
-        )}
-
-        {/* Book pages, center binding crease, and bookmark ribbon for livre */}
-        {(normShape === 'livre' || shape === 'livre') && isBaseBodyActive && (
-          <g style={{ pointerEvents: 'none' }}>
-            {/* Bookmark ribbon hanging from bottom center */}
-            <path
-              d="M -5,40 L -8,68 L 4,65 L 2,40 Z"
-              fill="#ef4444"
-              className={isTapping ? 'livre-ribbon-sway' : ''}
-              style={{ transformOrigin: '0px 40px' }}
-            />
-            {/* Open book pages background */}
-            <path
-              d="M -42,-42 C -20,-38 0,-42 0,-42 C 0,-42 20,-38 42,-42 L 42,42 C 20,46 0,42 0,42 C 0,42 -20,46 -42,42 Z"
-              fill="#fbfaf3"
-              mask={`url(#${maskId})`}
-              stroke="#000"
-              strokeWidth="1.5"
-              strokeOpacity="0.08"
-              className={isTapping ? 'livre-page-turn' : ''}
-              style={{ transformOrigin: '0px 0px' }}
-            />
-            {/* Book center binding crease */}
-            <path
-              d="M 0,-42 L 0,42"
-              stroke="#000"
-              strokeWidth="2.5"
-              opacity="0.16"
-              strokeLinecap="round"
-              mask={`url(#${maskId})`}
-            />
           </g>
         )}
 

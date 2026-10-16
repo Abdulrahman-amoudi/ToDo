@@ -150,7 +150,7 @@ export const FACE_CONFIGS: Record<string, FaceConfig> = {
   oeuf:     { dx: 0, dy: 2, scale: 0.86 },
   soleil:   { dx: 0, dy: 0, scale: 0.85 },
   fromage:  { dx: 0, dy: 3, scale: 0.80 },
-  livre:    { dx: 0, dy: 0, scale: 0.88 },
+  livre:    { dx: 0, dy: -2, scale: 0.95 },
 };
 
 /**
@@ -190,16 +190,21 @@ export const FACE_TRANSFORMS: Record<string, string> = {
 export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNode> = {
   livre: (bodyHex: string) => (
     <g style={{ pointerEvents: 'none' }}>
-      {/* Layer 1 — Soft Rounded Back Cover Rim (Depth Layer) */}
+      {/* Layer 1: Outer Cover Frame (Dynamic Accent Color + Depth Rim) */}
       <path
         d="M10 26 C10 20 15 17 22 17 C34 17 45 20 50 25 C55 20 66 17 78 17 C85 17 90 20 90 26 L90 74 C90 80 85 83 78 83 C66 83 55 80 50 85 C45 80 34 83 22 83 C15 83 10 80 10 74 Z"
         fill={bodyHex}
-        filter="brightness(0.78)"
+        filter="brightness(0.82)"
+        transform="translate(0, 3)"
       />
-      {/* Layer 2 — Cute Bottom Ribbon Bookmark Tail (Out of the Way of the Face) */}
       <path
-        d="M45 76 L55 76 L55 91 L50 87 L45 91 Z"
-        fill="#FF5A79"
+        d="M10 26 C10 20 15 17 22 17 C34 17 45 20 50 25 C55 20 66 17 78 17 C85 17 90 20 90 26 L90 74 C90 80 85 83 78 83 C66 83 55 80 50 85 C45 80 34 83 22 83 C15 83 10 80 10 74 Z"
+        fill={bodyHex}
+      />
+      {/* Layer 2: Swallowtail Ribbon Bookmark Tail (Bottom Spine) */}
+      <path
+        d="M45 76 L55 76 L55 92 L50 87 L45 92 Z"
+        fill="#FF4D6D"
         strokeLinejoin="round"
       />
     </g>
@@ -224,10 +229,20 @@ export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
   ),
   livre: () => (
     <g style={{ pointerEvents: 'none' }}>
-      {/* Layer 4 — Subtle Spine Crease Split into top and bottom notches so mouths & glasses are never sliced */}
-      <path d="M50 23 L50 33" stroke="rgba(0,0,0,0.12)" strokeWidth="3" strokeLinecap="round" />
-      <path d="M50 67 L50 78" stroke="rgba(0,0,0,0.12)" strokeWidth="3" strokeLinecap="round" />
-      <path d="M18 73 C30 73 44 71 50 76 C56 71 70 73 82 73" stroke="rgba(0,0,0,0.14)" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+      {/* Layer 4: Soft Spine Crease & Page Thickness Underlay */}
+      <path
+        d="M50 23 L50 80"
+        stroke="rgba(0, 0, 0, 0.12)"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M18 73 C30 73 44 71 50 76 C56 71 70 73 82 73"
+        stroke="rgba(0, 0, 0, 0.08)"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        fill="none"
+      />
     </g>
   ),
 };
