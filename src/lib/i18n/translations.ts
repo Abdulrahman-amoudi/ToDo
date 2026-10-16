@@ -70,8 +70,11 @@ export interface Translations {
   copied: string;
   eyeGazeDirection: string;
 
-  // Mascot Shapes (12)
+  // Mascot Shapes (4 Iconic + Legacy)
+  shape_cloud: string;
+  shape_book: string;
   shape_squircle: string;
+  shape_spark: string;
   shape_cercle: string;
   shape_galet: string;
   shape_capsule: string;
@@ -84,7 +87,13 @@ export interface Translations {
   shape_fromage: string;
   shape_livre: string;
 
-  // Mascot Expressions (15)
+  // Mascot Expressions (6 Canonical + Legacy)
+  expr_neutral: string;
+  expr_happy: string;
+  expr_excited: string;
+  expr_chill: string;
+  expr_shy: string;
+  expr_sleepy: string;
   expr_neutre: string;
   expr_attentif: string;
   expr_surpris: string;
@@ -229,8 +238,11 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     copied: 'Copied!',
     eyeGazeDirection: 'Eye Gaze Direction',
 
-    // Mascot Shapes (12)
+    // Mascot Shapes (4 Iconic + Legacy)
+    shape_cloud: 'Cloud',
+    shape_book: 'Book',
     shape_squircle: 'Squircle',
+    shape_spark: 'Spark',
     shape_cercle: 'Circle',
     shape_galet: 'Pebble',
     shape_capsule: 'Capsule',
@@ -243,8 +255,14 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     shape_fromage: 'Cheese',
     shape_livre: 'Book',
 
-    // Mascot Expressions (15)
-    expr_neutre: 'Neutral',
+    // Mascot Expressions (6 Canonical + Legacy)
+    expr_neutral: 'Focused',
+    expr_happy: 'Happy',
+    expr_excited: 'Hyped',
+    expr_chill: 'Chill',
+    expr_shy: 'Shy',
+    expr_sleepy: 'Sleepy',
+    expr_neutre: 'Focused',
     expr_attentif: 'Attentive',
     expr_surpris: 'Surprised',
     expr_excite: 'Excited',
@@ -387,8 +405,11 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     copied: 'تم النسخ!',
     eyeGazeDirection: 'اتجاه نظرة العين',
 
-    // Mascot Shapes (12)
-    shape_squircle: 'سكويركل',
+    // Mascot Shapes (4 Iconic + Legacy)
+    shape_cloud: 'سحابة',
+    shape_book: 'كتاب',
+    shape_squircle: 'مربع دائري',
+    shape_spark: 'نجمة',
     shape_cercle: 'دائرة',
     shape_galet: 'حصاة',
     shape_capsule: 'كبسولة',
@@ -401,12 +422,18 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     shape_fromage: 'جبنة',
     shape_livre: 'كتاب',
 
-    // Mascot Expressions (15)
-    expr_neutre: 'هادئ',
-    expr_attentif: 'مركّز',
+    // Mascot Expressions (6 Canonical + Legacy)
+    expr_neutral: 'مركّز',
+    expr_happy: 'سعيد',
+    expr_excited: 'متحمّس',
+    expr_chill: 'هادئ',
+    expr_shy: 'خجول',
+    expr_sleepy: 'نعسان',
+    expr_neutre: 'مركّز',
+    expr_attentif: 'منتبه',
     expr_surpris: 'متفاجئ',
     expr_excite: 'متحمّس',
-    expr_heureux: 'مبسوط',
+    expr_heureux: 'سعيد',
     expr_hilare: 'ضاحك',
     expr_colere: 'غاضب',
     expr_triste: 'حزين',
@@ -415,7 +442,7 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     expr_curieux: 'فضولي',
     expr_fier: 'فخور',
     expr_timide: 'خجول',
-    expr_blase: 'مروّق',
+    expr_blase: 'هادئ',
     expr_somnolent: 'نعسان',
 
     // Themes (16)

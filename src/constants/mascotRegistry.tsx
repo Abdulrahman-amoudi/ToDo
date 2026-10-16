@@ -16,90 +16,113 @@ export function normalizeId(str: string | undefined | null): string {
 }
 
 export const SHAPE_ALIASES: Record<string, string> = {
+  // 1. Cloud (Classic Companion)
+  cloud: 'cloud',
+  nuage: 'cloud',
+  goutte: 'cloud',
+  drop: 'cloud',
+  droplet: 'cloud',
+
+  // 2. Book (Study & Vault Companion)
+  book: 'book',
+  livre: 'book',
+
+  // 3. Squircle (Minimalist OLED Hardware Pet)
   squircle: 'squircle',
   square: 'squircle',
-  cercle: 'cercle',
-  circle: 'cercle',
-  round: 'cercle',
-  galet: 'galet',
-  pebble: 'galet',
-  capsule: 'capsule',
-  pill: 'capsule',
-  triangle: 'triangle',
-  hexagone: 'hexagone',
-  hexagon: 'hexagone',
-  nuage: 'nuage',
-  cloud: 'nuage',
-  goutte: 'goutte',
-  drop: 'goutte',
-  droplet: 'goutte',
-  oeuf: 'oeuf',
-  egg: 'oeuf',
-  soleil: 'soleil',
-  sun: 'soleil',
-  fromage: 'fromage',
-  cheese: 'fromage',
-  livre: 'livre',
-  book: 'livre',
+  cercle: 'squircle',
+  circle: 'squircle',
+  round: 'squircle',
+  galet: 'squircle',
+  pebble: 'squircle',
+  capsule: 'squircle',
+  pill: 'squircle',
+  oeuf: 'squircle',
+  egg: 'squircle',
+
+  // 4. Spark (Focus & Streak Companion)
+  spark: 'spark',
+  soleil: 'spark',
+  sun: 'spark',
+  star: 'spark',
+  hexagone: 'spark',
+  hexagon: 'spark',
+  triangle: 'spark',
+  fromage: 'spark',
+  cheese: 'spark',
 };
 
 export function normalizeShape(shape: string | undefined | null): string {
   const norm = normalizeId(shape);
-  return SHAPE_ALIASES[norm] || 'soleil';
+  return SHAPE_ALIASES[norm] || 'cloud';
 }
 
 export const EXPRESSION_ALIASES: Record<string, string> = {
-  neutre: 'neutre',
-  neutral: 'neutre',
-  idle: 'neutre',
-  attentif: 'attentif',
-  attentive: 'attentif',
-  focused: 'attentif',
-  focus: 'attentif',
-  surpris: 'surpris',
-  surprised: 'surpris',
-  surprise: 'surpris',
-  excite: 'excite',
-  excited: 'excite',
-  heureux: 'heureux',
-  happy: 'heureux',
-  joyeux: 'heureux',
-  hilare: 'hilare',
-  laugh: 'hilare',
-  laughing: 'hilare',
-  colere: 'colere',
-  angry: 'colere',
-  anger: 'colere',
-  triste: 'triste',
-  sad: 'triste',
-  sorrow: 'triste',
-  effraye: 'effraye',
-  scared: 'effraye',
-  fear: 'effraye',
-  mefiant: 'mefiant',
-  suspicious: 'mefiant',
-  curieux: 'curieux',
-  curious: 'curieux',
-  confus: 'curieux',
-  confused: 'curieux',
-  fier: 'fier',
-  proud: 'fier',
-  timide: 'timide',
-  shy: 'timide',
-  blase: 'blase',
-  bored: 'blase',
-  unamused: 'blase',
-  somnolent: 'somnolent',
-  sleep: 'somnolent',
-  sleepy: 'somnolent',
-  drowsy: 'somnolent',
-  vroum: 'excite',
-  klaxon: 'excite',
+  // 1. neutral ("Focused")
+  neutral: 'neutral',
+  focused: 'neutral',
+  focus: 'neutral',
+  neutre: 'neutral',
+  attentif: 'neutral',
+  attentive: 'neutral',
+  idle: 'neutral',
+
+  // 2. happy ("Happy")
+  happy: 'happy',
+  heureux: 'happy',
+  joyeux: 'happy',
+
+  // 3. excited ("Hyped")
+  excited: 'excited',
+  hyped: 'excited',
+  excite: 'excited',
+  hilare: 'excited',
+  laugh: 'excited',
+  laughing: 'excited',
+  surpris: 'excited',
+  surprised: 'excited',
+  surprise: 'excited',
+  vroum: 'excited',
+  klaxon: 'excited',
+
+  // 4. chill ("Chill")
+  chill: 'chill',
+  cool: 'chill',
+  blase: 'chill',
+  bored: 'chill',
+  unamused: 'chill',
+  mefiant: 'chill',
+  suspicious: 'chill',
+  fier: 'chill',
+  proud: 'chill',
+  curieux: 'chill',
+  curious: 'chill',
+  confus: 'chill',
+  confused: 'chill',
+  colere: 'chill',
+  angry: 'chill',
+  anger: 'chill',
+  triste: 'chill',
+  sad: 'chill',
+  sorrow: 'chill',
+
+  // 5. shy ("Shy")
+  shy: 'shy',
+  timide: 'shy',
+
+  // 6. sleepy ("Sleepy")
+  sleepy: 'sleepy',
+  sleep: 'sleepy',
+  somnolent: 'sleepy',
+  drowsy: 'sleepy',
+  effraye: 'excited',
+  scared: 'excited',
+  fear: 'excited',
 };
 
 export function normalizeExpression(expr: string | undefined | null): string {
   const norm = normalizeId(expr);
-  return EXPRESSION_ALIASES[norm] || 'neutre';
+  return EXPRESSION_ALIASES[norm] || 'neutral';
 }
 
 /**
@@ -290,183 +313,115 @@ export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
  * Soft, chubby kawaii aesthetic matching "timide" (rounded pills, strokeWidth 4-5.5, blush ovals).
  * Standardized cheek positions (cx=29, cx=71, rx=5) and safe face bounds (max width 38px).
  */
+/**
+ * 6 Canonical, Unmistakable Expressions inside 0 0 100 100 space.
+ * 1. neutral ("Focused"): Two clean vertical pill eyes with specular glints
+ * 2. happy ("Happy"): Two thick upward-curved eye arcs + warm smile
+ * 3. excited ("Hyped"): Starry wide eyes with 4-point star glints + open D mouth
+ * 4. chill ("Chill"): Sleek connected dark sunglasses with glare slashes + confident smirk
+ * 5. shy ("Shy"): Soft vertical pill eyes, cheek blush ovals, cat-smile
+ * 6. sleepy ("Sleepy"): Peaceful downward-curved eyelids, breathing o mouth, floating zZ
+ */
 export const EXPRESSION_RENDERERS: Record<
   string,
   (eyeColor: string, isLightBody: boolean) => React.ReactNode
 > = {
-  // 1. neutre (Calm Classic): 32px separation, y=38..53 with eye blink
-  neutre: (eyeColor = '#12111A') => (
+  // 1. neutral ("Focused")
+  neutral: (eyeColor = '#12111A') => (
     <g>
-      <rect className="eye-blink" x="30.5" y="38" width="7" height="15" rx="3.5" fill={eyeColor} />
-      <rect className="eye-blink" x="62.5" y="38" width="7" height="15" rx="3.5" fill={eyeColor} />
+      <rect className="eye-blink" x="31" y="42" width="7" height="14" rx="3.5" fill={eyeColor} />
+      <rect className="eye-blink" x="62" y="42" width="7" height="14" rx="3.5" fill={eyeColor} />
+      <circle cx="33.5" cy="45.5" r="1.8" fill="#FFFFFF" />
+      <circle cx="64.5" cy="45.5" r="1.8" fill="#FFFFFF" />
     </g>
   ),
 
-  // 2. attentif (Wide Starry-Eyed Focus): Taller glossy pill eyes + dual white specular highlights
-  attentif: (eyeColor = '#12111A') => (
-    <g className="eye-blink">
-      <rect x="29.75" y="36" width="8.5" height="17" rx="4.25" fill={eyeColor} />
-      <rect x="61.75" y="36" width="8.5" height="17" rx="4.25" fill={eyeColor} />
-      <circle cx="32.5" cy="40.5" r="2.4" fill="#FFFFFF" />
-      <circle cx="64.5" cy="40.5" r="2.4" fill="#FFFFFF" />
-      <circle cx="35.5" cy="49" r="1.2" fill="#FFFFFF" />
-      <circle cx="67.5" cy="49" r="1.2" fill="#FFFFFF" />
-    </g>
-  ),
-
-  // 3. surpris (Shocked Wide Eyes + Low 'O' Mouth): Clean air gap, arched brows, low mouth
-  surpris: (eyeColor = '#12111A') => (
+  // 2. happy ("Happy")
+  happy: (eyeColor = '#12111A') => (
     <g>
-      <path d="M28 31 Q34 26 40 31 M60 31 Q66 26 72 31" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
-      <ellipse cx="34" cy="44" rx="5" ry="6.5" fill={eyeColor} />
-      <ellipse cx="66" cy="44" rx="5" ry="6.5" fill={eyeColor} />
-      <circle cx="34" cy="41.5" r="1.8" fill="#FFFFFF" />
-      <circle cx="66" cy="41.5" r="1.8" fill="#FFFFFF" />
-      <ellipse className="mouth-pulse" cx="50" cy="59" rx="4" ry="4.8" fill={eyeColor} />
+      <path d="M28 49 Q34.5 39 41 49" stroke={eyeColor} strokeWidth="5" strokeLinecap="round" fill="none" />
+      <path d="M59 49 Q65.5 39 72 49" stroke={eyeColor} strokeWidth="5" strokeLinecap="round" fill="none" />
+      <path d="M45 56 Q50 61 55 56" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 4. excite (Super Happy Arcs): Wide separated arcs at cx=34/66
-  excite: (eyeColor = '#12111A') => (
+  // 3. excited ("Hyped")
+  excited: (eyeColor = '#12111A') => (
     <g>
-      <path d="M27 48 Q34 36 41 48" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" fill="none" />
-      <path d="M59 48 Q66 36 73 48" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" fill="none" />
+      <circle cx="34" cy="46" r="6.5" fill={eyeColor} />
+      <circle cx="66" cy="46" r="6.5" fill={eyeColor} />
+      {/* 4-point white star glints inside */}
+      <path d="M34 42 Q34 46 38 46 Q34 46 34 50 Q34 46 30 46 Q34 46 34 42 Z" fill="#FFFFFF" />
+      <path d="M66 42 Q66 46 70 46 Q66 46 66 50 Q66 46 62 46 Q66 46 66 42 Z" fill="#FFFFFF" />
+      {/* Open happy D-mouth */}
+      <path d="M44 55 L56 55 C56 63 44 63 44 55 Z" fill="#FF4D6D" stroke={eyeColor} strokeWidth="2" strokeLinejoin="round" />
     </g>
   ),
 
-  // 5. heureux (Warm Sweet Smile + Glossy Eyes): Glossy pill eyes and smile cleanly at y=56
-  heureux: (eyeColor = '#12111A') => (
+  // 4. chill ("Chill")
+  chill: (eyeColor = '#12111A') => (
     <g>
-      <g className="eye-blink">
-        <rect x="30.5" y="38" width="7" height="14" rx="3.5" fill={eyeColor} />
-        <rect x="62.5" y="38" width="7" height="14" rx="3.5" fill={eyeColor} />
-        <circle cx="33" cy="41.5" r="1.8" fill="#FFFFFF" />
-        <circle cx="65" cy="41.5" r="1.8" fill="#FFFFFF" />
-      </g>
-      <path d="M44 56 Q50 62 56 56" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      {/* Sleek connected dark sunglasses */}
+      <rect x="24" y="41" width="21" height="13" rx="4" fill={eyeColor} />
+      <rect x="55" y="41" width="21" height="13" rx="4" fill={eyeColor} />
+      <line x1="45" y1="45" x2="55" y2="45" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" />
+      {/* White diagonal lens glare slashes */}
+      <line x1="28" y1="50" x2="33" y2="44" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+      <line x1="59" y1="50" x2="64" y2="44" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+      {/* Confident smirk */}
+      <path d="M45 58 Q51 60 56 55" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 6. hilare (Squinting > < Laughing Eyes + D-Mouth): Separated eyes + laughing D-mouth
-  hilare: (eyeColor = '#12111A') => (
-    <g>
-      <g className="laugh-eyes">
-        <path d="M28 39 L38 45 L28 51" stroke={eyeColor} strokeWidth="5.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        <path d="M72 39 L62 45 L72 51" stroke={eyeColor} strokeWidth="5.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </g>
-      <path className="laugh-mouth" d="M42 55 L58 55 C58 64 42 64 42 55 Z" fill="#e11d48" stroke={eyeColor} strokeWidth="4" strokeLinejoin="round" />
-    </g>
-  ),
-
-  // 7. colere (Fierce Cute Pout): V-brows strictly at y=31..37 with 5px clear gap above eyes at y=42
-  colere: (eyeColor = '#12111A') => (
-    <g>
-      <path d="M26 31 L40 37 M74 31 L60 37" stroke={eyeColor} strokeWidth="5.5" strokeLinecap="round" />
-      <rect x="30.5" y="42" width="7" height="12" rx="3.5" fill={eyeColor} />
-      <rect x="62.5" y="42" width="7" height="12" rx="3.5" fill={eyeColor} />
-      <path d="M45 60 Q50 56 55 60" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
-    </g>
-  ),
-
-  // 8. triste (Droopy Puppy Eyes + Animated Teardrop): Clean brows at y=31..37, eyes at y=41, teardrop
-  triste: (eyeColor = '#12111A') => (
-    <g>
-      <path d="M26 37 Q33 31 40 33 M74 37 Q67 31 60 33" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
-      <rect x="30.5" y="41" width="7" height="13" rx="3.5" fill={eyeColor} />
-      <rect x="62.5" y="41" width="7" height="13" rx="3.5" fill={eyeColor} />
-      <circle cx="33" cy="44.5" r="2" fill="#FFFFFF" />
-      <circle cx="65" cy="44.5" r="2" fill="#FFFFFF" />
-      <path d="M45 60 Q50 56 55 60" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
-      <path className="tear-drip" d="M74 46 C74 46 79 53 79 56.5 A4.5 4.5 0 1 1 70 56.5 C70 53 74 46 74 46 Z" fill="#38BDF8" />
-    </g>
-  ),
-
-  // 9. effraye (Spooked Shrunk Pupils + Wavy Squiggle Mouth): Worried brows, sclera + jitter pupils
-  effraye: (eyeColor = '#12111A') => (
-    <g>
-      <path d="M27 33 Q34 28 40 32 M73 33 Q66 28 60 32" stroke={eyeColor} strokeWidth="4.2" strokeLinecap="round" fill="none" />
-      <ellipse cx="34" cy="44" rx="5.5" ry="6.5" fill="#FFFFFF" stroke={eyeColor} strokeWidth="3.5" />
-      <ellipse cx="66" cy="44" rx="5.5" ry="6.5" fill="#FFFFFF" stroke={eyeColor} strokeWidth="3.5" />
-      <g className="effraye-pupils">
-        <circle cx="34" cy="44" r="2.2" fill={eyeColor} />
-        <circle cx="66" cy="44" r="2.2" fill={eyeColor} />
-      </g>
-      <path d="M41 59 Q44 55 47 59 T53 59 T59 59" stroke={eyeColor} strokeWidth="4" strokeLinecap="round" fill="none" />
-    </g>
-  ),
-
-  // 10. mefiant (Skeptical Side-Eye Glare): Heavy half-lidded bars shifted + flat mouth at y=58
-  mefiant: (eyeColor = '#12111A') => (
-    <g>
-      <g transform="translate(3, 0)">
-        <rect x="28" y="42" width="12" height="5.5" rx="2.75" fill={eyeColor} />
-        <rect x="60" y="42" width="12" height="5.5" rx="2.75" fill={eyeColor} />
-      </g>
-      <line x1="45" y1="58" x2="55" y2="58" stroke={eyeColor} strokeWidth="4.2" strokeLinecap="round" />
-    </g>
-  ),
-
-  // 11. curieux (Asymmetric Inquisitive Brow & Tilt): Pill eyes, high arch brow above right eye, cute smirk
-  curieux: (eyeColor = '#12111A') => (
-    <g>
-      <rect className="eye-blink" x="30.5" y="40" width="7" height="13" rx="3.5" fill={eyeColor} />
-      <g className="eye-blink">
-        <rect x="61.5" y="36" width="8" height="16" rx="4" fill={eyeColor} />
-        <circle cx="64.5" cy="40.5" r="2" fill="#FFFFFF" />
-      </g>
-      <path d="M59 29 Q66 24 73 29" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
-      <ellipse cx="50" cy="58" rx="2.8" ry="3.2" fill={eyeColor} />
-    </g>
-  ),
-
-  // 12. fier (Smug Confident Closed Arcs + Smirk): Smug closed arcs, confident smirk
-  fier: (eyeColor = '#12111A') => (
-    <g>
-      <path d="M27 46 Q34 39 41 46 M59 46 Q66 39 73 46" stroke={eyeColor} strokeWidth="5.2" strokeLinecap="round" fill="none" />
-      <path d="M44 57 Q51 60 57 53" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
-    </g>
-  ),
-
-  // 13. timide (Shy Blushing — User Favorite, Spacious & Crisp): Clean pills, soft dynamic blush, low wobble mouth
-  timide: (eyeColor = '#12111A') => (
+  // 5. shy ("Shy")
+  shy: (eyeColor = '#12111A') => (
     <g>
       <g className="eye-blink">
-        <rect x="31" y="41" width="6.5" height="12.5" rx="3.25" fill={eyeColor} />
-        <rect x="62.5" y="41" width="6.5" height="12.5" rx="3.25" fill={eyeColor} />
+        <rect x="31" y="42" width="6.5" height="12" rx="3.25" fill={eyeColor} />
+        <rect x="62.5" y="42" width="6.5" height="12" rx="3.25" fill={eyeColor} />
       </g>
-      <circle cx="23" cy="53" r="6.5" fill="rgba(255, 255, 255, 0.16)" style={{ mixBlendMode: 'plus-lighter' }} />
-      <circle cx="77" cy="53" r="6.5" fill="rgba(255, 255, 255, 0.16)" style={{ mixBlendMode: 'plus-lighter' }} />
-      <path d="M47.5 56 Q50 58 52.5 56" stroke={eyeColor} strokeWidth="3.8" strokeLinecap="round" fill="none" />
+      {/* Subtle dynamic cheek blush ovals */}
+      <ellipse cx="23" cy="54" rx="6" ry="3.2" fill="#FF6B8B" opacity="0.45" />
+      <ellipse cx="77" cy="54" rx="6" ry="3.2" fill="#FF6B8B" opacity="0.45" />
+      {/* Tiny cat-smile */}
+      <path d="M46 56 Q48 59 50 56 Q52 59 54 56" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" fill="none" />
     </g>
   ),
 
-  // 14. blase (Cool Deal-With-It Shades): Connected sunglasses with thick frames and lens glare slashes
-  blase: (eyeColor = '#12111A') => (
+  // 6. sleepy ("Sleepy")
+  sleepy: (eyeColor = '#12111A') => (
     <g>
-      <path d="M24 41 L76 41" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" />
-      <rect x="26" y="40" width="19" height="13" rx="4" fill={eyeColor} />
-      <rect x="55" y="40" width="19" height="13" rx="4" fill={eyeColor} />
-      <line x1="30" y1="49" x2="35" y2="43" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="59" y1="49" x2="64" y2="43" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="46" y1="58" x2="54" y2="58" stroke={eyeColor} strokeWidth="3.8" strokeLinecap="round" />
-    </g>
-  ),
-
-  // 15. somnolent (Peaceful Sleeping Eyes + Floating "Zzz" & Breathing Mouth): Downward arcs, floating Zzz
-  somnolent: (eyeColor = '#12111A') => (
-    <g>
-      <path d="M27 45 Q34 52 41 45 M59 45 Q66 52 73 45" stroke={eyeColor} strokeWidth="5" strokeLinecap="round" fill="none" />
-      <circle className="sleep-mouth" cx="50" cy="58" r="2.8" fill={eyeColor} />
-      <g className="sleep-zzz">
-        <text x="74" y="32" fill={eyeColor} fontSize="11" fontWeight="900" fontFamily="sans-serif">z</text>
-        <text x="81" y="24" fill={eyeColor} fontSize="14" fontWeight="900" fontFamily="sans-serif">Z</text>
-      </g>
+      {/* Peaceful downward-curved closed eyelids */}
+      <path d="M28 47 Q34.5 54 41 47" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <path d="M59 47 Q65.5 54 72 47" stroke={eyeColor} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      {/* Tiny breathing o mouth */}
+      <circle cx="50" cy="58" r="2.5" fill={eyeColor} />
+      {/* Floating zZ */}
+      <text x="73" y="34" fill={eyeColor} fontSize="11" fontWeight="bold" fontFamily="sans-serif">z</text>
+      <text x="80" y="27" fill={eyeColor} fontSize="14" fontWeight="bold" fontFamily="sans-serif">Z</text>
     </g>
   ),
 };
 
+// Aliases for backwards compatibility
+EXPRESSION_RENDERERS.neutre = EXPRESSION_RENDERERS.neutral;
+EXPRESSION_RENDERERS.attentif = EXPRESSION_RENDERERS.neutral;
+EXPRESSION_RENDERERS.heureux = EXPRESSION_RENDERERS.happy;
+EXPRESSION_RENDERERS.excite = EXPRESSION_RENDERERS.excited;
+EXPRESSION_RENDERERS.hilare = EXPRESSION_RENDERERS.excited;
+EXPRESSION_RENDERERS.blase = EXPRESSION_RENDERERS.chill;
+EXPRESSION_RENDERERS.mefiant = EXPRESSION_RENDERERS.chill;
+EXPRESSION_RENDERERS.timide = EXPRESSION_RENDERERS.shy;
+EXPRESSION_RENDERERS.somnolent = EXPRESSION_RENDERERS.sleepy;
+EXPRESSION_RENDERERS.surpris = EXPRESSION_RENDERERS.excited;
+EXPRESSION_RENDERERS.colere = EXPRESSION_RENDERERS.chill;
+EXPRESSION_RENDERERS.triste = EXPRESSION_RENDERERS.chill;
+EXPRESSION_RENDERERS.effraye = EXPRESSION_RENDERERS.excited;
+EXPRESSION_RENDERERS.curieux = EXPRESSION_RENDERERS.chill;
+EXPRESSION_RENDERERS.fier = EXPRESSION_RENDERERS.chill;
+
 /**
- * Palette of all 12 supported mascot colors.
+ * Palette of all supported mascot colors.
  */
 export const COLOR_MAP: Record<string, string> = {
   encre: '#0a0a0c',
@@ -481,6 +436,9 @@ export const COLOR_MAP: Record<string, string> = {
   rose: '#e152b0',
   gris: '#a3a3a3',
   creme: '#f1efe9',
+  blanc: '#ffffff',
+  white: '#ffffff',
+  black: '#000000',
 };
 
 export function resolveColor(color: string | undefined | null): string {
@@ -491,6 +449,21 @@ export function resolveColor(color: string | undefined | null): string {
   return COLOR_MAP.bleu;
 }
 
+/**
+ * Critical SafeColor: Never invert #FFFFFF to black, and map pure black to #27272A.
+ */
+export function getSafeColor(color: string | undefined | null): string {
+  if (!color) return '#3B82F6';
+  const clean = color.toLowerCase().trim();
+  if (clean === '#000000' || clean === '#0a0a0c' || clean === '#12111a' || clean === 'encre' || clean === 'black') {
+    return '#27272A';
+  }
+  if (clean === '#ffffff' || clean === 'white' || clean === 'blanc') {
+    return '#FFFFFF';
+  }
+  return resolveColor(color);
+}
+
 export function isLightColor(hex: string): boolean {
   if (!hex || !hex.startsWith('#')) return false;
   const clean = hex.replace('#', '');
@@ -498,11 +471,12 @@ export function isLightColor(hex: string): boolean {
   const r = parseInt(clean.substring(0, 2), 16);
   const g = parseInt(clean.substring(2, 4), 16);
   const b = parseInt(clean.substring(4, 6), 16);
-  // Relative luminance formula
   const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-  return luma > 175;
+  return luma > 100;
 }
 
 export function getEyeColor(bodyHex: string): string {
+  // If the body is dark graphite (#27272A), black or dark blue, flip eyes to crisp white!
   return isLightColor(bodyHex) ? '#12111A' : '#FFFFFF';
 }
+

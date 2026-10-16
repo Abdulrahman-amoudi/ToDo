@@ -20,6 +20,7 @@ import {
 } from '@/lib/i18n/translations';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
+import { normalizeExpression, normalizeShape } from '@/constants/mascotRegistry';
 import { COLORS } from '@/lib/bot/skins';
 import { createClient } from '@/lib/supabase/client';
 import { VAPID_PUBLIC_KEY } from '@/lib/push-config';
@@ -94,21 +95,13 @@ const getDynamicMascotProps = (shape: string, baseColor: string, pendingCount: n
 
 
 
-const SHAPE_IDS = ['squircle', 'cercle', 'galet', 'capsule', 'triangle', 'hexagone', 'nuage', 'goutte', 'oeuf', 'soleil', 'fromage', 'livre'];
+const SHAPE_IDS = ['cloud', 'book', 'squircle', 'spark'];
 
 const SHAPE_LABELS: Record<string, string> = {
+  cloud: 'Cloud',
+  book: 'Book',
   squircle: 'Squircle',
-  cercle: 'Circle',
-  galet: 'Pebble',
-  capsule: 'Cloud',
-  triangle: 'Triangle',
-  hexagone: 'Hexagon',
-  nuage: 'Cloud',
-  goutte: 'Droplet',
-  oeuf: 'Egg',
-  soleil: 'Sun',
-  fromage: 'Cheese',
-  livre: 'Book',
+  spark: 'Spark',
 };
 
 export default function Home() {
@@ -1483,7 +1476,7 @@ export default function Home() {
   const targetCatObj: Category = categories.find(c => c.id === settingsTarget) || { id: 'default', name: 'General', type: 'todo' };
   const targetShape = isGlobalTarget ? mascotShape : (catSettings[settingsTarget]?.shape || getListMascot(targetCatObj, catSettings, mascotShape, mascotColor).shape);
   const targetColor = isGlobalTarget ? mascotColor : (catSettings[settingsTarget]?.color || getListMascot(targetCatObj, catSettings, mascotShape, mascotColor).color);
-  const targetExpr: ExpressionId = (isGlobalTarget ? mascotExpression : (catSettings[settingsTarget]?.expression as ExpressionId)) || 'neutre';
+  const targetExpr = (isGlobalTarget ? mascotExpression : (catSettings[settingsTarget]?.expression as ExpressionId)) || 'neutral';
 
   const updateTargetShape = (s: string) => {
     isPrefsDirtyRef.current = true;
@@ -1493,6 +1486,14 @@ export default function Home() {
     }
     if (isGlobalTarget) {
       setMascotShape(s);
+      // BUG 6 FIX: Sync global shape across all list categories so old overrides don't shadow Global
+      setCatSettings(prev => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          next[key] = { ...next[key], shape: s };
+        }
+        return next;
+      });
     } else {
       setCatSettings(prev => ({
         ...prev,
@@ -1500,7 +1501,7 @@ export default function Home() {
           ...prev[settingsTarget],
           shape: s,
           color: prev[settingsTarget]?.color || targetColor,
-          expression: prev[settingsTarget]?.expression || 'neutre'
+          expression: prev[settingsTarget]?.expression || 'neutral'
         }
       }));
     }
@@ -1515,6 +1516,14 @@ export default function Home() {
     }
     if (isGlobalTarget) {
       setMascotColor(c);
+      // BUG 6 FIX: Sync global color across all list categories
+      setCatSettings(prev => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          next[key] = { ...next[key], color: c };
+        }
+        return next;
+      });
     } else {
       setCatSettings(prev => ({
         ...prev,
@@ -1522,7 +1531,7 @@ export default function Home() {
           ...prev[settingsTarget],
           shape: prev[settingsTarget]?.shape || targetShape,
           color: c,
-          expression: prev[settingsTarget]?.expression || 'neutre'
+          expression: prev[settingsTarget]?.expression || 'neutral'
         }
       }));
     }
@@ -1537,6 +1546,14 @@ export default function Home() {
     }
     if (isGlobalTarget) {
       setMascotExpression(expr as any);
+      // BUG 6 FIX: Sync global expression across all list categories
+      setCatSettings(prev => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          next[key] = { ...next[key], expression: expr };
+        }
+        return next;
+      });
     } else {
       setCatSettings(prev => ({
         ...prev,
@@ -1617,42 +1634,40 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans select-none">
+      <div className="min-h-screen w-full bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none">
         {/* Soft Ambient Radial Halo */}
         <div 
-          className="fixed top-0 left-1/2 -translate-x-1/2 w-[650px] max-w-[100vw] h-[360px] rounded-full blur-[140px] pointer-events-none opacity-20 -z-0"
-          style={{ background: 'radial-gradient(ellipse at center, #f59e0b 0%, #d97706 40%, transparent 75%)' }}
+          className="fixed top-0 left-1/2 -translate-x-1/2 w-[650px] max-w-[100vw] h-[360px] rounded-full blur-[140px] pointer-events-none opacity-40 -z-0 bg-gradient-to-b from-indigo-100/70 to-transparent"
         />
 
         <motion.div 
           initial={{ y: 16, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-[390px] w-full p-7 sm:p-8 rounded-[28px] shadow-2xl shadow-black/80 bg-zinc-950/85 border border-white/[0.08] backdrop-blur-2xl relative z-10 text-center flex flex-col items-center before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:rounded-t-[28px]"
+          className="w-full max-w-md bg-white border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.08)] rounded-3xl p-8 relative z-10 text-center flex flex-col items-center"
         >
-          {/* Framed Mascot Hero */}
+          {/* Framed Mascot Hero - Cloud mascot with soft indigo/blue fill & happy expression */}
           <div className="relative mb-5 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-xl pointer-events-none" />
-            <div className="relative w-24 h-24 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-center shadow-inner">
-              <BloubMascot size={82} state="idle" expression="heureux" shape="soleil" color="ambre" />
+            <div className="w-24 h-24 rounded-2xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shadow-sm">
+              <BloubMascot size={80} state="idle" expression="happy" shape="cloud" color="#3B82F6" isStatic={false} />
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-white font-display">Vibe Todos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display">Vibe Todos</h1>
           
           {authStep === 'email' ? (
-            <p className="text-xs text-zinc-400 mt-1.5 mb-6 text-center leading-relaxed">
+            <p className="text-sm text-slate-500 mt-1.5 mb-6 text-center leading-relaxed">
               Sign in to sync your study notes, tasks, and customized mascot across devices.
             </p>
           ) : (
             <div className="text-center mt-1.5 mb-5 space-y-1.5">
-              <p className="text-xs text-zinc-400">Enter the verification code sent to</p>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.05] border border-white/10 text-xs text-zinc-200">
-                <span className="font-mono text-[11px]">{authEmail}</span>
+              <p className="text-xs text-slate-500">Enter the verification code sent to</p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs text-slate-700">
+                <span className="font-mono text-[11px] font-semibold">{authEmail}</span>
                 <button 
                   type="button" 
                   onClick={() => { setAuthStep('email'); setAuthOtpCode(''); setAuthError(null); }} 
-                  className="text-zinc-400 hover:text-white transition-colors ml-0.5"
+                  className="text-slate-400 hover:text-slate-700 transition-colors ml-0.5"
                   title="Change email"
                 >
                   <Edit2 size={11} />
@@ -1663,7 +1678,7 @@ export default function Home() {
 
           {/* Feedback Error Alert */}
           {authError && (
-            <div className="w-full mb-4 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 text-left animate-in fade-in duration-150">
+            <div className="w-full mb-4 px-3.5 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2 text-left animate-in fade-in duration-150">
               <AlertCircle size={15} className="shrink-0" />
               <span className="leading-snug">{authError}</span>
             </div>
@@ -1673,7 +1688,7 @@ export default function Home() {
             /* Step 1: Sleek Email Input Form */
             <form onSubmit={handleSendOtp} className="w-full space-y-3.5">
               <div className="relative w-full">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="email"
                   value={authEmail}
@@ -1681,7 +1696,7 @@ export default function Home() {
                   placeholder="name@example.com"
                   required
                   disabled={authLoading}
-                  className="w-full py-3.5 pl-10 pr-4 rounded-xl bg-white/[0.04] border border-white/10 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/20 outline-none text-sm text-white placeholder:text-zinc-500 transition-all font-sans"
+                  className="w-full py-3.5 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 outline-none text-sm placeholder:text-slate-400 transition-all font-sans"
                 />
               </div>
 
@@ -1702,12 +1717,12 @@ export default function Home() {
                 />
                 <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
                   rememberDevice 
-                    ? 'bg-amber-400 border-amber-400 text-zinc-950' 
-                    : 'bg-white/[0.04] border-white/20 group-hover:border-white/30 text-transparent'
+                    ? 'bg-slate-900 border-slate-900 text-white' 
+                    : 'bg-slate-50 border-slate-300 group-hover:border-slate-400 text-transparent'
                 }`}>
                   <Check size={12} strokeWidth={3} />
                 </div>
-                <span className="text-xs text-zinc-300 group-hover:text-zinc-200 transition-colors">
+                <span className="text-xs text-slate-600 group-hover:text-slate-900 transition-colors">
                   Remember this device
                 </span>
               </label>
@@ -1715,16 +1730,16 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={authLoading || !authEmail.trim()}
-                className="w-full py-3.5 px-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] rounded-xl flex items-center justify-center gap-2 font-semibold text-sm text-zinc-950 shadow-lg shadow-amber-400/20 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <KeyRound size={16} />
                 <span>{authLoading ? 'Sending Login Code...' : 'Send Login Code'}</span>
               </button>
 
               <div className="flex items-center gap-3 my-3">
-                <div className="h-px flex-1 bg-white/[0.08]" />
-                <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">or</span>
-                <div className="h-px flex-1 bg-white/[0.08]" />
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400">or</span>
+                <div className="h-px flex-1 bg-slate-200" />
               </div>
 
               <button 
@@ -1741,7 +1756,7 @@ export default function Home() {
                     } 
                   });
                 }} 
-                className="w-full py-3 px-4 bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.98] border border-white/10 rounded-xl flex items-center justify-center gap-2.5 font-medium text-sm text-zinc-200 transition-all duration-150"
+                className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium py-3 rounded-xl flex items-center justify-center gap-2.5 text-sm transition-all duration-150 shadow-sm active:scale-[0.98]"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
                 Continue with Google
@@ -1752,7 +1767,6 @@ export default function Home() {
             <form onSubmit={handleVerifyOtp} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
               {/* Segmented PIN Code Display */}
               <div className="relative flex justify-center py-1">
-                {/* Invisible native input over the pin boxes for keyboard, focus, and clipboard paste */}
                 <input
                   type="text"
                   inputMode="numeric"
@@ -1796,13 +1810,13 @@ export default function Home() {
                         key={idx}
                         className={`w-10 h-13 sm:w-11 sm:h-14 rounded-xl border flex items-center justify-center font-mono text-xl sm:text-2xl font-bold transition-all ${
                           digit 
-                            ? 'bg-white/[0.08] border-white/25 text-white' 
+                            ? 'bg-slate-50 border-slate-300 text-slate-900 shadow-sm' 
                             : isCurrent 
-                            ? 'bg-amber-400/[0.08] border-amber-400 ring-2 ring-amber-400/25 text-amber-300' 
-                            : 'bg-white/[0.03] border-white/10 text-zinc-600'
+                            ? 'bg-indigo-50/60 border-indigo-600 ring-2 ring-indigo-600/20 text-indigo-950' 
+                            : 'bg-slate-50/40 border-slate-200 text-slate-300'
                         }`}
                       >
-                        {digit || (isCurrent ? <span className="w-0.5 h-5 bg-amber-400 animate-pulse rounded-full" /> : '·')}
+                        {digit || (isCurrent ? <span className="w-0.5 h-5 bg-indigo-600 animate-pulse rounded-full" /> : '·')}
                       </div>
                     );
                   })}
@@ -1810,8 +1824,8 @@ export default function Home() {
               </div>
 
               {/* Direct Magic Link Helper Note */}
-              <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-400 pt-0.5">
-                <ExternalLink size={13} className="text-amber-400/80 shrink-0" />
+              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 pt-0.5">
+                <ExternalLink size={13} className="text-indigo-600 shrink-0" />
                 <span>Or click the direct sign-in link inside your email</span>
               </div>
 
@@ -1832,12 +1846,12 @@ export default function Home() {
                 />
                 <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
                   rememberDevice 
-                    ? 'bg-amber-400 border-amber-400 text-zinc-950' 
-                    : 'bg-white/[0.04] border-white/20 group-hover:border-white/30 text-transparent'
+                    ? 'bg-slate-900 border-slate-900 text-white' 
+                    : 'bg-slate-50 border-slate-300 group-hover:border-slate-400 text-transparent'
                 }`}>
                   <Check size={12} strokeWidth={3} />
                 </div>
-                <span className="text-xs text-zinc-300 group-hover:text-zinc-200 transition-colors">
+                <span className="text-xs text-slate-600 group-hover:text-slate-900 transition-colors">
                   Remember this device
                 </span>
               </label>
@@ -1846,7 +1860,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={authLoading || authOtpCode.length < 6}
-                className="w-full py-3.5 px-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] rounded-xl flex items-center justify-center gap-2 font-semibold text-sm text-zinc-950 shadow-lg shadow-amber-400/20 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShieldCheck size={16} />
                 <span>{authLoading ? 'Verifying Code...' : 'Verify & Sign In'}</span>
@@ -1861,7 +1875,7 @@ export default function Home() {
                     setAuthOtpCode('');
                     setAuthError(null);
                   }}
-                  className="text-zinc-400 hover:text-white transition-colors flex items-center gap-1"
+                  className="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1 font-medium"
                 >
                   <ArrowLeft size={13} />
                   <span>Different email</span>
@@ -1871,7 +1885,7 @@ export default function Home() {
                   type="button"
                   disabled={authCooldown > 0 || authLoading}
                   onClick={() => handleSendOtp()}
-                  className="text-amber-400 hover:text-amber-300 hover:underline disabled:opacity-40 disabled:no-underline transition-colors font-medium"
+                  className="text-indigo-600 hover:text-indigo-700 hover:underline disabled:opacity-40 disabled:no-underline transition-colors font-medium"
                 >
                   {authCooldown > 0 ? `Resend in ${authCooldown}s` : 'Resend code'}
                 </button>
@@ -1881,7 +1895,7 @@ export default function Home() {
 
           <button 
             onClick={() => setShowDownloadMenu(true)} 
-            className="mt-5 w-full py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-medium text-xs text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/10 transition-all duration-150 active:scale-[0.98]"
+            className="mt-5 w-full py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-medium text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200 transition-all duration-150 active:scale-[0.98]"
           >
             <Download size={13} />
             <span>Download App (APK / Windows)</span>
@@ -2298,10 +2312,15 @@ export default function Home() {
       {activeTab === 'settings' ? (
           <div className="flex-1 w-full flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-300 md:shadow-2xl md:my-6 md:rounded-3xl md:border md:border-white/10">
             {/* Left side: HUGE MASCOT */}
-            <div className="hidden md:flex md:w-1/2 lg:w-3/5 flex-1 items-center justify-center bg-slate-900/40 relative overflow-visible">
-                <div className="cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
-                  <BloubMascot size={220} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
+            <div className="hidden md:flex md:sticky md:top-0 md:h-screen md:w-1/2 lg:w-3/5 flex-col items-center justify-center p-8 select-none bg-slate-900/30 relative overflow-visible">
+              <div className="w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
+                <BloubMascot size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
+                <div className="mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
+                  <span className="font-bold text-white capitalize">{getLocalizedShape(targetShape, locale) || targetShape}</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400 capitalize">{getLocalizedExpression(targetExpr, locale) || targetExpr}</span>
                 </div>
+              </div>
             </div>
 
             {/* Right side: Settings controls */}
@@ -2309,7 +2328,7 @@ export default function Home() {
               
               {/* Mascot Preview inside Settings */}
               <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
-                <div className="w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
+                <div className="md:hidden w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
                   <BloubMascot size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
 
@@ -2473,14 +2492,14 @@ export default function Home() {
                     {getLocalizedExpression(targetExpr, locale) || targetExpr} {autoMoodEnabled && (locale === 'ar' ? '(تفاعلي تلقائي)' : '(Auto-Reactive)')}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {['neutre', 'attentif', 'surpris', 'excite', 'heureux', 'hilare', 'colere', 'triste', 'effraye', 'mefiant', 'curieux', 'fier', 'timide', 'blase', 'somnolent'].map(expr => (
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {(['neutral', 'happy', 'excited', 'chill', 'shy', 'sleepy'] as const).map(expr => (
                     <button
                       key={expr}
                       type="button"
                       onClick={() => updateTargetExpr(expr)}
                       className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
-                        targetExpr === expr
+                        normalizeExpression(targetExpr) === expr
                           ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
                           : isDark
                             ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
@@ -2488,7 +2507,7 @@ export default function Home() {
                       }`}
                       title={getLocalizedExpression(expr, locale) || expr}
                     >
-                      <BloubMascot size={36} state="idle" expression={expr as any} shape={targetShape} color={targetColor} isStatic={true} />
+                      <BloubMascot size={36} state="idle" expression={expr} shape={targetShape} color={targetColor} isStatic={true} />
                       <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedExpression(expr, locale) || expr}</span>
                     </button>
                   ))}

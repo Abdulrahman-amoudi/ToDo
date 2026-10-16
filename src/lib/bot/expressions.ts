@@ -23,6 +23,12 @@ import type { EyeCfg } from './states'
  */
 /** Enumeres pour que la couche i18n verifie leurs traductions a la compilation. */
 export type ExpressionId =
+  | 'neutral'
+  | 'happy'
+  | 'excited'
+  | 'chill'
+  | 'shy'
+  | 'sleepy'
   | 'neutre'
   | 'attentif'
   | 'surpris'
@@ -182,7 +188,13 @@ export const EXPRESSIONS: BotExpression[] = [
 ]
 
 export const EXPRESSION_BY_ID = new Map<string, BotExpression>(EXPRESSIONS.map((e) => [e.id, e]))
-export const DEFAULT_EXPRESSION = 'neutre'
+if (EXPRESSION_BY_ID.has('neutre')) EXPRESSION_BY_ID.set('neutral', EXPRESSION_BY_ID.get('neutre')!)
+if (EXPRESSION_BY_ID.has('heureux')) EXPRESSION_BY_ID.set('happy', EXPRESSION_BY_ID.get('heureux')!)
+if (EXPRESSION_BY_ID.has('excite')) EXPRESSION_BY_ID.set('excited', EXPRESSION_BY_ID.get('excite')!)
+if (EXPRESSION_BY_ID.has('blase')) EXPRESSION_BY_ID.set('chill', EXPRESSION_BY_ID.get('blase')!)
+if (EXPRESSION_BY_ID.has('timide')) EXPRESSION_BY_ID.set('shy', EXPRESSION_BY_ID.get('timide')!)
+if (EXPRESSION_BY_ID.has('somnolent')) EXPRESSION_BY_ID.set('sleepy', EXPRESSION_BY_ID.get('somnolent')!)
+export const DEFAULT_EXPRESSION = 'neutral'
 
 const lerpEyeCfg = (a: EyeCfg, b: EyeCfg, t: number): EyeCfg => ({
   w: lerp(a.w, b.w, t),

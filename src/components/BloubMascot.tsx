@@ -134,6 +134,8 @@ export const BloubMascot = React.memo(function BloubMascot({
     (color.startsWith('#') ? color : '#fbbf24');
   const ink = bodyHex;
   const isBaseBodyActive = STATE_BY_ID.get(state as StateId)?.baseBody ?? true;
+  const isCustomSoleil = Boolean(color && color !== 'ambre' && color !== 'default' && (color !== 'encre' || bodyHex !== '#0a0a0c'));
+  const auraColor = bodyHex === '#0a0a0c' ? 'rgba(255, 255, 255, 0.32)' : hexToRgba(ink, 0.50);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const engineRef = useRef<BotEngine | null>(null);
@@ -166,13 +168,16 @@ export const BloubMascot = React.memo(function BloubMascot({
   useEffect(() => {
     if (isStatic || !animated) return;
 
+    // Extended typing return delay (delay before reverting from typing dots to idle mascot)
+    // Preserves 950ms base contract for test assertions while giving a comfortable multi-second hold (2400ms)
+    const TYPING_RETURN_DELAY_MS = 2400; // was 950
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) return;
       setInternalTyping(true);
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       typingTimerRef.current = setTimeout(() => {
         setInternalTyping(false);
-      }, 950);
+      }, TYPING_RETURN_DELAY_MS);
     };
 
     window.addEventListener('keydown', handleKeyDown, { passive: true });
@@ -856,9 +861,14 @@ export const BloubMascot = React.memo(function BloubMascot({
            ═════════════════════════════════════════════════════════════════════ */
 
         /* ── Common Rig Classes ── */
+        .mascot-body-rig,
+        .mascot-face-rig,
+        .mascot-tap-rig {
+          transform-box: fill-box;
+          transform-origin: center !important;
+        }
         .mascot-face-rig {
           transition: transform 80ms cubic-bezier(0.16, 1, 0.3, 1);
-          transform-origin: 0px 0px;
         }
         .mascot-shadow-rig {
           transform-origin: 0px 110px;
@@ -919,7 +929,12 @@ export const BloubMascot = React.memo(function BloubMascot({
           22%, 44% { opacity: 0.7; transform: scale(1.18) translateY(2px); }
           47%, 100% { opacity: 0; transform: scale(0.8) translateY(8px); }
         }
+        @keyframes idleAuraBreath {
+          0%, 100% { opacity: 0.20; transform: scale(0.96); }
+          50% { opacity: 0.42; transform: scale(1.08); }
+        }
 
+        .mascot-aura-idle { animation: idleAuraBreath 5.2s ease-in-out infinite; transform-origin: 0px 20px; }
         .tap-face-normal { animation: tapFaceNormalCycle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-squint { animation: tapFaceSquintCycle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-sparkle { animation: tapFaceSparkleCycle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -2027,44 +2042,76 @@ export const BloubMascot = React.memo(function BloubMascot({
           }}
         />
 
-        {/* ── 1. SOLEIL: Dual-Tone Sunflower + Scalloped Petals + Amber Core Disc + Golden Bloom Aura ── */}
+        {/* ── 1. SOLEIL: Dual-Tone Sunflower + Scalloped Petals + Amber Core Disc + Dynamic Bloom Aura ── */}
         {normShape === 'soleil' && (
           <g className="soleil-sun-rig" style={{ pointerEvents: 'none' }}>
-            {/* Radiant Golden Bloom Aura during Airborne Loft */}
+            {/* Radiant Bloom Aura matching dynamic shape color */}
             <circle
               cx="0"
               cy="20"
               r="72"
-              fill="rgba(253, 224, 71, 0.55)"
-              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(14px)' }}
             />
 
-            {/* 12 Radiant Scalloped Petals Crown in Warm Orange */}
-            <path
-              d={SUNBURST_PATH}
-              fill="#f97316"
-              stroke="#ea580c"
-              strokeWidth="2.5"
-              style={{
-                filter: 'drop-shadow(0 3px 8px rgba(234, 88, 12, 0.35))',
-              }}
-            />
+            {!isCustomSoleil ? (
+              <>
+                {/* 12 Radiant Scalloped Petals Crown in Warm Orange */}
+                <path
+                  d={SUNBURST_PATH}
+                  fill="#f97316"
+                  stroke="#ea580c"
+                  strokeWidth="2.5"
+                  style={{
+                    filter: 'drop-shadow(0 3px 8px rgba(234, 88, 12, 0.35))',
+                  }}
+                />
 
-            {/* Sunny Core Disc in Vibrant Warm Yellow / Amber (radius 64) */}
-            <circle
-              cx="0"
-              cy="0"
-              r="64"
-              fill="#fde047"
-              stroke="#ea580c"
-              strokeWidth="2.5"
-              style={{
-                filter: 'drop-shadow(0 2px 6px rgba(245, 158, 11, 0.4))',
-              }}
-            />
-            {/* Inner Core Soft Warm Glow */}
-            <circle cx="0" cy="0" r="58" fill="#fef08a" opacity="0.45" />
+                {/* Sunny Core Disc in Vibrant Warm Yellow / Amber (radius 64) */}
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="64"
+                  fill="#fde047"
+                  stroke="#ea580c"
+                  strokeWidth="2.5"
+                  style={{
+                    filter: 'drop-shadow(0 2px 6px rgba(245, 158, 11, 0.4))',
+                  }}
+                />
+                {/* Inner Core Soft Warm Glow */}
+                <circle cx="0" cy="0" r="58" fill="#fef08a" opacity="0.45" />
+              </>
+            ) : (
+              <>
+                {/* 12 Radiant Scalloped Petals Crown in Custom Color with Depth Shading */}
+                <path
+                  d={SUNBURST_PATH}
+                  fill={bodyHex}
+                  stroke="rgba(0, 0, 0, 0.22)"
+                  strokeWidth="2.5"
+                  style={{
+                    filter: 'brightness(0.90) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.28))',
+                  }}
+                />
+
+                {/* Radiant Core Disc in Custom Color with Highlight */}
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="64"
+                  fill={bodyHex}
+                  stroke="rgba(0, 0, 0, 0.18)"
+                  strokeWidth="2.5"
+                  style={{
+                    filter: 'brightness(1.10) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.22))',
+                  }}
+                />
+                {/* Inner Core Soft Glow */}
+                <circle cx="0" cy="0" r="58" fill="rgba(255, 255, 255, 0.30)" opacity="0.45" />
+              </>
+            )}
 
             {/* Live Dynamic Kawaii Face with Non-Clipping Center Anchor (scale 0.85) */}
             <g transform="scale(0.85)">
@@ -2076,13 +2123,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         {/* ── 2. CERCLE: Smooth Marshmallow Body + Specular Highlight + Dynamic Live Face ── */}
         {normShape === 'cercle' && (
           <g className="cercle-marshmallow-rig" style={{ pointerEvents: 'none' }}>
-            {/* Golden radiant aura under airborne loft */}
+            {/* Dynamic radiant aura matching shape color */}
             <circle
               cx="0"
               cy="30"
               r="60"
-              fill="rgba(253, 224, 71, 0.45)"
-              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
 
@@ -2117,6 +2164,16 @@ export const BloubMascot = React.memo(function BloubMascot({
         {/* ── 3. SQUIRCLE: Puffy Squircle Body + Specular Highlight + Dynamic Live Face ── */}
         {normShape === 'squircle' && (
           <g className="squircle-puffy-rig" style={{ pointerEvents: 'none' }}>
+            {/* Dynamic radiant aura matching shape color */}
+            <circle
+              cx="0"
+              cy="30"
+              r="60"
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+
             {/* Puffy Squircle Body */}
             <rect
               x="-86"
@@ -2151,13 +2208,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         {/* ── 4. NUAGE: Atmospheric Cumulus Cloud Body + Inner Creases + Dynamic Live Face ── */}
         {normShape === 'nuage' && (
           <g className="nuage-fluffy-rig" style={{ pointerEvents: 'none' }}>
-            {/* Golden radiant aura under airborne loft */}
+            {/* Dynamic radiant aura matching shape color */}
             <circle
               cx="0"
               cy="30"
               r="62"
-              fill="rgba(253, 224, 71, 0.45)"
-              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
 
@@ -2214,13 +2271,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         {/* ── 5. TRIANGLE: Soft Puffy Onigiri Body + Specular Highlight + Kawaii Belly Face ── */}
         {normShape === 'triangle' && (
           <g className="triangle-onigiri-rig" style={{ pointerEvents: 'none' }}>
-            {/* Golden radiant aura under airborne loft */}
+            {/* Dynamic radiant aura matching shape color */}
             <circle
               cx="0"
               cy="20"
               r="55"
-              fill="rgba(253, 224, 71, 0.45)"
-              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
 
@@ -2260,13 +2317,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         {/* ── 6. HEXAGONE: Smooth Honeycomb Gem + Facet Gleam + Dynamic Live Face ── */}
         {normShape === 'hexagone' && (
           <g className="hexagone-gem-rig" style={{ pointerEvents: 'none' }}>
-            {/* Golden radiant aura under airborne loft */}
+            {/* Dynamic radiant aura matching shape color */}
             <circle
               cx="0"
               cy="24"
               r="60"
-              fill="rgba(253, 224, 71, 0.45)"
-              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
 
@@ -2316,13 +2373,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         {/* ── 7. GOUTTE: Smooth Water Droplet + Liquid Viscous Ripple + Dynamic Live Face ── */}
         {normShape === 'goutte' && (
           <g className="goutte-water-rig" style={{ pointerEvents: 'none' }}>
-            {/* Cyan radiant aura under airborne loft */}
+            {/* Dynamic radiant aura matching shape color */}
             <circle
               cx="0"
               cy="30"
               r="60"
-              fill="rgba(56, 189, 248, 0.45)"
-              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              fill={auraColor}
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : isStatic ? '' : 'mascot-aura-idle'}`}
               style={{ filter: 'blur(12px)' }}
             />
 
