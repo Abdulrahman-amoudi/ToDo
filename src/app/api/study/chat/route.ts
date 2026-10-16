@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     const action = body.action || 'ask';
-    const model = body.model || 'gemini-3.8-flash';
+    const model = body.model || 'gemini-3.6-flash';
     const language = body.language || body.locale;
 
     if (action === 'summarize') {

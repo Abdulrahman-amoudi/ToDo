@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     // Connection Test Action
     if (action === 'test-key' || action === 'test-connection') {
-      const testResult = await QuizService.testConnection(apiKey, body.model || 'gemini-3.8-flash', body.useMock);
+      const testResult = await QuizService.testConnection(apiKey, body.model || 'gemini-3.6-flash', body.useMock);
       return NextResponse.json(
         {
           success: testResult.valid,
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     const quiz = await QuizService.generateQuiz({
       apiKey,
-      model: body.model || 'gemini-3.8-flash',
+      model: body.model || 'gemini-3.6-flash',
       noteTitle: body.noteTitle || 'Study Note',
       noteContent,
       config: {

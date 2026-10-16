@@ -112,7 +112,7 @@ export class QuizService {
   /**
    * Tests API key connection.
    */
-  static async testConnection(apiKey: string, model: string = 'gemini-3.8-flash', useMock?: boolean): Promise<ConnectionTestResult> {
+  static async testConnection(apiKey: string, model: string = 'gemini-3.6-flash', useMock?: boolean): Promise<ConnectionTestResult> {
     if (isMockMode(apiKey, useMock)) {
       return MockGeminiClient.testConnection(apiKey);
     }

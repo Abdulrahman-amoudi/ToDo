@@ -126,8 +126,18 @@ export class GeminiClient {
     systemInstruction?: string,
     jsonMode: boolean = false
   ): Promise<string> {
-    const selectedModel = model || 'gemini-3.8-flash';
-    const url = `${GEMINI_API_BASE}/${selectedModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const primaryModel = model || 'gemini-3.6-flash';
+    
+    // Ordered candidate cascade: prioritize requested model, followed by verified operational models
+    const candidateModels = [
+      primaryModel,
+      'gemini-3.6-flash',
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash-lite',
+      'gemini-3-flash-preview',
+      'gemini-3.8-flash',
+      'gemini-3.5-flash'
+    ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
     const bodyPayload: GeminiRequestBody = {
       contents: [
@@ -149,98 +159,65 @@ export class GeminiClient {
       };
     }
 
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bodyPayload)
-      });
-    } catch (networkErr: unknown) {
-      const netErr = networkErr as Error;
-      const err: CustomHttpError = new Error(`NETWORK_ERROR: Failed to connect to Gemini API: ${netErr.message}`);
-      err.statusCode = 503;
-      throw err;
-    }
+    let lastError: CustomHttpError | null = null;
 
-    if (!res.ok) {
-      // Automatic retry & multi-model fallback on 503 high-demand or 429 rate limit spikes
-      if (res.status === 503 || res.status === 429) {
-        // Step 1: Immediate short backoff and retry on primary model
-        await new Promise(r => setTimeout(r, 600));
-        try {
-          const retryRes = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(bodyPayload)
-          });
-          if (retryRes.ok) {
-            const data = (await retryRes.json()) as GeminiResponseBody;
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) return text;
-          }
-        } catch {}
+    for (const currentModel of candidateModels) {
+      const url = `${GEMINI_API_BASE}/${currentModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bodyPayload)
+        });
+      } catch (networkErr: unknown) {
+        const netErr = networkErr as Error;
+        const err: CustomHttpError = new Error(`NETWORK_ERROR: Failed to connect to Gemini API (${currentModel}): ${netErr.message}`);
+        err.statusCode = 503;
+        lastError = err;
+        continue;
+      }
 
-        // Step 2: Fallback cascade across verified active operational models
-        const fallbackModels = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
-        for (const fbModel of fallbackModels) {
-          if (fbModel === selectedModel) continue;
-          try {
-            const fbUrl = `${GEMINI_API_BASE}/${fbModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
-            const fbRes = await fetch(fbUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(bodyPayload)
-            });
-            if (fbRes.ok) {
-              const fbData = (await fbRes.json()) as GeminiResponseBody;
-              const fbText = fbData?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (fbText) return fbText;
-            }
-          } catch {}
+      if (res.ok) {
+        const data = (await res.json()) as GeminiResponseBody;
+        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (candidateText) {
+          return candidateText;
         }
+        const err: CustomHttpError = new Error(`MALFORMED_OUTPUT: Received empty response from ${currentModel}.`);
+        err.statusCode = 502;
+        lastError = err;
+        continue;
       }
 
       const errorData = (await res.json().catch(() => ({}))) as GeminiResponseBody;
       const errorMsg = errorData?.error?.message || res.statusText || 'Gemini API Error';
-      
-      if (res.status === 400 || res.status === 401 || res.status === 403) {
+
+      // If invalid API key (401 / bad key), abort immediately because no model will work with an invalid key
+      if (res.status === 401 || (res.status === 400 && errorMsg.toLowerCase().includes('api key'))) {
         const err: CustomHttpError = new Error(`INVALID_API_KEY: Provided API key is invalid or unauthorized (${errorMsg}).`);
         err.statusCode = 401;
         throw err;
       }
 
-      if (res.status === 429) {
-        const err: CustomHttpError = new Error(`RATE_LIMIT_EXCEEDED: Google AI Gemini rate limit reached (${errorMsg}). Retry in 5000ms.`);
-        err.statusCode = 429;
-        err.retryAfterMs = 5000;
-        throw err;
-      }
-
-      const err: CustomHttpError = new Error(`GEMINI_API_ERROR: HTTP ${res.status} - ${errorMsg}`);
+      // If rate limit (429), high demand (503), model retired/not found (404), or server error (500), try next model in cascade
+      const err: CustomHttpError = new Error(`GEMINI_API_ERROR: HTTP ${res.status} (${currentModel}) - ${errorMsg}`);
       err.statusCode = res.status;
-      throw err;
+      lastError = err;
+      console.warn(`[GeminiClient] Model ${currentModel} returned HTTP ${res.status}. Cascading to next fallback...`);
     }
 
-    const data = (await res.json()) as GeminiResponseBody;
-    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!candidateText) {
-      const err: CustomHttpError = new Error('MALFORMED_OUTPUT: Received empty response from Gemini API.');
-      err.statusCode = 502;
-      throw err;
-    }
-
-    return candidateText;
+    throw lastError || new Error('All operational Gemini models failed to respond.');
   }
 
   /**
    * Generates a structured quiz using Gemini.
    */
   static async generateQuiz(request: QuizGenerateRequest): Promise<QuizResponse> {
-    const { apiKey, model = 'gemini-3.8-flash', noteTitle, noteContent, config, language } = request;
+    const { apiKey, model = 'gemini-3.6-flash', noteTitle, noteContent, config, language } = request;
     const reqLang = language || config?.language;
     const isArabic = reqLang === 'ar' || /[\u0600-\u06FF]/.test(noteContent.slice(0, 600));
 
@@ -360,7 +337,7 @@ Required JSON Output Schema:
    * Generates a Socratic hint without spoiling the answer.
    */
   static async generateHint(request: HintRequest): Promise<HintResponse> {
-    const { apiKey, model = 'gemini-3.8-flash', question, noteContext, language } = request;
+    const { apiKey, model = 'gemini-3.6-flash', question, noteContext, language } = request;
     const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(question);
 
     if (!apiKey || apiKey.trim() === '') {
@@ -396,7 +373,7 @@ DO NOT reveal the answer, correct option index, or exact option text. Guide the 
    * Evaluates a free-text response against the source note context.
    */
   static async evaluateAnswer(request: EvaluateRequest): Promise<EvaluationResponse> {
-    const { apiKey, model = 'gemini-3.8-flash', question, userAnswer, expectedAnswer, noteContext, language } = request;
+    const { apiKey, model = 'gemini-3.6-flash', question, userAnswer, expectedAnswer, noteContext, language } = request;
     const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(question) || /[\u0600-\u06FF]/.test(userAnswer);
 
     if (!apiKey || apiKey.trim() === '') {
@@ -471,7 +448,7 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
   }): Promise<{ answer: string; citations: string[]; grounded: boolean }> {
     const {
       apiKey,
-      model = 'gemini-3.8-flash',
+      model = 'gemini-3.6-flash',
       question,
       documentTitle = 'Study Document',
       documentContent = '',
@@ -508,7 +485,7 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
       };
     }
 
-    const systemPrompt = `You are Bloub NotebookLM, an intelligent study assistant powered by Google Gemini 3.8 Flash.
+    const systemPrompt = `You are Bloub NotebookLM, an intelligent study assistant powered by Google Gemini.
 Your answers MUST be strictly and exclusively grounded in the provided document text.
 
 CRITICAL ANTI-HALLUCINATION RULES:
@@ -590,7 +567,7 @@ Provide an accurate, strictly grounded answer following the rules.`;
   }> {
     const {
       apiKey,
-      model = 'gemini-3.8-flash',
+      model = 'gemini-3.6-flash',
       documentTitle = 'Study Document',
       documentContent = '',
       pageNumber,
@@ -620,7 +597,7 @@ Provide an accurate, strictly grounded answer following the rules.`;
     }
 
     const systemPrompt = isArabic
-      ? `أنت بلوب (Bloub NotebookLM)، مساعد دراسي ومُلخّص أكاديمي فائق الذكاء مدعوم بنموذج Google Gemini 3.8 Flash.
+      ? `أنت بلوب (Bloub NotebookLM)، مساعد دراسي ومُلخّص أكاديمي فائق الذكاء مدعوم بنموذج Google Gemini.
 مهمتك: توليد ملخص دراسي مُحكَم، ذكي وسلس باللغة العربية الفصحى المعاصرة بناءً حصراً ومباشرة على النص المقدم، بدون أي هلاوس أو معلومات خارج النص.
 
 قواعد الأسلوب واللغة العربية:
@@ -637,7 +614,7 @@ Provide an accurate, strictly grounded answer following the rules.`;
   ],
   "suggestedQuestions": ["سؤال مراجعة ذكي لتثبيت الفهم 1", "سؤال 2"]
 }`
-      : `You are Bloub NotebookLM, an academic synthesizer powered by Google Gemini 3.8 Flash.
+      : `You are Bloub NotebookLM, an academic synthesizer powered by Google Gemini.
 Generate a structured study summary based STRICTLY on facts in the provided text. Never hallucinate outside facts.
 Output MUST be valid JSON adhering to this schema:
 {
@@ -677,7 +654,7 @@ ${targetText}`;
   /**
    * Tests API key validity with a lightweight ping.
    */
-  static async testConnection(apiKey: string, model: string = 'gemini-3.8-flash'): Promise<ConnectionTestResult> {
+  static async testConnection(apiKey: string, model: string = 'gemini-3.6-flash'): Promise<ConnectionTestResult> {
     if (!apiKey || apiKey.trim() === '') {
       return { valid: false, message: 'API key cannot be empty.' };
     }

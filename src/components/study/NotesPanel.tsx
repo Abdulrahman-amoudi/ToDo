@@ -295,14 +295,17 @@ export const NotesPanel = React.memo(function NotesPanel({
     setAiError(null);
     triggerMascot?.('thinking', 'curieux', true);
 
+    const effectiveKey = apiKey || (typeof window !== 'undefined' ? (localStorage.getItem('vibe_geminiApiKey') || localStorage.getItem('guest_geminiApiKey') || localStorage.getItem('vibe_todos_gemini_api_key')) : '') || '';
+    const selectedModel = (typeof window !== 'undefined' ? (localStorage.getItem('vibe_todos_gemini_model') || localStorage.getItem('vibe_gemini_model')) : '') || 'gemini-3.6-flash';
+
     try {
       const res = await fetch('/api/study/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          apiKey,
+          apiKey: effectiveKey,
           action: actionType,
-          model: 'gemini-3.8-flash',
+          model: selectedModel,
           question: q,
           documentTitle: docTitle,
           documentContent,
@@ -354,7 +357,7 @@ export const NotesPanel = React.memo(function NotesPanel({
       triggerMascot?.('orbit', 'heureux');
     } catch (err: any) {
       setLastFailedRequest({ prompt: q, actionType, summaryMode });
-      setAiError(err.message || 'Error communicating with Gemini 3.8 Flash.');
+      setAiError(err.message || 'Error communicating with Gemini.');
       triggerMascot?.('idle', 'triste');
     } finally {
       setIsAiLoading(false);
@@ -369,6 +372,9 @@ export const NotesPanel = React.memo(function NotesPanel({
     setQuizCurrentIdx(0);
     triggerMascot?.('thinking', 'curieux', true);
 
+    const effectiveKey = apiKey || (typeof window !== 'undefined' ? (localStorage.getItem('vibe_geminiApiKey') || localStorage.getItem('guest_geminiApiKey') || localStorage.getItem('vibe_todos_gemini_api_key')) : '') || '';
+    const selectedModel = (typeof window !== 'undefined' ? (localStorage.getItem('vibe_todos_gemini_model') || localStorage.getItem('vibe_gemini_model')) : '') || 'gemini-3.6-flash';
+
     try {
       const noteContentForQuiz = pageContent.trim() ? `[Page ${pageNumber} Content]:\n${pageContent}` : documentContent;
       const res = await fetch('/api/study/quiz', {
@@ -376,8 +382,8 @@ export const NotesPanel = React.memo(function NotesPanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'generate',
-          apiKey,
-          model: 'gemini-3.8-flash',
+          apiKey: effectiveKey,
+          model: selectedModel,
           noteTitle: `${docTitle} (Pg. ${pageNumber})`,
           noteContent: noteContentForQuiz || 'Study document content',
           config: { questionCount: quizQuestionCount || 8, difficulty: 'medium' },
@@ -393,7 +399,7 @@ export const NotesPanel = React.memo(function NotesPanel({
       setQuizData(data.quiz);
       triggerMascot?.('orbit', 'heureux');
     } catch (err: any) {
-      setQuizError(err.message || 'Failed to create quiz with Gemini 3.8 Flash.');
+      setQuizError(err.message || 'Failed to create quiz with Gemini.');
       triggerMascot?.('idle', 'triste');
     } finally {
       setQuizLoading(false);
@@ -904,7 +910,7 @@ export const NotesPanel = React.memo(function NotesPanel({
         {isAiLoading && (
           <div className="flex items-center gap-2 p-3 rounded-2xl bg-[var(--theme-surface-elevated)]/90 border border-[var(--theme-border)] text-xs text-[var(--theme-text-primary)] w-fit animate-pulse backdrop-blur-md shadow-lg">
             <Sparkles size={13} className="text-[var(--theme-primary)] animate-spin" />
-            <span>Gemini 3.8 Flash formulating response...</span>
+            <span>Gemini formulating response...</span>
           </div>
         )}
 

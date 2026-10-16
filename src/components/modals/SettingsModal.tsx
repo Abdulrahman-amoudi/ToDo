@@ -34,10 +34,10 @@ export const THEMES = [
 ];
 
 export const GEMINI_MODELS = [
-  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Recommended - Latest & Most Powerful)' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Fast & High Precision)' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Standard Lightweight)' },
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Next-Gen)' }
+  { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Recommended - Ultra-Fast & High Reliability)' },
+  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Latest Preview)' },
+  { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash Lite (Rapid & Lightweight)' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }
 ];
 
 export interface SettingsModalProps {
@@ -102,9 +102,9 @@ export default function SettingsModal({
 
   const [model, setModel] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(storageModelKey) || localStorage.getItem('vibe_todos_gemini_model') || 'gemini-3.8-flash';
+      return localStorage.getItem(storageModelKey) || localStorage.getItem('vibe_todos_gemini_model') || 'gemini-3.6-flash';
     }
-    return 'gemini-3.8-flash';
+    return 'gemini-3.6-flash';
   });
 
   const [showKey, setShowKey] = useState(false);
