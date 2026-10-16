@@ -1623,6 +1623,7 @@ export default function PdfNotebookViewer({
           pageContent={activePageText}
           apiKey={apiKey}
           pageNumber={pageNumber}
+          numPages={numPages}
           notesWidth={notesWidth}
           isDark={isDark}
           initialNote={notes[pageNumber] || { text: '', lang: 'en' }}

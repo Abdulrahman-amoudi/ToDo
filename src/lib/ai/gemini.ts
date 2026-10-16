@@ -233,12 +233,22 @@ export class GeminiClient {
       throw err;
     }
 
-    const questionCount = Math.max(1, config?.questionCount || 8);
+    const isExhaustive = config?.exhaustive === true;
+    const isFullDoc = config?.scope === 'full_document' || isExhaustive;
+    const questionCount = isExhaustive 
+      ? Math.max(15, config?.questionCount || 20)
+      : Math.max(1, config?.questionCount || 8);
     const difficulty: QuizDifficulty = config?.difficulty || 'medium';
     const types: QuestionType[] = config?.types && config.types.length > 0 ? config.types : ['multiple_choice'];
 
     const systemPrompt = `You are an expert tutor and study assistant modeled after NotebookLM.
 Your task is to generate high-yield, conceptually rigorous quiz questions based ONLY on the provided source note.
+
+${isExhaustive ? `CRITICAL EXHAUSTIVE FULL-DOCUMENT COVERAGE MODE:
+1. Your goal is to generate ALL possible conceptually distinct questions that thoroughly test EVERY fact, section, theorem, formula, law, milestone, and mechanism in the provided document.
+2. Do NOT leave any page, chapter, or section untested. Walk through the document systematically from beginning to end.
+3. Every question must test a different critical concept or nuance from the text.
+4. Generate exactly ${questionCount} diverse, comprehensive questions covering all facets of the text.` : ''}
 
 Rules:
 1. Rely strictly on facts directly mentioned in the note. Do not assume or extrapolate external knowledge.
@@ -254,13 +264,16 @@ ${isArabic ? `   - Write ALL questions, options, explanations, and titles in nat
      * Always enclose mathematical formulas, equations, and standalone units inside inline backticks (e.g. \`P_avg = 0.5 * P_max\` or \`75 W\` or \`W\`). This guarantees perfect bidirectional rendering without inverted numbers or misplaced punctuation.
    - For multiple choice options with numbers and units, write them clearly with spacing, e.g. "75 W", "150 W", "200 W", "250 W".` : `   - Always match the primary language of the source document (e.g. if the note is in Arabic, write questions, options, and explanations in Arabic).`}`;
 
-    const userPrompt = `Generate a ${difficulty} difficulty quiz with ${questionCount} questions based on the following note.
+    const userPrompt = `${isExhaustive 
+      ? `EXHAUSTIVE FULL-DOCUMENT AUDIT & EXAM (${questionCount} QUESTIONS):\nExtract all possible exam questions covering every section, concept, formula, and definition across the full document without skipping any topic.` 
+      : `Generate a ${difficulty} difficulty quiz with ${questionCount} questions based on the following note.`}
 
 Target question types: ${types.join(', ')}.
+Target question count: exactly ${questionCount}.
 
-Note Title: ${noteTitle || 'Untitled Note'}
+Note Title: ${noteTitle || 'Untitled Document'}
 
-Note Content:
+Document Content:
 ${noteContent}
 
 Required JSON Output Schema:

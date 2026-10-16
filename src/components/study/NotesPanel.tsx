@@ -42,6 +42,7 @@ export type PanelTab = 'ai' | 'notes' | 'quiz';
 
 export interface NotesPanelProps {
   pageNumber: number;
+  numPages?: number;
   notesWidth: number;
   docId?: string;
   docTitle?: string;
@@ -76,6 +77,7 @@ interface ChatMessage {
 
 export const NotesPanel = React.memo(function NotesPanel({
   pageNumber,
+  numPages = 1,
   notesWidth,
   docId = 'doc',
   docTitle = 'Study Document',
@@ -148,6 +150,8 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [quizAnswers, setQuizAnswers] = useState<Record<string, { isCorrect: boolean; selectedIdx: number; feedback: string }>>({});
   const [quizCurrentIdx, setQuizCurrentIdx] = useState(0);
   const [quizQuestionCount, setQuizQuestionCount] = useState<number>(8);
+  const [quizScope, setQuizScope] = useState<'page' | 'full'>('full');
+  const [quizMode, setQuizMode] = useState<'standard' | 'exhaustive'>('exhaustive');
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -376,7 +380,21 @@ export const NotesPanel = React.memo(function NotesPanel({
     const selectedModel = (typeof window !== 'undefined' ? (localStorage.getItem('vibe_todos_gemini_model') || localStorage.getItem('vibe_gemini_model')) : '') || 'gemini-3.6-flash';
 
     try {
-      const noteContentForQuiz = pageContent.trim() ? `[Page ${pageNumber} Content]:\n${pageContent}` : documentContent;
+      const isExhaustive = quizMode === 'exhaustive';
+      const isFullScope = quizScope === 'full';
+
+      let noteContentForQuiz = '';
+      if (isFullScope) {
+        noteContentForQuiz = (documentContent && documentContent.trim().length > 30)
+          ? documentContent
+          : (pageContent.trim() ? `[Page ${pageNumber} Content]:\n${pageContent}` : 'Study document content');
+      } else {
+        noteContentForQuiz = pageContent.trim() ? `[Page ${pageNumber} Content]:\n${pageContent}` : documentContent;
+      }
+
+      const qCount = isExhaustive ? 20 : (quizQuestionCount || 8);
+      const titleLabel = isFullScope ? `${docTitle} (Full Document Exam)` : `${docTitle} (Pg. ${pageNumber})`;
+
       const res = await fetch('/api/study/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -384,9 +402,14 @@ export const NotesPanel = React.memo(function NotesPanel({
           action: 'generate',
           apiKey: effectiveKey,
           model: selectedModel,
-          noteTitle: `${docTitle} (Pg. ${pageNumber})`,
+          noteTitle: titleLabel,
           noteContent: noteContentForQuiz || 'Study document content',
-          config: { questionCount: quizQuestionCount || 8, difficulty: 'medium' },
+          config: { 
+            questionCount: qCount, 
+            difficulty: 'medium',
+            scope: isFullScope ? 'full_document' : 'page',
+            exhaustive: isExhaustive
+          },
           language: locale
         })
       });
@@ -1025,53 +1048,133 @@ export const NotesPanel = React.memo(function NotesPanel({
     return (
       <div className="flex flex-col flex-1 h-full min-h-0 overflow-y-auto p-4 custom-scrollbar bg-[var(--theme-surface)]">
         {!quizData && !quizLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-5 animate-in fade-in duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)]/30 flex items-center justify-center text-[var(--theme-primary)] shadow-inner">
-              <HelpCircle size={28} />
+          <div className="flex flex-col items-center justify-center h-full text-center p-5 space-y-4 animate-in fade-in duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[var(--theme-primary)]/20 to-amber-500/20 border border-[var(--theme-primary)]/30 flex items-center justify-center text-[var(--theme-primary)] shadow-inner">
+              <Zap size={28} className="text-amber-400" />
             </div>
             <div className="space-y-1">
               <h4 className="text-sm font-bold text-white">Interactive Mastery Quiz</h4>
               <p className="text-xs text-[var(--theme-text-muted)] max-w-xs leading-relaxed">
-                Test your comprehension of Page {pageNumber} with rigorous questions formulated strictly from this document.
+                {quizScope === 'full' 
+                  ? 'Audit and test your understanding across all pages of the complete document.'
+                  : `Test your comprehension of Page ${pageNumber} strictly from this document page.`}
               </p>
             </div>
 
-            {/* Question Count Selector */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)]">Quiz Size</span>
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs font-semibold">
-                {[5, 8, 10].map(count => (
-                  <button
-                    key={count}
-                    type="button"
-                    onClick={() => setQuizQuestionCount(count)}
-                    className={`px-3 py-1 rounded-lg transition-all ${
-                      quizQuestionCount === count
-                        ? 'bg-[var(--theme-primary)] text-white shadow-xs font-bold'
-                        : 'text-[var(--theme-text-muted)] hover:text-white'
-                    }`}
-                  >
-                    {count} Questions
-                  </button>
-                ))}
+            {/* Scope Selector: Full PDF vs Current Page */}
+            <div className="w-full space-y-1.5 max-w-xs text-start">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)]">Quiz Scope</span>
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setQuizScope('full')}
+                  className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    quizScope === 'full'
+                      ? 'bg-[var(--theme-primary)] text-white shadow-xs font-bold'
+                      : 'text-[var(--theme-text-muted)] hover:text-white'
+                  }`}
+                >
+                  <BookOpen size={12} />
+                  <span>Full PDF {numPages > 1 ? `(${numPages} Pgs)` : ''}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuizScope('page')}
+                  className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    quizScope === 'page'
+                      ? 'bg-[var(--theme-primary)] text-white shadow-xs font-bold'
+                      : 'text-[var(--theme-text-muted)] hover:text-white'
+                  }`}
+                >
+                  <FileText size={12} />
+                  <span>Page {pageNumber} Only</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Depth Mode Selector: Exhaustive (All Questions) vs Fixed Count */}
+            <div className="w-full space-y-1.5 max-w-xs text-start">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)]">Quiz Depth & Coverage</span>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setQuizMode('exhaustive')}
+                  className={`p-2.5 rounded-xl border text-start transition-all flex items-start gap-2.5 ${
+                    quizMode === 'exhaustive'
+                      ? 'bg-gradient-to-r from-amber-500/15 to-indigo-500/15 border-amber-500/40 text-white'
+                      : 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-white'
+                  }`}
+                >
+                  <Zap size={15} className={`mt-0.5 shrink-0 ${quizMode === 'exhaustive' ? 'text-amber-400' : 'text-zinc-500'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-zinc-100">All Possible Questions</span>
+                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500/25 text-amber-300 border border-amber-500/30 uppercase">Exam Mode</span>
+                    </div>
+                    <p className="text-[11px] opacity-75 mt-0.5 leading-snug">
+                      Exhaustively extracts every question covering all theorems, definitions, laws, and facts across the full document.
+                    </p>
+                  </div>
+                </button>
+
+                <div className="flex items-center justify-between p-1.5 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)]">
+                  <span className="text-xs font-semibold px-2 text-[var(--theme-text-muted)]">Fixed Size:</span>
+                  <div className="flex items-center gap-1">
+                    {[5, 10, 15].map(count => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => {
+                          setQuizMode('standard');
+                          setQuizQuestionCount(count);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs transition-all ${
+                          quizMode === 'standard' && quizQuestionCount === count
+                            ? 'bg-[var(--theme-primary)] text-white shadow-xs font-bold'
+                            : 'text-[var(--theme-text-muted)] hover:text-white'
+                        }`}
+                      >
+                        {count} Qs
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleGenerateInPanelQuiz}
-              className="py-2.5 px-5 rounded-xl bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 active:scale-95 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
+              className={`w-full max-w-xs py-3 px-5 rounded-xl text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 ${
+                quizMode === 'exhaustive'
+                  ? 'bg-gradient-to-r from-amber-500 to-indigo-600 hover:brightness-110 shadow-amber-500/20'
+                  : 'bg-[var(--theme-primary,#3b82f6)] hover:brightness-110 shadow-indigo-500/20'
+              }`}
             >
-              <Sparkles size={14} /> Generate {quizQuestionCount}-Question Quiz
+              {quizMode === 'exhaustive' ? (
+                <>
+                  <Zap size={15} className="text-amber-200 animate-pulse" />
+                  <span>Generate All Possible Questions ({quizScope === 'full' ? 'Full PDF' : `Page ${pageNumber}`})</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  <span>Generate {quizQuestionCount}-Question Quiz ({quizScope === 'full' ? 'Full PDF' : `Page ${pageNumber}`})</span>
+                </>
+              )}
             </button>
           </div>
         )}
 
         {quizLoading && (
           <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-3 animate-pulse">
-            <Sparkles size={30} className="text-[var(--theme-primary)] animate-spin" />
-            <h4 className="text-sm font-bold text-white">Formulating {quizQuestionCount} Questions...</h4>
-            <p className="text-xs text-[var(--theme-text-muted)]">NotebookLM engine is verifying document facts.</p>
+            <Zap size={32} className="text-amber-400 animate-bounce" />
+            <h4 className="text-sm font-bold text-white">
+              {quizMode === 'exhaustive'
+                ? 'Auditing Full Document for All Possible Questions...'
+                : `Formulating ${quizQuestionCount} Questions...`}
+            </h4>
+            <p className="text-xs text-[var(--theme-text-muted)]">NotebookLM engine is verifying every theorem, law, and section.</p>
           </div>
         )}
 
@@ -1107,9 +1210,19 @@ export const NotesPanel = React.memo(function NotesPanel({
         {quizData && currentQ && (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-[var(--theme-text-muted)] pb-2 border-b border-[var(--theme-border)]">
-              <span className="font-bold text-zinc-200">
-                Question {quizCurrentIdx + 1} of {questions.length}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-zinc-200">
+                  Question {quizCurrentIdx + 1} of {questions.length}
+                </span>
+                {quizMode === 'exhaustive' && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    All-Questions Mode
+                  </span>
+                )}
+                <span className="text-[10px] text-zinc-400">
+                  {quizScope === 'full' ? 'Full PDF' : `Page ${pageNumber}`}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={handleGenerateInPanelQuiz}

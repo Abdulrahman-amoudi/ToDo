@@ -25,6 +25,8 @@ export interface QuizConfig {
   difficulty?: QuizDifficulty;
   types?: QuestionType[];
   language?: string;
+  scope?: 'page' | 'full_document';
+  exhaustive?: boolean;
 }
 
 export interface QuizGenerateRequest {

@@ -29,28 +29,43 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
   const [isGettingHint, setIsGettingHint] = useState(false);
   
   const [isFinished, setIsFinished] = useState(false);
+  const [isExhaustiveQuiz, setIsExhaustiveQuiz] = useState(false);
 
   const fallbackContent = (note.bodyContent && note.bodyContent.trim()) || note.rawContent || (note.frontmatter?.pdf_notes ? JSON.stringify(note.frontmatter.pdf_notes) : '') || note.title || 'Study document content';
 
   useEffect(() => {
-    generateQuiz();
+    generateQuiz(false);
   }, []);
 
-  const generateQuiz = async () => {
+  const generateQuiz = async (exhaustiveMode = false) => {
     try {
       setLoading(true);
       setError(null);
+      setCurrentIdx(0);
+      setAnswers({});
+      setIsFinished(false);
+      setIsExhaustiveQuiz(exhaustiveMode);
       triggerMascot('thinking', 'curieux', true);
+
+      const effectiveKey = apiKey || (typeof window !== 'undefined' ? (localStorage.getItem('vibe_geminiApiKey') || localStorage.getItem('guest_geminiApiKey') || localStorage.getItem('vibe_todos_gemini_api_key')) : '') || '';
+      const selectedModel = (typeof window !== 'undefined' ? (localStorage.getItem('vibe_todos_gemini_model') || localStorage.getItem('vibe_gemini_model')) : '') || 'gemini-3.6-flash';
       
+      const qCount = exhaustiveMode ? 20 : 8;
+
       const res = await fetch('/api/study/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'generate',
-          apiKey,
-          noteTitle: note.title,
+          apiKey: effectiveKey,
+          model: selectedModel,
+          noteTitle: exhaustiveMode ? `${note.title} (Full Document Exam)` : note.title,
           noteContent: fallbackContent,
-          config: { questionCount: 8 },
+          config: { 
+            questionCount: qCount,
+            scope: 'full_document',
+            exhaustive: exhaustiveMode
+          },
           language: locale
         })
       });
@@ -186,7 +201,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
         <XCircle className="text-red-500 w-16 h-16 mb-4" />
         <h2 className="text-lg font-bold text-red-500 mb-2">Failed to Generate Quiz</h2>
         <p className="text-sm opacity-75 max-w-md mb-6">{error}</p>
-        <button onClick={generateQuiz} className="px-6 py-2 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white rounded-xl font-bold transition-all">Try Again</button>
+        <button onClick={() => generateQuiz()} className="px-6 py-2 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white rounded-xl font-bold transition-all">Try Again</button>
         <button onClick={onClose} className="mt-4 text-xs opacity-60">Close</button>
       </div>
     );
@@ -199,12 +214,15 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
         <h2 className="text-3xl font-black mb-2 tracking-tight">Quiz Complete!</h2>
         <p className="text-lg opacity-80 mb-8">You scored {score} out of {total}</p>
         
-        <div className="flex gap-4">
-          <button onClick={onClose} className="px-6 py-3 rounded-2xl bg-[var(--theme-surface-elevated)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-primary)] border border-[var(--theme-border)] font-bold transition-all shadow-md active:scale-95">
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-2xl bg-[var(--theme-surface-elevated)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-primary)] border border-[var(--theme-border)] font-bold transition-all shadow-md active:scale-95 text-xs">
             Back to Note
           </button>
-          <button onClick={generateQuiz} className="px-6 py-3 rounded-2xl bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white font-bold shadow-lg shadow-[var(--theme-primary)]/25 hover:scale-105 active:scale-95 transition-all">
-            Generate New Quiz
+          <button onClick={() => generateQuiz(false)} className="px-5 py-2.5 rounded-2xl bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] text-[var(--theme-text-primary)] border border-[var(--theme-border)] font-bold transition-all shadow-md active:scale-95 text-xs">
+            Standard Quiz (8 Qs)
+          </button>
+          <button onClick={() => generateQuiz(true)} className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:brightness-110 text-white font-bold shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-xs flex items-center gap-1.5">
+            <Sparkles size={14} /> All Possible Questions (Full PDF)
           </button>
         </div>
       </div>
@@ -214,10 +232,25 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
   return (
     <div className={`flex flex-col h-full w-full relative ${isDark ? 'text-[var(--theme-text-primary)]' : 'text-slate-900'}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between p-5 border-b transition-colors duration-200 ${isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]' : 'border-gray-200'}`}>
-        <button onClick={onClose} className="flex items-center gap-2 text-sm font-semibold opacity-70 hover:opacity-100 transition-opacity">
-          <ArrowLeft size={16} /> End Quiz
-        </button>
+      <div className={`flex items-center justify-between p-4 border-b transition-colors duration-200 ${isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]' : 'border-gray-200'}`}>
+        <div className="flex items-center gap-2">
+          <button onClick={onClose} className="flex items-center gap-2 text-sm font-semibold opacity-70 hover:opacity-100 transition-opacity">
+            <ArrowLeft size={16} /> End Quiz
+          </button>
+          <button
+            onClick={() => generateQuiz(!isExhaustiveQuiz)}
+            disabled={loading}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shadow-xs ${
+              isExhaustiveQuiz
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:text-white'
+            }`}
+            title="Toggle between standard and exhaustive full-PDF quiz mode"
+          >
+            <Sparkles size={12} className={isExhaustiveQuiz ? 'text-amber-400' : ''} />
+            <span>{isExhaustiveQuiz ? 'All Qs Mode (20 Qs)' : 'All Questions in Full PDF'}</span>
+          </button>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
             {quizData?.questions.map((_, i) => (
