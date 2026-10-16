@@ -70,6 +70,62 @@ export interface Translations {
   copied: string;
   eyeGazeDirection: string;
 
+  // Mascot Shapes (12)
+  shape_squircle: string;
+  shape_cercle: string;
+  shape_galet: string;
+  shape_capsule: string;
+  shape_triangle: string;
+  shape_hexagone: string;
+  shape_nuage: string;
+  shape_goutte: string;
+  shape_oeuf: string;
+  shape_soleil: string;
+  shape_fromage: string;
+  shape_livre: string;
+
+  // Mascot Expressions (15)
+  expr_neutre: string;
+  expr_attentif: string;
+  expr_surpris: string;
+  expr_excite: string;
+  expr_heureux: string;
+  expr_hilare: string;
+  expr_colere: string;
+  expr_triste: string;
+  expr_effraye: string;
+  expr_mefiant: string;
+  expr_curieux: string;
+  expr_fier: string;
+  expr_timide: string;
+  expr_blase: string;
+  expr_somnolent: string;
+
+  // Themes (16)
+  theme_dark_blue: string;
+  theme_midnight_violet: string;
+  theme_emerald_night: string;
+  theme_crimson_ember: string;
+  theme_solar_amber: string;
+  theme_abyssal_cyan: string;
+  theme_neon_rose: string;
+  theme_forest_moss: string;
+  theme_royal_indigo: string;
+  theme_deep_plum: string;
+  theme_burnt_bronze: string;
+  theme_titanium_slate: string;
+  theme_obsidian_oled: string;
+  theme_phantom_charcoal: string;
+  theme_mystic_magenta: string;
+  theme_arctic_navy: string;
+
+  // Theme Categories (5)
+  theme_cat_all: string;
+  theme_cat_cyber: string;
+  theme_cat_atmosphere: string;
+  theme_cat_element: string;
+  theme_cat_studio: string;
+
   // Study & AI
   studyWorkspace: string;
   documentChat: string;
@@ -173,6 +229,62 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     copied: 'Copied!',
     eyeGazeDirection: 'Eye Gaze Direction',
 
+    // Mascot Shapes (12)
+    shape_squircle: 'Squircle',
+    shape_cercle: 'Circle',
+    shape_galet: 'Pebble',
+    shape_capsule: 'Capsule',
+    shape_triangle: 'Triangle',
+    shape_hexagone: 'Hexagon',
+    shape_nuage: 'Cloud',
+    shape_goutte: 'Droplet',
+    shape_oeuf: 'Egg',
+    shape_soleil: 'Sun',
+    shape_fromage: 'Cheese',
+    shape_livre: 'Book',
+
+    // Mascot Expressions (15)
+    expr_neutre: 'Neutral',
+    expr_attentif: 'Attentive',
+    expr_surpris: 'Surprised',
+    expr_excite: 'Excited',
+    expr_heureux: 'Happy',
+    expr_hilare: 'Laughing',
+    expr_colere: 'Angry',
+    expr_triste: 'Sad',
+    expr_effraye: 'Scared',
+    expr_mefiant: 'Suspicious',
+    expr_curieux: 'Curious',
+    expr_fier: 'Proud',
+    expr_timide: 'Shy',
+    expr_blase: 'Chill',
+    expr_somnolent: 'Sleepy',
+
+    // Themes (16)
+    theme_dark_blue: 'Dark Blue',
+    theme_midnight_violet: 'Midnight Violet',
+    theme_emerald_night: 'Emerald Night',
+    theme_crimson_ember: 'Crimson Ember',
+    theme_solar_amber: 'Solar Amber',
+    theme_abyssal_cyan: 'Abyssal Cyan',
+    theme_neon_rose: 'Neon Rose',
+    theme_forest_moss: 'Forest Moss',
+    theme_royal_indigo: 'Royal Indigo',
+    theme_deep_plum: 'Deep Plum',
+    theme_burnt_bronze: 'Burnt Bronze',
+    theme_titanium_slate: 'Titanium Slate',
+    theme_obsidian_oled: 'Obsidian OLED',
+    theme_phantom_charcoal: 'Phantom Charcoal',
+    theme_mystic_magenta: 'Mystic Magenta',
+    theme_arctic_navy: 'Arctic Navy',
+
+    // Theme Categories (5)
+    theme_cat_all: 'All',
+    theme_cat_cyber: 'Cyber',
+    theme_cat_atmosphere: 'Atmosphere',
+    theme_cat_element: 'Element',
+    theme_cat_studio: 'Studio',
+
     // Study & AI
     studyWorkspace: 'Study Workspace',
     documentChat: 'NotebookLM Assistant',
@@ -275,6 +387,62 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     copied: 'تم النسخ!',
     eyeGazeDirection: 'اتجاه نظرة العين',
 
+    // Mascot Shapes (12)
+    shape_squircle: 'سكويركل',
+    shape_cercle: 'دائرة',
+    shape_galet: 'حصاة',
+    shape_capsule: 'كبسولة',
+    shape_triangle: 'مثلث',
+    shape_hexagone: 'سداسي',
+    shape_nuage: 'غيمة',
+    shape_goutte: 'قطرة',
+    shape_oeuf: 'بيضة',
+    shape_soleil: 'شمس',
+    shape_fromage: 'جبنة',
+    shape_livre: 'كتاب',
+
+    // Mascot Expressions (15)
+    expr_neutre: 'هادئ',
+    expr_attentif: 'مركّز',
+    expr_surpris: 'متفاجئ',
+    expr_excite: 'متحمّس',
+    expr_heureux: 'مبسوط',
+    expr_hilare: 'ضاحك',
+    expr_colere: 'غاضب',
+    expr_triste: 'حزين',
+    expr_effraye: 'مذعور',
+    expr_mefiant: 'حذر',
+    expr_curieux: 'فضولي',
+    expr_fier: 'فخور',
+    expr_timide: 'خجول',
+    expr_blase: 'مروّق',
+    expr_somnolent: 'نعسان',
+
+    // Themes (16)
+    theme_dark_blue: 'أزرق داكن',
+    theme_midnight_violet: 'بنفسج منتصف الليل',
+    theme_emerald_night: 'زمرد ليلي',
+    theme_crimson_ember: 'جمر قرمزي',
+    theme_solar_amber: 'كهرمان شمسي',
+    theme_abyssal_cyan: 'سماوي أعماق',
+    theme_neon_rose: 'وردي نيون',
+    theme_forest_moss: 'طحلب الغابة',
+    theme_royal_indigo: 'نيلي ملكي',
+    theme_deep_plum: 'برقوقي داكن',
+    theme_burnt_bronze: 'برونزي محروق',
+    theme_titanium_slate: 'رمادي تيتانيوم',
+    theme_obsidian_oled: 'سواد أوبسيديان',
+    theme_phantom_charcoal: 'فحمي شبحي',
+    theme_mystic_magenta: 'أرجواني غامض',
+    theme_arctic_navy: 'كحلي قطبي',
+
+    // Theme Categories (5)
+    theme_cat_all: 'الكل',
+    theme_cat_cyber: 'سايبر',
+    theme_cat_atmosphere: 'أجواء',
+    theme_cat_element: 'عناصر',
+    theme_cat_studio: 'استوديو',
+
     // Study & AI
     studyWorkspace: 'مساحة المذاكرة',
     documentChat: 'مساعد الملاحظات الذكي',
@@ -307,3 +475,95 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     needsReview: 'راجع النقاط الأساسية لتثبيت المفهوم.'
   }
 };
+
+const THEME_SLUG_MAP: Record<string, keyof Translations> = {
+  'dark-blue': 'theme_dark_blue',
+  'midnight-violet': 'theme_midnight_violet',
+  'emerald-night': 'theme_emerald_night',
+  'crimson-ember': 'theme_crimson_ember',
+  'solar-amber': 'theme_solar_amber',
+  'abyssal-cyan': 'theme_abyssal_cyan',
+  'neon-rose': 'theme_neon_rose',
+  'forest-moss': 'theme_forest_moss',
+  'royal-indigo': 'theme_royal_indigo',
+  'deep-plum': 'theme_deep_plum',
+  'burnt-bronze': 'theme_burnt_bronze',
+  'titanium-slate': 'theme_titanium_slate',
+  'obsidian-oled': 'theme_obsidian_oled',
+  'phantom-charcoal': 'theme_phantom_charcoal',
+  'mystic-magenta': 'theme_mystic_magenta',
+  'arctic-navy': 'theme_arctic_navy',
+
+  // Tailwind class IDs
+  'bg-[#080d2a]': 'theme_dark_blue',
+  'bg-[#1a0b2e]': 'theme_midnight_violet',
+  'bg-[#022c22]': 'theme_emerald_night',
+  'bg-[#3b0712]': 'theme_crimson_ember',
+  'bg-[#422006]': 'theme_solar_amber',
+  'bg-[#082f49]': 'theme_abyssal_cyan',
+  'bg-[#380424]': 'theme_neon_rose',
+  'bg-[#052e16]': 'theme_forest_moss',
+  'bg-[#1e1b4b]': 'theme_royal_indigo',
+  'bg-[#2e0854]': 'theme_deep_plum',
+  'bg-[#3c1605]': 'theme_burnt_bronze',
+  'bg-[#0f172a]': 'theme_titanium_slate',
+  'bg-[#030712]': 'theme_obsidian_oled',
+  'bg-[#18181b]': 'theme_phantom_charcoal',
+  'bg-[#3b0d2d]': 'theme_mystic_magenta',
+  'bg-[#0c1a30]': 'theme_arctic_navy',
+
+  // Names lowercase
+  'dark blue': 'theme_dark_blue',
+  'midnight violet': 'theme_midnight_violet',
+  'emerald night': 'theme_emerald_night',
+  'crimson ember': 'theme_crimson_ember',
+  'solar amber': 'theme_solar_amber',
+  'abyssal cyan': 'theme_abyssal_cyan',
+  'neon rose': 'theme_neon_rose',
+  'forest moss': 'theme_forest_moss',
+  'royal indigo': 'theme_royal_indigo',
+  'deep plum': 'theme_deep_plum',
+  'burnt bronze': 'theme_burnt_bronze',
+  'titanium slate': 'theme_titanium_slate',
+  'obsidian oled': 'theme_obsidian_oled',
+  'phantom charcoal': 'theme_phantom_charcoal',
+  'mystic magenta': 'theme_mystic_magenta',
+  'arctic navy': 'theme_arctic_navy',
+};
+
+export function getLocalizedShape(shape: string | undefined | null, locale: Locale): string {
+  if (!shape) return '';
+  const norm = shape.toLowerCase().trim();
+  const key = `shape_${norm}` as keyof Translations;
+  const dict = TRANSLATIONS[locale] || TRANSLATIONS.en;
+  return (dict[key] as string) || shape;
+}
+
+export function getLocalizedExpression(expr: string | undefined | null, locale: Locale): string {
+  if (!expr) return '';
+  const norm = expr.toLowerCase().trim();
+  const key = `expr_${norm}` as keyof Translations;
+  const dict = TRANSLATIONS[locale] || TRANSLATIONS.en;
+  return (dict[key] as string) || expr;
+}
+
+export function getLocalizedThemeName(identifier: string | undefined | null, locale: Locale): string {
+  if (!identifier) return '';
+  const clean = identifier.trim();
+  const lower = clean.toLowerCase();
+  const key = THEME_SLUG_MAP[clean] || THEME_SLUG_MAP[lower];
+  const dict = TRANSLATIONS[locale] || TRANSLATIONS.en;
+  if (key && dict[key]) {
+    return dict[key] as string;
+  }
+  return identifier;
+}
+
+export function getLocalizedThemeCategory(category: string | undefined | null, locale: Locale): string {
+  if (!category) return '';
+  const norm = category.toLowerCase().trim();
+  const key = `theme_cat_${norm}` as keyof Translations;
+  const dict = TRANSLATIONS[locale] || TRANSLATIONS.en;
+  return (dict[key] as string) || category;
+}
+

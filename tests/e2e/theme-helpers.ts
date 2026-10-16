@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Shared Theme Verification Helpers, Types & Mathematical Formulas
  * 
  * Provides:
@@ -154,8 +154,25 @@ export function parseThemesFromSource(filePath?: string): ThemeItem[] {
   }
   const content = fs.readFileSync(targetPath, 'utf8');
   const match = content.match(/(?:export\s+)?const\s+THEMES\s*=\s*(\[[\s\S]*?\]);/);
-  if (!match) {
-    throw new Error(`Could not locate "const THEMES = [...]" in ${targetPath}`);
+  if (match) {
+    return new Function('return ' + match[1])() as ThemeItem[];
   }
-  return new Function('return ' + match[1])() as ThemeItem[];
+
+  // Fallback to src/lib/theme/tokens.ts
+  const tokensPath = path.resolve(process.cwd(), 'src/lib/theme/tokens.ts');
+  if (fs.existsSync(tokensPath)) {
+    const tokensContent = fs.readFileSync(tokensPath, 'utf8');
+    const tokensMatch = tokensContent.match(/(?:export\s+)?const\s+STITCH_THEMES[^=]*=\s*(\[[\s\S]*?\])\s*as\s+const;/);
+    if (tokensMatch) {
+      const raw = new Function('return ' + tokensMatch[1])();
+      return raw.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        color: t.id.replace('bg-[', '').replace(']', '') || t.neutralColor,
+      }));
+    }
+  }
+
+  throw new Error(`Could not locate "const THEMES = [...]" in ${targetPath}`);
 }
+

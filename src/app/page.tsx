@@ -12,6 +12,12 @@ import {
   TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown, ExternalLink, Globe, Languages 
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/useLanguage';
+import {
+  getLocalizedShape,
+  getLocalizedExpression,
+  getLocalizedThemeName,
+  getLocalizedThemeCategory,
+} from '@/lib/i18n/translations';
 import { STATE_BY_ID, type StateId } from '@/lib/bot/states';
 import type { ExpressionId } from '@/lib/bot/expressions';
 import { COLORS } from '@/lib/bot/skins';
@@ -2371,7 +2377,7 @@ export default function Home() {
                     <Shapes size={14} /> {tLang('shape')}
                   </span>
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
-                    {SHAPE_LABELS[targetShape] || targetShape}
+                    {getLocalizedShape(targetShape, locale) || targetShape}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
@@ -2387,10 +2393,10 @@ export default function Home() {
                             ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
                             : 'bg-white border-gray-200 hover:border-gray-300'
                       }`}
-                      title={SHAPE_LABELS[s] || s}
+                      title={getLocalizedShape(s, locale) || s}
                     >
                       <BloubMascot size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
-                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{SHAPE_LABELS[s] || s}</span>
+                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedShape(s, locale) || s}</span>
                     </button>
                   ))}
                 </div>
@@ -2439,7 +2445,7 @@ export default function Home() {
                     <Smile size={14} /> {tLang('expression')}
                   </span>
                   <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
-                    {targetExpr} {autoMoodEnabled && '(Auto-Reactive)'}
+                    {getLocalizedExpression(targetExpr, locale) || targetExpr} {autoMoodEnabled && (locale === 'ar' ? '(تفاعلي تلقائي)' : '(Auto-Reactive)')}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
@@ -2455,10 +2461,10 @@ export default function Home() {
                             ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
                             : 'bg-white border-gray-200 hover:border-gray-300'
                       }`}
-                      title={expr}
+                      title={getLocalizedExpression(expr, locale) || expr}
                     >
                       <BloubMascot size={36} state="idle" expression={expr as any} shape={targetShape} color={targetColor} isStatic={true} />
-                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{expr}</span>
+                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedExpression(expr, locale) || expr}</span>
                     </button>
                   ))}
                 </div>
@@ -2499,7 +2505,7 @@ export default function Home() {
                     <Palette size={14} className="text-[var(--theme-primary,#3b82f6)]" /> {tLang('themeStudio')}
                   </span>
                   <span className="text-[10px] font-mono text-[var(--theme-primary,#3b82f6)] uppercase tracking-wider font-bold">
-                    {THEMES.find(t => t.id === bgTheme)?.name || 'Default'}
+                    {getLocalizedThemeName(bgTheme, locale) || 'Default'}
                   </span>
                 </div>
 
@@ -2516,7 +2522,7 @@ export default function Home() {
                           : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
                       }`}
                     >
-                      {cat}
+                      {getLocalizedThemeCategory(cat, locale)}
                     </button>
                   ))}
                 </div>
@@ -2525,6 +2531,8 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-2.5">
                   {filteredThemes.map(theme => {
                     const isSelected = bgTheme === theme.id;
+                    const localizedName = getLocalizedThemeName(theme.slug || theme.id, locale) || theme.name;
+                    const localizedCategory = getLocalizedThemeCategory(theme.category, locale);
                     return (
                       <button
                         key={theme.id}
@@ -2553,10 +2561,10 @@ export default function Home() {
                           
                           <div className="min-w-0 flex-1">
                             <span className={`text-[13px] font-medium block whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight ${isSelected ? 'text-[var(--theme-primary,#3b82f6)]' : 'text-zinc-100'}`}>
-                              {theme.name}
+                              {localizedName}
                             </span>
                             <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider block mt-0.5">
-                              {theme.category}
+                              {localizedCategory}
                             </span>
                           </div>
                         </div>

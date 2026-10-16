@@ -591,10 +591,29 @@ export const BloubMascot = React.memo(function BloubMascot({
           </g>
         )}
 
-        {/* Book bookmark ribbon for livre */}
-        {shape === 'livre' && isBaseBodyActive && !isTapping && (
+        {/* Book pages, center binding crease, and bookmark ribbon for livre */}
+        {(normShape === 'livre' || shape === 'livre') && isBaseBodyActive && !isTapping && (
           <g style={{ pointerEvents: 'none' }}>
+            {/* Bookmark ribbon hanging from bottom center */}
             <path d="M -5,40 L -8,68 L 4,65 L 2,40 Z" fill="#ef4444" />
+            {/* Open book pages background */}
+            <path
+              d="M -42,-42 C -20,-38 0,-42 0,-42 C 0,-42 20,-38 42,-42 L 42,42 C 20,46 0,42 0,42 C 0,42 -20,46 -42,42 Z"
+              fill="#fbfaf3"
+              mask={`url(#${maskId})`}
+              stroke="#000"
+              strokeWidth="1.5"
+              strokeOpacity="0.08"
+            />
+            {/* Book center binding crease */}
+            <path
+              d="M 0,-42 L 0,42"
+              stroke="#000"
+              strokeWidth="2.5"
+              opacity="0.16"
+              strokeLinecap="round"
+              mask={`url(#${maskId})`}
+            />
           </g>
         )}
 

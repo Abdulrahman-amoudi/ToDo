@@ -12,6 +12,7 @@ import { COLORS } from '@/lib/bot/skins';
 import type { Category } from '@/types/todo';
 import { maskApiKey } from '@/lib/ai/quiz';
 import { useLanguage } from '@/lib/i18n/useLanguage';
+import { getLocalizedShape, getLocalizedThemeName } from '@/lib/i18n/translations';
 
 export const THEMES = [
   { id: 'bg-[#080d2a]', name: 'Dark Blue', color: '#080d2a' },
@@ -443,7 +444,7 @@ export default function SettingsModal({
                 }`}
               >
                 <span className="flex items-center gap-1.5">
-                  <Palette size={14} /> App Theme ({THEMES.find(th => th.id === bgTheme)?.name || 'Minimal'})
+                  <Palette size={14} /> {t('themeStudio') || 'App Theme'} ({getLocalizedThemeName(bgTheme, locale) || 'Minimal'})
                 </span>
                 {showThemePicker ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
@@ -467,7 +468,7 @@ export default function SettingsModal({
                           }`}
                         >
                           <div className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-inner flex-shrink-0" style={{ backgroundColor: theme.color }} />
-                          {theme.name}
+                          {getLocalizedThemeName(theme.id, locale) || theme.name}
                         </button>
                       ))}
                     </div>
@@ -486,7 +487,7 @@ export default function SettingsModal({
                   isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-800'
                 }`}
               >
-                <span className="flex items-center gap-1.5"><Shapes size={14} /> Mascot Shape</span>
+                <span className="flex items-center gap-1.5"><Shapes size={14} /> {t('shape') || 'Mascot Shape'}</span>
                 {showShapePicker ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
               <AnimatePresence>
@@ -502,6 +503,7 @@ export default function SettingsModal({
                         <button 
                           key={s} 
                           onClick={() => updateTargetShape(s)}
+                          title={getLocalizedShape(s, locale) || s}
                           className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all ${
                             targetShape === s 
                               ? 'bg-blue-500 text-white border-transparent shadow-md' 

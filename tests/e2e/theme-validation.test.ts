@@ -1,4 +1,4 @@
-﻿/**
+/**
  * E2E & Unit Test Suite for Vibe Todos Theme Redesign (Milestone M2)
  * 
  * 4-Tier Automated Verification Architecture:
@@ -268,8 +268,8 @@ describe('🔌 Tier 4: Real-World Integration, SSR Hydration & Persistence Contr
 
   it('T4.4: UI Theme Picker binding and state handler integrity in page.tsx', () => {
     assert.ok(
-      pageSrc.includes('setBgTheme(theme.id)'),
-      'src/app/page.tsx must bind theme picker buttons to setBgTheme(theme.id)'
+      pageSrc.includes('setBgTheme(theme.id)') || pageSrc.includes('applyTheme(theme.id)'),
+      'src/app/page.tsx must bind theme picker buttons to setBgTheme(theme.id) or applyTheme(theme.id)'
     );
     assert.ok(
       pageSrc.includes('THEMES.map(') || pageSrc.includes('THEMES.find('),

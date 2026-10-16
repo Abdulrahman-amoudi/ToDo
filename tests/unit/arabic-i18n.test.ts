@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { TRANSLATIONS } from '../../src/lib/i18n/translations';
+import {
+  TRANSLATIONS,
+  getLocalizedShape,
+  getLocalizedExpression,
+  getLocalizedThemeName,
+  getLocalizedThemeCategory
+} from '../../src/lib/i18n/translations';
 import { GeminiClient } from '../../src/lib/ai/gemini';
 
 describe('Arabic i18n & AI Prompt Verification', () => {
@@ -105,4 +111,85 @@ describe('Arabic i18n & AI Prompt Verification', () => {
       (GeminiClient as any).callGenerateContent = originalCall;
     }
   });
+
+  it('should localize all 12 shapes into natural Arabic', () => {
+    const expectedShapes: Record<string, string> = {
+      squircle: 'سكويركل',
+      cercle: 'دائرة',
+      galet: 'حصاة',
+      capsule: 'كبسولة',
+      triangle: 'مثلث',
+      hexagone: 'سداسي',
+      nuage: 'غيمة',
+      goutte: 'قطرة',
+      oeuf: 'بيضة',
+      soleil: 'شمس',
+      fromage: 'جبنة',
+      livre: 'كتاب'
+    };
+
+    for (const [id, expectedAr] of Object.entries(expectedShapes)) {
+      assert.strictEqual(getLocalizedShape(id, 'ar'), expectedAr, `Shape "${id}" in Arabic should be "${expectedAr}"`);
+      assert.ok(getLocalizedShape(id, 'en').length > 0, `Shape "${id}" in English should be defined`);
+    }
+  });
+
+  it('should localize all 15 expressions into authentic Arabic', () => {
+    const expectedExpressions: Record<string, string> = {
+      neutre: 'هادئ',
+      attentif: 'مركّز',
+      surpris: 'متفاجئ',
+      excite: 'متحمّس',
+      heureux: 'مبسوط',
+      hilare: 'ضاحك',
+      colere: 'غاضب',
+      triste: 'حزين',
+      effraye: 'مذعور',
+      mefiant: 'حذر',
+      curieux: 'فضولي',
+      fier: 'فخور',
+      timide: 'خجول',
+      blase: 'مروّق',
+      somnolent: 'نعسان'
+    };
+
+    for (const [id, expectedAr] of Object.entries(expectedExpressions)) {
+      assert.strictEqual(getLocalizedExpression(id, 'ar'), expectedAr, `Expression "${id}" in Arabic should be "${expectedAr}"`);
+      assert.ok(getLocalizedExpression(id, 'en').length > 0, `Expression "${id}" in English should be defined`);
+    }
+  });
+
+  it('should localize all 16 themes and categories into authentic Arabic', () => {
+    const expectedThemes: Record<string, string> = {
+      'dark-blue': 'أزرق داكن',
+      'midnight-violet': 'بنفسج منتصف الليل',
+      'emerald-night': 'زمرد ليلي',
+      'crimson-ember': 'جمر قرمزي',
+      'solar-amber': 'كهرمان شمسي',
+      'abyssal-cyan': 'سماوي أعماق',
+      'neon-rose': 'وردي نيون',
+      'forest-moss': 'طحلب الغابة',
+      'royal-indigo': 'نيلي ملكي',
+      'deep-plum': 'برقوقي داكن',
+      'burnt-bronze': 'برونزي محروق',
+      'titanium-slate': 'رمادي تيتانيوم',
+      'obsidian-oled': 'سواد أوبسيديان',
+      'phantom-charcoal': 'فحمي شبحي',
+      'mystic-magenta': 'أرجواني غامض',
+      'arctic-navy': 'كحلي قطبي',
+    };
+
+    for (const [slug, expectedAr] of Object.entries(expectedThemes)) {
+      assert.strictEqual(getLocalizedThemeName(slug, 'ar'), expectedAr, `Theme "${slug}" in Arabic should be "${expectedAr}"`);
+      assert.ok(getLocalizedThemeName(slug, 'en').length > 0, `Theme "${slug}" in English should be defined`);
+    }
+
+    // Categories
+    assert.strictEqual(getLocalizedThemeCategory('All', 'ar'), 'الكل');
+    assert.strictEqual(getLocalizedThemeCategory('Cyber', 'ar'), 'سايبر');
+    assert.strictEqual(getLocalizedThemeCategory('Atmosphere', 'ar'), 'أجواء');
+    assert.strictEqual(getLocalizedThemeCategory('Element', 'ar'), 'عناصر');
+    assert.strictEqual(getLocalizedThemeCategory('Studio', 'ar'), 'استوديو');
+  });
 });
+
