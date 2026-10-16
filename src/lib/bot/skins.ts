@@ -59,10 +59,15 @@ const droplet = normalize(
 
 const capsule = profileFromPolygon(hullOfCircles(-0.42, 0, 0.62, 0.42, 0, 0.62), 0, 0)
 
-const sun = normalize(
-  ANGLES.map((a) => 1 + 0.28 * Math.cos(10 * a)),
-  1.18
-)
+const sunPetalCircles = [
+  { x: 0, y: 0, r: 0.72 },
+  ...Array.from({ length: 10 }, (_, i) => {
+    const a = (i / 10) * Math.PI * 2;
+    return { x: 0.56 * Math.cos(a), y: 0.56 * Math.sin(a), r: 0.42 };
+  })
+];
+
+const sun = normalize(unionOfCirclesProfile(sunPetalCircles), 1.18);
 
 const cheese = normalize(
   profileFromPolygon(

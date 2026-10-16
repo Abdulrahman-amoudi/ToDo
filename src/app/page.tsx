@@ -861,7 +861,7 @@ export default function Home() {
       const data = await res.json();
       if (res.ok && data.note) {
         setSelectedNote(data.note);
-        triggerMascot('orbit', 'heureux');
+        triggerMascot('idle', 'heureux');
       } else {
         triggerMascot('alert', 'mefiant');
         alert('Failed to load note: ' + (data.error || 'Unknown error'));
@@ -1133,7 +1133,7 @@ export default function Home() {
     e.preventDefault();
     if (!newCatText.trim() || isSubmitting) return;
     setIsSubmitting(true);
-    triggerMascot('orbit', 'heureux');
+    triggerMascot('idle', 'heureux');
     const newId = Date.now().toString();
     // Optimistically add to local state with the correct type
     setCategories(prev => [...prev, { id: newId, name: newCatText.trim(), type: newCatType }]);
@@ -1217,8 +1217,8 @@ export default function Home() {
     if (todo.completed) {
       triggerMascot('idle', 'neutre');
     } else if (isNextCompleted) {
-      triggerMascot('orbit', 'fier');
-      setTimeout(() => triggerMascot('idle', 'blase'), 3500);
+      triggerMascot('idle', 'fier');
+      setTimeout(() => triggerMascot('idle', 'heureux'), 2500);
     } else {
       triggerMascot('wink', 'heureux');
       resetToIdle();
@@ -1240,8 +1240,8 @@ export default function Home() {
     if (newCompleted) {
       const allDone = updatedTodos.filter(t => t.categoryId === activeCategory).every(t => t.completed);
       if (allDone) {
-        triggerMascot('orbit', 'fier');
-        setTimeout(() => triggerMascot('idle', 'blase'), 3500);
+        triggerMascot('idle', 'fier');
+        setTimeout(() => triggerMascot('idle', 'heureux'), 2500);
       } else {
         triggerMascot('wink', 'heureux');
         resetToIdle();
@@ -2032,7 +2032,7 @@ export default function Home() {
               <div className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-4 sm:gap-5 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] bg-[var(--theme-surface,#12141a)]/70 backdrop-blur-md shadow-lg">
                 <div 
                   className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible flex-shrink-0"
-                  onClick={() => triggerMascot('orbit', 'heureux')}
+                  onClick={() => triggerMascot('idle', 'heureux')}
                   title="Interact with Bloub"
                 >
                   {(() => {
@@ -2045,7 +2045,7 @@ export default function Home() {
                         expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
                         shape={heroShape} 
                         color={heroColor} 
-                        onInteract={() => triggerMascot('orbit', 'heureux')}
+                        onInteract={() => triggerMascot('idle', 'heureux')}
                       />
                     );
                   })()}
@@ -2274,7 +2274,7 @@ export default function Home() {
           <div className="flex-1 w-full flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-300 md:shadow-2xl md:my-6 md:rounded-3xl md:border md:border-white/10">
             {/* Left side: HUGE MASCOT */}
             <div className="hidden md:flex md:w-1/2 lg:w-3/5 flex-1 items-center justify-center bg-slate-900/40 relative overflow-visible">
-                <div className="cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('orbit', targetExpr)}>
+                <div className="cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
                   <BloubMascot size={220} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
             </div>
@@ -2284,7 +2284,7 @@ export default function Home() {
               
               {/* Mascot Preview inside Settings */}
               <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
-                <div className="w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('orbit', targetExpr)}>
+                <div className="w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
                   <BloubMascot size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
 
@@ -2770,7 +2770,7 @@ export default function Home() {
           >
             <div 
               className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible" 
-              onClick={() => triggerMascot('orbit', 'heureux')}
+              onClick={() => triggerMascot('idle', 'heureux')}
             >
               {(() => {
                 const isAnim = animState !== 'idle';
@@ -2782,7 +2782,7 @@ export default function Home() {
                     expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
                     shape={heroShape} 
                     color={heroColor} 
-                    onInteract={() => triggerMascot('orbit', 'heureux')}
+                    onInteract={() => triggerMascot('idle', 'heureux')}
                   />
                 );
               })()}
@@ -3281,7 +3281,7 @@ export default function Home() {
                   <div className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] mb-2">
                     <div 
                       className="w-16 h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() => triggerMascot('orbit', 'heureux')}
+                      onClick={() => triggerMascot('idle', 'heureux')}
                     >
                       <BloubMascot 
                         size={64} 
@@ -3289,7 +3289,7 @@ export default function Home() {
                         expression={animState !== 'idle' ? (animExpression || mascotExpression) : (autoMoodEnabled ? computeReactiveMood() : mascotExpression)} 
                         shape={mascotShape} 
                         color={mascotColor} 
-                        onInteract={() => triggerMascot('orbit', 'heureux')}
+                        onInteract={() => triggerMascot('idle', 'heureux')}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -3388,7 +3388,7 @@ export default function Home() {
                     <div className="flex items-center gap-4">
                       <div 
                         className="w-14 h-14 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                        onClick={() => triggerMascot('orbit', 'heureux')}
+                        onClick={() => triggerMascot('idle', 'heureux')}
                       >
                         <BloubMascot 
                           size={56} 
@@ -3396,7 +3396,7 @@ export default function Home() {
                           expression={animState !== 'idle' ? (animExpression || mascotExpression) : ((catSettings[activeCategory]?.expression || mascotExpression || 'neutre') as ExpressionId)} 
                           shape={catSettings[activeCategory]?.shape || mascotShape || 'squircle'} 
                           color={catSettings[activeCategory]?.color || mascotColor || '#3b82f6'} 
-                          onInteract={() => triggerMascot('orbit', 'heureux')}
+                          onInteract={() => triggerMascot('idle', 'heureux')}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -3605,7 +3605,7 @@ export default function Home() {
                               lastModifiedMs: file.lastModified
                             });
                             setShowStudyExplorer(false);
-                            triggerMascot('orbit', 'heureux');
+                            triggerMascot('idle', 'heureux');
                           };
                           reader.readAsText(file);
                         }} 
@@ -3650,13 +3650,13 @@ export default function Home() {
                     </div>
                     <h3 className={`text-sm font-bold mb-1 ${t.textPrimary}`}>Ready for Study Session</h3>
                     <p className={`text-xs max-w-xs mb-4 leading-relaxed ${t.textMuted}`}>
-                      Explore your cloud Obsidian notes or launch an AI quiz session to test your retention and master concepts.
+                       Explore your cloud Obsidian notes or launch an AI quiz session to test your retention and master concepts.
                     </p>
                     <button 
                       type="button" 
                       onClick={() => {
                         setShowStudyExplorer(true);
-                        triggerMascot('orbit', 'fier');
+                        triggerMascot('idle', 'fier');
                       }} 
                       className="px-4 py-2 rounded-xl bg-[var(--theme-primary,#3b82f6)] text-white text-xs font-semibold hover:brightness-110 shadow-md shadow-[var(--theme-primary,#3b82f6)]/25 transition-all active:scale-95 flex items-center gap-1.5"
                     >
