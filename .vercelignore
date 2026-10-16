@@ -1,0 +1,45 @@
+# Vercel Ignore file to reduce deployment bundle size and storage
+
+# Large binary downloads not used directly by web bundle
+public/downloads/Todos-Windows-Portable.zip
+*.zip
+*.tar.gz
+*.mp4
+*.mkv
+
+# Test suites & benchmarks
+tests/
+__tests__/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Temporary scripts & maintenance tools
+scripts/
+fix-*.py
+fix-*.cjs
+*.py
+*.cjs
+add-hide-ui*.py
+cleanup-*.py
+dual-highlighter.py
+native-viewer-*.py
+portal-toolbar*.py
+refactor-toolbar*.py
+restore-*.py
+revert-*.py
+update-themes.cjs
+check-db.cjs
+create-bucket.cjs
+build-settings.cjs
+build-settings.js
+script*.cjs
+script*.js
+convert.ps1
+
+# Documentation & drafts
+*.md
+!README.md
+docs/
+.agents/

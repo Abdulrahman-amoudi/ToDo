@@ -352,35 +352,57 @@ export const BloubMascot = React.memo(function BloubMascot({
     return () => cancelAnimationFrame(rafRef.current);
   }, [color, normShape, normExpr, isVisible, isStatic, ink]);
 
+  const [tapCount, setTapCount] = useState(0);
+
+  useEffect(() => {
+    if (!isStatic && animated !== false && normShape === 'soleil') {
+      setIsTapping(true);
+      setTapCount((c) => c + 1);
+      const timer = setTimeout(() => {
+        setIsTapping(false);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [normShape, isStatic, animated]);
+
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       onClick?.(e);
       onInteract?.();
-      if (!isStatic && animated !== false && engineRef.current) {
+      if (!isStatic && animated !== false) {
         setIsTapping(true);
-        engineRef.current.setState('orbit', clockRef.current);
-        stateRef.current = 'idle';
+        setTapCount((c) => c + 1);
 
-        if (animTimerRef.current) clearTimeout(animTimerRef.current);
-        animTimerRef.current = setTimeout(() => {
-          if (engineRef.current && engineRef.current.state === 'orbit') {
-            engineRef.current.setState('idle', clockRef.current);
-            stateRef.current = 'idle';
-            const target = resolveGaze(gazeRef.current);
-            if (target) {
-              engineRef.current.setLook(
-                { yaw: target.yaw, pitch: target.pitch, mix: 0.7, spin: 0, wander: 0.15 },
-                clockRef.current,
-                0.3
-              );
+        if (normShape === 'soleil') {
+          if (animTimerRef.current) clearTimeout(animTimerRef.current);
+          animTimerRef.current = setTimeout(() => {
+            setIsTapping(false);
+          }, 1200);
+        } else if (engineRef.current) {
+          engineRef.current.setState('orbit', clockRef.current);
+          stateRef.current = 'idle';
+
+          if (animTimerRef.current) clearTimeout(animTimerRef.current);
+          animTimerRef.current = setTimeout(() => {
+            if (engineRef.current && engineRef.current.state === 'orbit') {
+              engineRef.current.setState('idle', clockRef.current);
+              stateRef.current = 'idle';
+              const target = resolveGaze(gazeRef.current);
+              if (target) {
+                engineRef.current.setLook(
+                  { yaw: target.yaw, pitch: target.pitch, mix: 0.7, spin: 0, wander: 0.15 },
+                  clockRef.current,
+                  0.3
+                );
+              }
             }
-          }
-          setIsTapping(false);
-        }, 3400);
+            setIsTapping(false);
+          }, 3400);
+        }
       }
     },
-    [onClick, onInteract, isStatic, animated]
+    [onClick, onInteract, isStatic, animated, normShape]
   );
 
   const isThinking = state === 'thinking';
@@ -454,6 +476,114 @@ export const BloubMascot = React.memo(function BloubMascot({
         .typing-dot-ambient-4 {
           animation: typingDotsLevitate 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s infinite;
         }
+
+        /* ── Soleil (Sun) Kinetic Engine: Calm, Radiant & Slow ── */
+        @keyframes idleSoleil {
+          0% {
+            transform: scale(1) rotate(0deg) translateY(0);
+          }
+          50% {
+            transform: scale(1.06) rotate(18deg) translateY(-5px);
+          }
+          100% {
+            transform: scale(1) rotate(36deg) translateY(0);
+          }
+        }
+
+        @keyframes idleShadowSoleil {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          50% {
+            transform: scale(0.90);
+            opacity: 0.2;
+          }
+        }
+
+        @keyframes tapBurstSoleil {
+          0% {
+            transform: scale(1) rotate(0deg) translateY(0);
+          }
+          18% {
+            transform: scale(0.92) rotate(-10deg) translateY(4px);
+          }
+          50% {
+            transform: scale(1.12) rotate(36deg) translateY(-18px);
+          }
+          80% {
+            transform: scaleX(1.06) scaleY(0.96) rotate(36deg) translateY(2px);
+          }
+          100% {
+            transform: scale(1) rotate(36deg) translateY(0);
+          }
+        }
+
+        @keyframes tapShadowSoleil {
+          0% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          18% {
+            transform: scale(1.10);
+            opacity: 0.38;
+          }
+          50% {
+            transform: scale(0.72);
+            opacity: 0.15;
+          }
+          80% {
+            transform: scale(1.05);
+            opacity: 0.32;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+        }
+
+        @keyframes tapFaceSoleil {
+          0% {
+            transform: scale(1) rotate(0deg) translateY(0);
+          }
+          18% {
+            transform: scale(0.94) rotate(-6deg) translateY(2px);
+          }
+          50% {
+            transform: scale(1.08) rotate(28deg) translateY(-12px);
+          }
+          80% {
+            transform: scale(1.02) rotate(34deg) translateY(1px);
+          }
+          100% {
+            transform: scale(1) rotate(36deg) translateY(0);
+          }
+        }
+
+        .idle-soleil {
+          animation: idleSoleil 5.2s ease-in-out infinite;
+          transform-origin: 0px 0px;
+        }
+        .tap-burst-soleil {
+          animation: tapBurstSoleil 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: 0px 0px;
+        }
+        .idle-shadow-soleil {
+          animation: idleShadowSoleil 5.2s ease-in-out infinite;
+          transform-origin: 0px 114px;
+        }
+        .tap-shadow-soleil {
+          animation: tapShadowSoleil 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: 0px 114px;
+        }
+        .mascot-face-rig {
+          transition: transform 80ms cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: 0px 0px;
+        }
+        .tap-face-soleil {
+          animation: tapFaceSoleil 1200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: 0px 0px;
+        }
       `}</style>
 
       <defs>
@@ -468,7 +598,12 @@ export const BloubMascot = React.memo(function BloubMascot({
           {/* White body shape — fills the mask */}
           <path data-mask-body="" fill="#fff" />
           {/* Black eye holes — cut through the body */}
-          <g data-mask-eyes="" />
+          <g
+            data-mask-eyes=""
+            className={`mascot-face-rig ${
+              normShape === 'soleil' && isTapping ? 'tap-face-soleil' : ''
+            }`}
+          />
         </mask>
       </defs>
 
@@ -542,12 +677,44 @@ export const BloubMascot = React.memo(function BloubMascot({
         </g>
       </g>
 
+      {/* Dynamic floor shadow */}
+      <ellipse
+        cx="0"
+        cy="114"
+        rx="48"
+        ry="9"
+        fill="#000"
+        className={
+          normShape === 'soleil'
+            ? isTapping
+              ? 'tap-shadow-soleil'
+              : isStatic
+              ? ''
+              : 'idle-shadow-soleil'
+            : ''
+        }
+        style={{
+          pointerEvents: 'none',
+          display: normShape === 'soleil' && !activeTyping ? 'block' : 'none',
+        }}
+      />
+
       {/* Mascot Main Layer */}
       <g
-        className="mascot-main-group"
+        key={normShape === 'soleil' ? `soleil-${tapCount}` : undefined}
+        className={`mascot-main-group ${
+          normShape === 'soleil'
+            ? `mascot-tap-rig ${isTapping ? 'tap-burst-soleil' : isStatic ? '' : 'idle-soleil'}`
+            : ''
+        }`}
+        onAnimationEnd={() => {
+          if (normShape === 'soleil' && isTapping) {
+            setIsTapping(false);
+          }
+        }}
         style={{
           opacity: activeTyping ? 0 : 1,
-          transform: activeTyping ? 'scale(0.82)' : 'scale(1)',
+          transform: activeTyping ? 'scale(0.82)' : undefined,
           pointerEvents: activeTyping ? 'none' : 'auto',
           transition:
             'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -565,6 +732,17 @@ export const BloubMascot = React.memo(function BloubMascot({
             transition: 'fill 0.2s ease',
           }}
         />
+
+        {/* Soleil inner core disc + kawaii blush cheeks */}
+        {normShape === 'soleil' && (
+          <g className="soleil-core-disc" style={{ pointerEvents: 'none' }}>
+            {/* Subtle inner core disc depth */}
+            <circle cx="0" cy="0" r="42" fill="#fff" opacity="0.12" />
+            {/* Kawaii blush cheeks */}
+            <circle cx="-32" cy="12" r="8" fill="#ff8a80" opacity={isTapping ? 0.65 : 0.45} />
+            <circle cx="32" cy="12" r="8" fill="#ff8a80" opacity={isTapping ? 0.65 : 0.45} />
+          </g>
+        )}
 
         {/* Cheese holes rendered on top of the body so they look indented, not like eyes */}
         {shape === 'fromage' && isBaseBodyActive && !isTapping && (
