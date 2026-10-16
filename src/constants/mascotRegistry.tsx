@@ -123,7 +123,7 @@ export const SHAPE_PATHS: Record<string, string> = {
   goutte:
     'M50 12 C50 12 82 46 82 66 C82 82 68 90 50 90 C32 90 18 82 18 66 C18 46 50 12 50 12 Z',
   oeuf:
-    'M50 12 C68 12 80 38 80 60 C80 78 67 90 50 90 C33 90 20 78 20 60 C20 38 32 12 50 12 Z',
+    'M50 13 C69 13 83 39 83 61 C83 79 69 88 50 88 C31 88 17 79 17 61 C17 39 31 13 50 13 Z',
   soleil:
     'M 50.00 9.00 C 52.93 9.00 55.38 16.24 58.80 17.16 C 62.22 18.07 67.96 13.03 70.50 14.49 C 73.04 15.96 71.54 23.46 74.04 25.96 C 76.54 28.46 84.04 26.96 85.51 29.50 C 86.97 32.04 81.93 37.78 82.84 41.20 C 83.76 44.62 91.00 47.07 91.00 50.00 C 91.00 52.93 83.76 55.38 82.84 58.80 C 81.93 62.22 86.97 67.96 85.51 70.50 C 84.04 73.04 76.54 71.54 74.04 74.04 C 71.54 76.54 73.04 84.04 70.50 85.51 C 67.96 86.97 62.22 81.93 58.80 82.84 C 55.38 83.76 52.93 91.00 50.00 91.00 C 47.07 91.00 44.62 83.76 41.20 82.84 C 37.78 81.93 32.04 86.97 29.50 85.51 C 26.96 84.04 28.46 76.54 25.96 74.04 C 23.46 71.54 15.96 73.04 14.49 70.50 C 13.03 67.96 18.07 62.22 17.16 58.80 C 16.24 55.38 9.00 52.93 9.00 50.00 C 9.00 47.07 16.24 44.62 17.16 41.20 C 18.07 37.78 13.03 32.04 14.49 29.50 C 15.96 26.96 23.46 28.46 25.96 25.96 C 28.46 23.46 26.96 15.96 29.50 14.49 C 32.04 13.03 37.78 18.07 41.20 17.16 C 44.62 16.24 47.07 9.00 50.00 9.00 Z',
   fromage:
@@ -147,7 +147,7 @@ export const FACE_CONFIGS: Record<string, FaceConfig> = {
   hexagone: { dx: 0, dy: 0, scale: 0.90 },
   nuage:    { dx: 0, dy: 1, scale: 0.92 },
   goutte:   { dx: 0, dy: 7, scale: 0.80 },
-  oeuf:     { dx: 0, dy: 2, scale: 0.86 },
+  oeuf:     { dx: 0, dy: 7, scale: 0.86 },
   soleil:   { dx: 0, dy: 0, scale: 0.85 },
   fromage:  { dx: 0, dy: 3, scale: 0.80 },
   livre:    { dx: 0, dy: -2, scale: 0.95 },
@@ -209,6 +209,17 @@ export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNod
       />
     </g>
   ),
+  oeuf: (bodyHex: string) => (
+    <g style={{ pointerEvents: 'none' }}>
+      {/* Layer 1 — Subtle Depth Shadow Rim */}
+      <path
+        d="M50 13 C69 13 83 39 83 61 C83 79 69 88 50 88 C31 88 17 79 17 61 C17 39 31 13 50 13 Z"
+        fill={bodyHex}
+        filter="brightness(0.80)"
+        transform="translate(0, 3)"
+      />
+    </g>
+  ),
 };
 
 /**
@@ -242,6 +253,19 @@ export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
         strokeWidth="3.5"
         strokeLinecap="round"
         fill="none"
+      />
+    </g>
+  ),
+  oeuf: () => (
+    <g style={{ pointerEvents: 'none' }}>
+      {/* Layer 3 — Shell Highlight Glint */}
+      <ellipse
+        cx="36"
+        cy="30"
+        rx="4.5"
+        ry="8"
+        transform="rotate(-25 36 30)"
+        fill="rgba(255, 255, 255, 0.35)"
       />
     </g>
   ),

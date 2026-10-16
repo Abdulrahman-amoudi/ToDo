@@ -325,7 +325,8 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'triangle' ||
         normShape === 'hexagone' ||
         normShape === 'goutte' ||
-        normShape === 'livre';
+        normShape === 'livre' ||
+        normShape === 'oeuf';
 
       if (isCustomShape && svg) {
         let rawTx0 = -28, rawTy0 = -6, rawTx1 = 28, rawTy1 = -6;
@@ -355,7 +356,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         const ty0 = clampedCenterY;
         const ty1 = clampedCenterY;
 
-        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : 0;
+        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : normShape === 'oeuf' ? 14 : 0;
         const ey0 = ty0 + shapeYOffset;
         const ey1 = ty1 + shapeYOffset;
 
@@ -397,7 +398,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           normShape !== 'triangle' &&
           normShape !== 'hexagone' &&
           normShape !== 'goutte' &&
-          normShape !== 'livre'
+          normShape !== 'livre' &&
+          normShape !== 'oeuf'
         ) {
           for (const eye of frame.eyes) {
             const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1534,44 +1536,110 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-burst-triangle { animation: tapBurstTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-shadow-triangle { animation: tapShadowTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* ── 11. OEUF: Gentle Cradle Rock ── */
+        /* ── 11. OEUF: Cradled Calm Sway & Cushiony Rock & Hop ── */
         @keyframes idleOeuf {
-          0%, 100% { transform: scale(1) translateY(0); }
-          50% { transform: scaleX(0.99) scaleY(1.02) translateY(-4px); }
+          0%, 100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          25% {
+            transform: scale(1.04) translateY(-4px) translateX(-1px) rotate(-6deg);
+          }
+          50% {
+            transform: scale(1.01) translateY(-1px) translateX(0px) rotate(-1deg);
+          }
+          75% {
+            transform: scale(1.02) translateY(-2px) translateX(1px) rotate(4deg);
+          }
         }
         @keyframes idleShadowOeuf {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.92); opacity: 0.22; }
+          0%, 100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          25% {
+            transform: scale(0.90) translateX(-1px);
+            opacity: 0.22;
+          }
+          50% {
+            transform: scale(0.95) translateX(0);
+            opacity: 0.26;
+          }
+          75% {
+            transform: scale(0.94) translateX(1px);
+            opacity: 0.25;
+          }
         }
         @keyframes tapBurstOeuf {
-          0% { transform: rotate(0deg) translateY(0); }
-          22% { transform: rotate(-8deg) translateY(-2px); }
-          48% { transform: rotate(8deg) translateY(-2px); }
-          70% { transform: rotate(-4deg) translateY(-1px); }
-          84% { transform: rotate(0deg) translateY(-6px) scale(1.02); }
-          100% { transform: rotate(0deg) translateY(0) scale(1); }
+          0% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          17% {
+            transform: scaleX(1.12) scaleY(0.88) translateY(6px) rotate(0deg);
+          }
+          45% {
+            transform: scaleX(1.04) translateY(-2px) translateX(-4px) rotate(-14deg);
+          }
+          74% {
+            transform: scaleX(0.92) scaleY(1.08) translateY(-14px) rotate(8deg);
+          }
+          87% {
+            transform: scaleX(1.14) scaleY(0.92) translateY(4px) rotate(0deg);
+          }
+          100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
         }
         @keyframes tapShadowOeuf {
-          0% { transform: scale(1); opacity: 0.3; }
-          22% { transform: scale(0.96) rotate(-6deg); opacity: 0.28; }
-          48% { transform: scale(0.96) rotate(6deg); opacity: 0.28; }
-          70% { transform: scale(0.98); opacity: 0.29; }
-          84% { transform: scale(0.86); opacity: 0.20; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          17% {
+            transform: scale(1.16) translateX(0);
+            opacity: 0.45;
+          }
+          45% {
+            transform: scale(0.96) translateX(-3px);
+            opacity: 0.28;
+          }
+          74% {
+            transform: scale(0.65) translateX(2px);
+            opacity: 0.15;
+          }
+          87% {
+            transform: scale(1.16) translateX(0);
+            opacity: 0.40;
+          }
+          100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
         }
         @keyframes tapFaceOeuf {
-          0% { transform: rotate(0deg) translateY(0); }
-          22% { transform: rotate(-6deg) translateY(-1px); }
-          48% { transform: rotate(6deg) translateY(-1px); }
-          70% { transform: rotate(-3deg); }
-          84% { transform: translateY(-4px); }
-          100% { transform: rotate(0deg) translateY(0); }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+          }
+          17% {
+            transform: translateY(4px) scaleX(1.10) scaleY(0.88);
+          }
+          45% {
+            transform: translateY(-1px) translateX(-3px) rotate(-10deg);
+          }
+          74% {
+            transform: translateY(-10px) translateX(2px) scaleX(0.95) scaleY(1.05) rotate(6deg);
+          }
+          87% {
+            transform: translateY(3px) scaleX(1.12) scaleY(0.90);
+          }
+          100% {
+            transform: translate(0, 0) rotate(0deg);
+          }
         }
-        .idle-oeuf { animation: idleOeuf 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-oeuf { animation: idleShadowOeuf 5.0s ease-in-out infinite; }
-        .tap-burst-oeuf { animation: tapBurstOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-oeuf { animation: idleOeuf 5.2s ease-in-out infinite; transform-origin: 0px 50px; }
+        .idle-shadow-oeuf { animation: idleShadowOeuf 5.2s ease-in-out infinite; }
+        .tap-burst-oeuf { animation: tapBurstOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 50px; }
         .tap-shadow-oeuf { animation: tapShadowOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-oeuf { animation: tapFaceOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-face-oeuf { animation: tapFaceOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 50px; }
 
         /* ── 12. FROMAGE: Playful Cheese Tilt ── */
         @keyframes idleFromage {
@@ -1752,7 +1820,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && normShape !== 'livre' && (
+        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && normShape !== 'livre' && normShape !== 'oeuf' && (
           <>
             <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
             <path
@@ -2148,6 +2216,47 @@ export const BloubMascot = React.memo(function BloubMascot({
             {/* Live Dynamic Kawaii Face (centered over open pages) */}
             <g className={isTapping ? 'tap-face-livre' : ''} transform="translate(0, -3)">
               {renderLiveFace(false)}
+            </g>
+          </g>
+        )}
+
+        {/* ── 9. OEUF: Chubby Tamago Egg Body + Shell Glint + Cradled Rock Rig ── */}
+        {normShape === 'oeuf' && (
+          <g className="oeuf-tamago-rig" style={{ pointerEvents: 'none' }}>
+            <circle
+              cx="0"
+              cy="25"
+              r="60"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+            <g transform="scale(1.75) translate(-50, -50)">
+              {/* Layer 1: Subtle Depth Shadow Rim */}
+              <path
+                d="M50 13 C69 13 83 39 83 61 C83 79 69 88 50 88 C31 88 17 79 17 61 C17 39 31 13 50 13 Z"
+                fill={bodyHex === '#0a0a0c' ? '#fbbf24' : bodyHex}
+                filter="brightness(0.80)"
+                transform="translate(0, 3)"
+              />
+              {/* Layer 2: Chubby Tamago Egg Body */}
+              <path
+                d="M50 13 C69 13 83 39 83 61 C83 79 69 88 50 88 C31 88 17 79 17 61 C17 39 31 13 50 13 Z"
+                fill={bodyHex === '#0a0a0c' ? '#fbbf24' : bodyHex}
+              />
+              {/* Layer 3: Shell Highlight Glint */}
+              <ellipse
+                cx="36"
+                cy="30"
+                rx="4.5"
+                ry="8"
+                transform="rotate(-25 36 30)"
+                fill="rgba(255, 255, 255, 0.35)"
+              />
+            </g>
+            {/* Live Dynamic Kawaii Face (centered comfortably in the lower belly) */}
+            <g className={isTapping ? 'tap-face-oeuf' : ''} transform="translate(0, 8)">
+              {renderLiveFace(true)}
             </g>
           </g>
         )}
