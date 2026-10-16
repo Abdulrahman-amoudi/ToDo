@@ -25,6 +25,7 @@ import {
   ArrowRight,
   Workflow,
   ScrollText,
+  Layers,
   Image as ImageIcon
 } from 'lucide-react';
 import type { QuizResponse } from '@/types/quiz';
@@ -48,6 +49,10 @@ export interface NotesPanelProps {
   docTitle?: string;
   documentContent?: string;
   pageContent?: string;
+  prevPageContent?: string;
+  prevPageNumber?: number;
+  nextPageContent?: string;
+  nextPageNumber?: number;
   apiKey?: string;
   isDark?: boolean;
   initialNote?: NoteData;
@@ -83,6 +88,10 @@ export const NotesPanel = React.memo(function NotesPanel({
   docTitle = 'Study Document',
   documentContent = '',
   pageContent = '',
+  prevPageContent = '',
+  prevPageNumber,
+  nextPageContent = '',
+  nextPageNumber,
   apiKey = '',
   isDark = true,
   initialNote,
@@ -152,6 +161,7 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [quizQuestionCount, setQuizQuestionCount] = useState<number>(8);
   const [quizScope, setQuizScope] = useState<'page' | 'full'>('full');
   const [quizMode, setQuizMode] = useState<'standard' | 'exhaustive'>('exhaustive');
+  const [customQuizPrompt, setCustomQuizPrompt] = useState<string>('');
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -315,6 +325,10 @@ export const NotesPanel = React.memo(function NotesPanel({
           documentContent,
           pageNumber,
           pageContent,
+          prevPageNumber: prevPageNumber || (pageNumber > 1 ? pageNumber - 1 : undefined),
+          prevPageContent: prevPageContent || '',
+          nextPageNumber: nextPageNumber || (numPages && pageNumber < numPages ? pageNumber + 1 : undefined),
+          nextPageContent: nextPageContent || '',
           mode: summaryMode || 'summary',
           language: locale,
           chatHistory: messages.map(m => ({ role: m.role, text: m.text }))
@@ -404,11 +418,18 @@ export const NotesPanel = React.memo(function NotesPanel({
           model: selectedModel,
           noteTitle: titleLabel,
           noteContent: noteContentForQuiz || 'Study document content',
+          customPrompt: customQuizPrompt.trim() || undefined,
+          pageNumber,
+          prevPageNumber: prevPageNumber || (pageNumber > 1 ? pageNumber - 1 : undefined),
+          prevPageContent: prevPageContent || '',
+          nextPageNumber: nextPageNumber || (numPages && pageNumber < numPages ? pageNumber + 1 : undefined),
+          nextPageContent: nextPageContent || '',
           config: { 
             questionCount: qCount, 
             difficulty: 'medium',
             scope: isFullScope ? 'full_document' : 'page',
-            exhaustive: isExhaustive
+            exhaustive: isExhaustive,
+            customPrompt: customQuizPrompt.trim() || undefined
           },
           language: locale
         })
@@ -662,6 +683,36 @@ export const NotesPanel = React.memo(function NotesPanel({
           className="absolute top-1/2 -right-16 w-[300px] h-[300px] rounded-full blur-[100px] opacity-30 transition-all duration-700" 
           style={{ background: 'radial-gradient(circle, var(--theme-accent, var(--theme-primary, #6366f1)) 0%, transparent 70%)' }} 
         />
+      </div>
+
+      {/* Multi-Page Continuity Awareness Pill */}
+      <div className="px-3 py-1.5 bg-[var(--theme-surface-elevated)]/40 border-b border-[var(--theme-border)]/60 flex items-center justify-between text-[11px] text-[var(--theme-text-muted)] select-none z-10 shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Layers size={12} className="text-[var(--theme-primary,#818cf8)] shrink-0" />
+          <span className="font-semibold text-zinc-300">
+            {locale === 'ar' ? 'سياق الصفحات المتصلة:' : 'Connected Pages Context:'}
+          </span>
+          <div className="inline-flex items-center gap-1 font-mono text-[10px]">
+            {prevPageContent ? (
+              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-white/5" title="Preceding page loaded into AI context">
+                Pg.{prevPageNumber || pageNumber - 1} ↑
+              </span>
+            ) : null}
+            <span className="px-1.5 py-0.5 rounded bg-[var(--theme-primary)]/20 text-white font-bold border border-[var(--theme-primary)]/40 shadow-xs">
+              Pg.{pageNumber} {locale === 'ar' ? '(الحالية)' : '(Active)'}
+            </span>
+            {nextPageContent ? (
+              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-white/5" title="Following page loaded into AI context">
+                Pg.{nextPageNumber || pageNumber + 1} ↓
+              </span>
+            ) : null}
+          </div>
+        </div>
+        {(prevPageContent || nextPageContent) && (
+          <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full hidden sm:inline-flex items-center gap-1">
+            <CheckCircle2 size={10} /> {locale === 'ar' ? 'الصفحات بالأعلى والأسفل مدمجة' : 'Pages above & below active'}
+          </span>
+        )}
       </div>
 
       {/* Quick Prompt Chips Bar */}
@@ -1140,6 +1191,52 @@ export const NotesPanel = React.memo(function NotesPanel({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Surrounding Page Context Banner for Page-level Quizzes */}
+            {quizScope === 'page' && (prevPageContent || nextPageContent) && (
+              <div className="w-full max-w-xs p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-start gap-2 text-start text-[11px] text-indigo-200">
+                <Layers size={14} className="text-indigo-400 mt-0.5 shrink-0" />
+                <div className="leading-snug">
+                  <span className="font-semibold text-white block mb-0.5">
+                    {locale === 'ar' ? 'سياق الصفحات المحيطة مفعل:' : 'Surrounding Context Active:'}
+                  </span>
+                  <span>
+                    {locale === 'ar'
+                      ? `Gemini يقرأ ما قبل (ص.${prevPageNumber || pageNumber - 1}) وما بعد (ص.${nextPageNumber || pageNumber + 1}) لفهم تسلسل القواعد بدقة.`
+                      : `Gemini reads preceding (Pg.${prevPageNumber || pageNumber - 1}) and following (Pg.${nextPageNumber || pageNumber + 1}) pages to prevent truncated questions.`}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Custom Exam Prompt / Focus Input */}
+            <div className="w-full space-y-1.5 max-w-xs text-start">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] flex items-center gap-1.5">
+                  <Sparkles size={11} className="text-amber-400" />
+                  <span>{locale === 'ar' ? 'توجيه / برومبت مخصص للاختبار' : 'Prompt Focus Into Exam (Optional)'}</span>
+                </span>
+                {customQuizPrompt && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomQuizPrompt('')}
+                    className="text-[10px] text-zinc-400 hover:text-white"
+                  >
+                    {locale === 'ar' ? 'مسح' : 'Clear'}
+                  </button>
+                )}
+              </div>
+              <textarea
+                dir="auto"
+                value={customQuizPrompt}
+                onChange={(e) => setCustomQuizPrompt(e.target.value)}
+                placeholder={locale === 'ar'
+                  ? 'اكتب أي فكرة أو توجيه محدد (مثال: ركّز على قاعدة المعلم للتمييز، اجعل الأسئلة صعبة على حذف حرف العلة، أسئلة علل...)'
+                  : 'Prompt custom focus into the exam (e.g. Focus on teacher distinction rules, tricky edge cases, hard questions...)'}
+                rows={2}
+                className="w-full p-2.5 rounded-xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-400/50 resize-none transition-all"
+              />
             </div>
 
             <button

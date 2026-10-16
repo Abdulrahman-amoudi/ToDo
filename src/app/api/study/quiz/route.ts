@@ -16,6 +16,12 @@ interface QuizRouteRequestBody {
   useMock?: boolean;
   language?: string;
   locale?: string;
+  customPrompt?: string;
+  pageNumber?: number;
+  prevPageNumber?: number;
+  prevPageContent?: string;
+  nextPageNumber?: number;
+  nextPageContent?: string;
 }
 
 interface CustomHttpError extends Error {
@@ -148,8 +154,15 @@ export async function POST(req: NextRequest) {
       noteContent,
       config: {
         ...body.config,
-        language: language || body.config?.language
+        language: language || body.config?.language,
+        customPrompt: body.customPrompt || body.config?.customPrompt
       },
+      customPrompt: body.customPrompt || body.config?.customPrompt,
+      pageNumber: body.pageNumber,
+      prevPageNumber: body.prevPageNumber,
+      prevPageContent: body.prevPageContent,
+      nextPageNumber: body.nextPageNumber,
+      nextPageContent: body.nextPageContent,
       useMock: body.useMock,
       language
     });

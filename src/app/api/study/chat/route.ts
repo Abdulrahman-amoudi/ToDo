@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
         documentContent: body.documentContent || '',
         pageNumber: body.pageNumber,
         pageContent: body.pageContent || '',
+        prevPageNumber: body.prevPageNumber,
+        prevPageContent: body.prevPageContent || '',
+        nextPageNumber: body.nextPageNumber,
+        nextPageContent: body.nextPageContent || '',
         mode: body.mode || 'summary',
         language
       });
@@ -67,6 +71,10 @@ export async function POST(req: NextRequest) {
       documentContent: body.documentContent || '',
       pageNumber: body.pageNumber,
       pageContent: body.pageContent || '',
+      prevPageNumber: body.prevPageNumber,
+      prevPageContent: body.prevPageContent || '',
+      nextPageNumber: body.nextPageNumber,
+      nextPageContent: body.nextPageContent || '',
       chatHistory: Array.isArray(body.chatHistory) ? body.chatHistory : [],
       language
     });

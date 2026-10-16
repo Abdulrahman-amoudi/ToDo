@@ -27,6 +27,7 @@ export interface QuizConfig {
   language?: string;
   scope?: 'page' | 'full_document';
   exhaustive?: boolean;
+  customPrompt?: string;
 }
 
 export interface QuizGenerateRequest {
@@ -37,6 +38,12 @@ export interface QuizGenerateRequest {
   config?: QuizConfig;
   useMock?: boolean;
   language?: string;
+  customPrompt?: string;
+  pageNumber?: number;
+  prevPageNumber?: number;
+  prevPageContent?: string;
+  nextPageNumber?: number;
+  nextPageContent?: string;
 }
 
 export interface QuizResponse {

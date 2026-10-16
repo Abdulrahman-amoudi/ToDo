@@ -30,6 +30,8 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
   
   const [isFinished, setIsFinished] = useState(false);
   const [isExhaustiveQuiz, setIsExhaustiveQuiz] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState<string>('');
+  const [showPromptInput, setShowPromptInput] = useState<boolean>(false);
 
   const fallbackContent = (note.bodyContent && note.bodyContent.trim()) || note.rawContent || (note.frontmatter?.pdf_notes ? JSON.stringify(note.frontmatter.pdf_notes) : '') || note.title || 'Study document content';
 
@@ -37,7 +39,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
     generateQuiz(false);
   }, []);
 
-  const generateQuiz = async (exhaustiveMode = false) => {
+  const generateQuiz = async (exhaustiveMode = false, promptOverride?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -51,6 +53,7 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
       const selectedModel = (typeof window !== 'undefined' ? (localStorage.getItem('vibe_todos_gemini_model') || localStorage.getItem('vibe_gemini_model')) : '') || 'gemini-3.6-flash';
       
       const qCount = exhaustiveMode ? 20 : 8;
+      const effectivePrompt = (promptOverride !== undefined ? promptOverride : customPrompt).trim();
 
       const res = await fetch('/api/study/quiz', {
         method: 'POST',
@@ -61,10 +64,12 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           model: selectedModel,
           noteTitle: exhaustiveMode ? `${note.title} (Full Document Exam)` : note.title,
           noteContent: fallbackContent,
+          customPrompt: effectivePrompt || undefined,
           config: { 
-            questionCount: qCount,
+            questionCount: qCount, 
             scope: 'full_document',
-            exhaustive: exhaustiveMode
+            exhaustive: exhaustiveMode,
+            customPrompt: effectivePrompt || undefined
           },
           language: locale
         })
@@ -250,6 +255,18 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
             <Sparkles size={12} className={isExhaustiveQuiz ? 'text-amber-400' : ''} />
             <span>{isExhaustiveQuiz ? 'All Qs Mode (20 Qs)' : 'All Questions in Full PDF'}</span>
           </button>
+          <button
+            onClick={() => setShowPromptInput(prev => !prev)}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shadow-xs ${
+              showPromptInput || customPrompt
+                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:text-white'
+            }`}
+            title="Prompt custom focus or specific rules into the exam"
+          >
+            <Sparkles size={12} className="text-purple-400" />
+            <span>{customPrompt ? 'Prompt Active' : 'Prompt Focus'}</span>
+          </button>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
@@ -260,6 +277,33 @@ export default function QuizSession({ note, apiKey, isDark = true, onClose, trig
           <span className="text-xs font-bold opacity-50">{currentIdx + 1}/{total}</span>
         </div>
       </div>
+
+      {/* Expandable Custom Exam Prompt Bar */}
+      {showPromptInput && (
+        <div className="p-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface-subtle)] flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-150">
+          <Sparkles size={14} className="text-amber-400 shrink-0" />
+          <input
+            dir="auto"
+            type="text"
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                generateQuiz(isExhaustiveQuiz, customPrompt);
+              }
+            }}
+            placeholder={locale === 'ar' ? 'اكتب توجيه محدد للاختبار (مثال: ركّز على قاعدة التمييز وحذف حرف العلة، أسئلة صعبة...)' : 'Prompt specific focus into exam (e.g. Focus on distinction rules, tricky cases, formulas...)'}
+            className="flex-1 px-3 py-1.5 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] text-xs text-white placeholder:text-zinc-500 outline-none focus:border-amber-400/50"
+          />
+          <button
+            onClick={() => generateQuiz(isExhaustiveQuiz, customPrompt)}
+            disabled={loading}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:brightness-110 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+          >
+            Apply & Retake
+          </button>
+        </div>
+      )}
 
       {/* Main Question Area */}
       <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col max-w-4xl mx-auto w-full">

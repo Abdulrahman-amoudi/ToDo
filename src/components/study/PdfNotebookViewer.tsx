@@ -118,15 +118,43 @@ export default function PdfNotebookViewer({
     };
   }, [pdfUrl]);
 
-  // High-Precision Arabic Text Layer State
+  // High-Precision Arabic Text Layer State & Multi-Page Continuity Engine
   const [activePageProxy, setActivePageProxy] = useState<any>(null);
   const [pageTextContent, setPageTextContent] = useState<any>(null);
   const [pageViewport, setPageViewport] = useState<any>(null);
 
+  // Multi-Page Context Cache: Stores text of active, previous, and next pages
+  const pdfDocRef = useRef<any>(null);
+  const pageTextsRef = useRef<Record<number, string>>({});
+  const [pageTexts, setPageTexts] = useState<Record<number, string>>({});
+  const [extractedDocContent, setExtractedDocContent] = useState<string>('');
+
+  const extractPageTextAsync = useCallback(async (doc: any, pg: number): Promise<string> => {
+    try {
+      if (!doc || pg < 1 || (doc.numPages && pg > doc.numPages)) return '';
+      if (pageTextsRef.current[pg]) return pageTextsRef.current[pg];
+      const page = await doc.getPage(pg);
+      const tc = await page.getTextContent();
+      if (!tc || !tc.items) return '';
+      const text = tc.items.map((it: any) => it.str || '').join(' ').trim();
+      if (text) {
+        pageTextsRef.current[pg] = text;
+        setPageTexts(prev => ({ ...prev, [pg]: text }));
+      }
+      return text;
+    } catch (err) {
+      console.warn(`[PdfNotebookViewer] Could not extract text for page ${pg}:`, err);
+      return '';
+    }
+  }, []);
+
   const activePageText = React.useMemo(() => {
-    if (!pageTextContent || !pageTextContent.items) return '';
-    return pageTextContent.items.map((it: any) => it.str || '').join(' ').trim();
-  }, [pageTextContent]);
+    if (pageTextContent && pageTextContent.items) {
+      const live = pageTextContent.items.map((it: any) => it.str || '').join(' ').trim();
+      if (live) return live;
+    }
+    return pageTexts[pageNumber] || pageTextsRef.current[pageNumber] || '';
+  }, [pageTextContent, pageTexts, pageNumber]);
 
   const handlePageLoadSuccess = (pageProxy: any) => {
     setActivePageProxy(pageProxy);
@@ -139,6 +167,11 @@ export default function PdfNotebookViewer({
     if (pageProxy && typeof pageProxy.getTextContent === 'function') {
       pageProxy.getTextContent().then((tc: any) => {
         setPageTextContent(tc);
+        const liveText = (tc?.items || []).map((it: any) => it.str || '').join(' ').trim();
+        if (liveText) {
+          pageTextsRef.current[pageNumber] = liveText;
+          setPageTexts(prev => ({ ...prev, [pageNumber]: liveText }));
+        }
       }).catch((err: any) => {
         console.error('Failed to extract text content in PdfNotebookViewer:', err);
       });
@@ -404,10 +437,49 @@ export default function PdfNotebookViewer({
     }
   }, [noteId, initialNotesStr, notePath]);
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
-    setNumPages(numPages);
+  function onDocumentLoadSuccess(pdfDoc: any): void {
+    pdfDocRef.current = pdfDoc;
+    const total = pdfDoc?.numPages || 1;
+    setNumPages(total);
     setPageNumber(1);
+
+    // Pre-extract page 1 and page 2 immediately
+    extractPageTextAsync(pdfDoc, 1);
+    if (total > 1) {
+      extractPageTextAsync(pdfDoc, 2);
+    }
+
+    // Progressively extract all pages in the background for complete document understanding
+    (async () => {
+      try {
+        for (let p = 1; p <= total; p++) {
+          if (!pageTextsRef.current[p]) {
+            await extractPageTextAsync(pdfDoc, p);
+          }
+        }
+        const fullDoc = Object.entries(pageTextsRef.current)
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([pg, txt]) => `[Page ${pg}]:\n${txt}`)
+          .join('\n\n');
+        setExtractedDocContent(fullDoc);
+      } catch (err) {
+        console.warn('[PdfNotebookViewer] Background page extraction error:', err);
+      }
+    })();
   }
+
+  // Pre-extract surrounding pages (previous, current, and next) on page flip
+  useEffect(() => {
+    const doc = pdfDocRef.current;
+    if (!doc) return;
+    extractPageTextAsync(doc, pageNumber);
+    if (pageNumber > 1) {
+      extractPageTextAsync(doc, pageNumber - 1);
+    }
+    if (numPages && pageNumber < numPages) {
+      extractPageTextAsync(doc, pageNumber + 1);
+    }
+  }, [pageNumber, numPages, extractPageTextAsync]);
 
   const handleSave = async (forceNotes?: any, forceAnnotations?: any, targetNoteId?: string, targetNotePath?: string) => {
     let saveAnnotations = forceAnnotations !== undefined ? forceAnnotations : annotationsRef.current;
@@ -1619,8 +1691,12 @@ export default function PdfNotebookViewer({
           initialTab={activeNotesTab}
           docId={noteId || notePath || 'current'}
           docTitle={noteTitle}
-          documentContent={noteContent}
+          documentContent={(extractedDocContent && extractedDocContent.length > 50) ? extractedDocContent : noteContent}
           pageContent={activePageText}
+          prevPageContent={(pageNumber > 1 ? pageTexts[pageNumber - 1] : '') || ''}
+          prevPageNumber={pageNumber > 1 ? pageNumber - 1 : undefined}
+          nextPageContent={(numPages && pageNumber < numPages ? pageTexts[pageNumber + 1] : '') || ''}
+          nextPageNumber={(numPages && pageNumber < numPages) ? pageNumber + 1 : undefined}
           apiKey={apiKey}
           pageNumber={pageNumber}
           numPages={numPages}

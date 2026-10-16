@@ -217,7 +217,21 @@ export class GeminiClient {
    * Generates a structured quiz using Gemini.
    */
   static async generateQuiz(request: QuizGenerateRequest): Promise<QuizResponse> {
-    const { apiKey, model = 'gemini-3.6-flash', noteTitle, noteContent, config, language } = request;
+    const { 
+      apiKey, 
+      model = 'gemini-3.6-flash', 
+      noteTitle, 
+      noteContent, 
+      config, 
+      language,
+      customPrompt,
+      pageNumber,
+      prevPageNumber,
+      prevPageContent,
+      nextPageNumber,
+      nextPageContent
+    } = request;
+    const effectiveCustomPrompt = (customPrompt || config?.customPrompt || '').trim();
     const reqLang = language || config?.language;
     const isArabic = reqLang === 'ar' || /[\u0600-\u06FF]/.test(noteContent.slice(0, 600));
 
@@ -244,11 +258,19 @@ export class GeminiClient {
     const systemPrompt = `You are an expert tutor and study assistant modeled after NotebookLM.
 Your task is to generate high-yield, conceptually rigorous quiz questions based ONLY on the provided source note.
 
+${effectiveCustomPrompt ? `CRITICAL USER CUSTOM EXAM FOCUS / PROMPT:
+"${effectiveCustomPrompt}"
+You MUST strictly prioritize and tailor the questions to test the exact topics, rules, formulas, distinctions, or difficulty specified above while remaining 100% faithful to the text.` : ''}
+
 ${isExhaustive ? `CRITICAL EXHAUSTIVE FULL-DOCUMENT COVERAGE MODE:
 1. Your goal is to generate ALL possible conceptually distinct questions that thoroughly test EVERY fact, section, theorem, formula, law, milestone, and mechanism in the provided document.
 2. Do NOT leave any page, chapter, or section untested. Walk through the document systematically from beginning to end.
 3. Every question must test a different critical concept or nuance from the text.
 4. Generate exactly ${questionCount} diverse, comprehensive questions covering all facets of the text.` : ''}
+
+CRITICAL MULTI-PAGE CONTINUITY & SURROUNDING CONTEXT:
+1. When context from the page above or page below is provided, inspect it to understand the full continuum of rules, theorems, classifications, or distinctions (e.g. antecedent rules, exceptions, past-tense verb distinction rules, worked examples).
+2. Never ask ambiguous questions caused by an isolated page cut. Ground options, stems, and explanations in the complete multi-page context.
 
 Rules:
 1. Rely strictly on facts directly mentioned in the note. Do not assume or extrapolate external knowledge.
@@ -264,17 +286,24 @@ ${isArabic ? `   - Write ALL questions, options, explanations, and titles in nat
      * Always enclose mathematical formulas, equations, and standalone units inside inline backticks (e.g. \`P_avg = 0.5 * P_max\` or \`75 W\` or \`W\`). This guarantees perfect bidirectional rendering without inverted numbers or misplaced punctuation.
    - For multiple choice options with numbers and units, write them clearly with spacing, e.g. "75 W", "150 W", "200 W", "250 W".` : `   - Always match the primary language of the source document (e.g. if the note is in Arabic, write questions, options, and explanations in Arabic).`}`;
 
+    let compiledContent = noteContent;
+    if (prevPageContent || nextPageContent) {
+      compiledContent = `${prevPageContent ? `--- [PAGE ABOVE: Page ${prevPageNumber || (pageNumber ? pageNumber - 1 : '')}] (Preceding Context & Rules) ---\n${prevPageContent.trim()}\n\n` : ''}` +
+        `--- [TARGET STUDY PAGE: Page ${pageNumber || ''}] (Primary Focus) ---\n${noteContent.trim()}\n\n` +
+        `${nextPageContent ? `--- [PAGE BELOW: Page ${nextPageNumber || (pageNumber ? pageNumber + 1 : '')}] (Following Context & Distinctions) ---\n${nextPageContent.trim()}` : ''}`;
+    }
+
     const userPrompt = `${isExhaustive 
       ? `EXHAUSTIVE FULL-DOCUMENT AUDIT & EXAM (${questionCount} QUESTIONS):\nExtract all possible exam questions covering every section, concept, formula, and definition across the full document without skipping any topic.` 
       : `Generate a ${difficulty} difficulty quiz with ${questionCount} questions based on the following note.`}
-
+${effectiveCustomPrompt ? `\nSPECIAL USER EXAM INSTRUCTION / PROMPT:\n"${effectiveCustomPrompt}"\n(Tailor questions and choices specifically to this prompt while verifying against the source text!)\n` : ''}
 Target question types: ${types.join(', ')}.
 Target question count: exactly ${questionCount}.
 
 Note Title: ${noteTitle || 'Untitled Document'}
 
 Document Content:
-${noteContent}
+${compiledContent}
 
 Required JSON Output Schema:
 {
@@ -446,7 +475,7 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
   }
 
   /**
-   * Grounded NotebookLM Document Chat (Zero Hallucination)
+   * Grounded NotebookLM Document Chat (Zero Hallucination with Multi-Page Context)
    */
   static async askDocument(request: {
     apiKey: string;
@@ -456,6 +485,10 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
     documentContent?: string;
     pageNumber?: number;
     pageContent?: string;
+    prevPageNumber?: number;
+    prevPageContent?: string;
+    nextPageNumber?: number;
+    nextPageContent?: string;
     chatHistory?: { role: 'user' | 'assistant'; text: string }[];
     language?: string;
   }): Promise<{ answer: string; citations: string[]; grounded: boolean }> {
@@ -467,6 +500,10 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
       documentContent = '',
       pageNumber,
       pageContent = '',
+      prevPageNumber,
+      prevPageContent = '',
+      nextPageNumber,
+      nextPageContent = '',
       chatHistory = [],
       language
     } = request;
@@ -483,8 +520,33 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
       throw err;
     }
 
-    const availableContext = (pageContent && pageContent.trim() ? `[Active Page ${pageNumber || 1} Text]:\n${pageContent.trim()}\n\n` : '') +
-      (documentContent && documentContent.trim() ? `[Document Excerpts]:\n${documentContent.slice(0, 15000)}` : '');
+    const contextSections: string[] = [];
+
+    if (prevPageContent && prevPageContent.trim()) {
+      contextSections.push(
+        `--- [PAGE ABOVE: Page ${prevPageNumber || (pageNumber ? pageNumber - 1 : 'Previous')}] (Preceding Context, Rule Categories, Conditions & Headings) ---\n${prevPageContent.trim()}`
+      );
+    }
+
+    if (pageContent && pageContent.trim()) {
+      contextSections.push(
+        `--- [ACTIVE CURRENT PAGE: Page ${pageNumber || 1}] (Primary Focus) ---\n${pageContent.trim()}`
+      );
+    }
+
+    if (nextPageContent && nextPageContent.trim()) {
+      contextSections.push(
+        `--- [PAGE BELOW: Page ${nextPageNumber || (pageNumber ? pageNumber + 1 : 'Next')}] (Following Context, Continuations, Distinctions & Exceptions) ---\n${nextPageContent.trim()}`
+      );
+    }
+
+    if (documentContent && documentContent.trim()) {
+      contextSections.push(
+        `--- [BROADER DOCUMENT EXCERPTS & ARCHIVE] ---\n${documentContent.slice(0, 20000)}`
+      );
+    }
+
+    const availableContext = contextSections.join('\n\n');
 
     const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(question) || /[\u0600-\u06FF]/.test(availableContext.slice(0, 400));
 
@@ -500,6 +562,14 @@ Note Context: ${(noteContext || '').slice(0, 3000)}`;
 
     const systemPrompt = `You are Bloub NotebookLM, an intelligent study assistant powered by Google Gemini.
 Your answers MUST be strictly and exclusively grounded in the provided document text.
+
+CRITICAL MULTI-PAGE CONTINUITY & CONTEXTUAL AWARENESS:
+1. Educational texts, Arabic grammar rules, scientific derivations, theorems, definitions, and formulas naturally flow across page breaks.
+2. ALWAYS inspect the preceding page (Page above: Page ${pageNumber ? pageNumber - 1 : 'previous'}) to understand:
+   - Topic headings, rule categories (e.g. rule #1, rule #2 leading to #3), introductory conditions, grammatical premises, or definitions that precede the current page text.
+3. ALWAYS inspect the following page (Page below: Page ${pageNumber ? pageNumber + 1 : 'next'}) to understand:
+   - Rule continuations, exceptions, clarifications, pedagogical distinction rules (e.g. "قاعدة المعلم للتمييز"), worked examples, or concluding remarks.
+4. If a rule or explanation begins on the previous page or is clarified on the next page, COMBINE and SYNTHESIZE the full multi-page context seamlessly. NEVER give an incorrect, truncated, or misleading answer because a sentence or rule started or finished on an adjacent page!
 
 CRITICAL ANTI-HALLUCINATION RULES:
 1. ONLY state facts, numbers, equations, definitions, and conclusions directly present in the source text.
@@ -531,12 +601,12 @@ ${isArabic ? `   - أجب باللغة العربية الفصحى المعاص�
     }
 
     const userPrompt = `${historyText}Source Document: "${documentTitle}"
-${pageNumber ? `Active Page: ${pageNumber}\n` : ''}
+${pageNumber ? `Active Focus Page: ${pageNumber}\n` : ''}
 ${availableContext}
 
 User Question: ${question}
 
-Provide an accurate, strictly grounded answer following the rules.`;
+Provide an accurate, strictly grounded answer taking into account the full multi-page context above and below following the rules.`;
 
     const answer = await this.callGenerateContent(apiKey, model, userPrompt, systemPrompt, false);
     
@@ -569,6 +639,10 @@ Provide an accurate, strictly grounded answer following the rules.`;
     documentContent?: string;
     pageNumber?: number;
     pageContent?: string;
+    prevPageNumber?: number;
+    prevPageContent?: string;
+    nextPageNumber?: number;
+    nextPageContent?: string;
     mode?: 'summary' | 'key_takeaways' | 'study_guide';
     language?: string;
   }): Promise<{
@@ -585,6 +659,10 @@ Provide an accurate, strictly grounded answer following the rules.`;
       documentContent = '',
       pageNumber,
       pageContent = '',
+      prevPageNumber,
+      prevPageContent = '',
+      nextPageNumber,
+      nextPageContent = '',
       mode = 'summary',
       language
     } = request;
@@ -595,7 +673,21 @@ Provide an accurate, strictly grounded answer following the rules.`;
       throw err;
     }
 
-    const targetText = ((pageContent && pageContent.trim()) || (documentContent && documentContent.slice(0, 15000)) || '').trim();
+    const contextParts: string[] = [];
+    if (prevPageContent && prevPageContent.trim()) {
+      contextParts.push(`[Preceding Context - Page ${prevPageNumber || (pageNumber ? pageNumber - 1 : '')}]:\n${prevPageContent.trim()}`);
+    }
+    if (pageContent && pageContent.trim()) {
+      contextParts.push(`[Active Page ${pageNumber || 1}]:\n${pageContent.trim()}`);
+    }
+    if (nextPageContent && nextPageContent.trim()) {
+      contextParts.push(`[Following Context - Page ${nextPageNumber || (pageNumber ? pageNumber + 1 : '')}]:\n${nextPageContent.trim()}`);
+    }
+    if (documentContent && documentContent.trim()) {
+      contextParts.push(`[Document Excerpts]:\n${documentContent.slice(0, 15000)}`);
+    }
+
+    const targetText = contextParts.join('\n\n').trim();
     const isArabic = language === 'ar' || /[\u0600-\u06FF]/.test(targetText.slice(0, 500));
 
     if (!targetText) {
