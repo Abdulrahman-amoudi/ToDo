@@ -85,6 +85,9 @@ const SUNBURST_PATH = generateSunburstPath(12, 98, 66);
 const HEXAGONE_PATH =
   'M 29.0,-77.9 Q 45.0,-77.9 53.0,-64.1 L 82.0,-13.9 Q 90.0,0.0 82.0,13.9 L 53.0,64.1 Q 45.0,77.9 29.0,77.9 L -29.0,77.9 Q -45.0,77.9 -53.0,64.1 L -82.0,13.9 Q -90.0,0.0 -82.0,-13.9 L -53.0,-64.1 Q -45.0,-77.9 -29.0,-77.9 Z';
 
+const GOUTTE_PATH =
+  'M 0,-78 C 10,-60 68,-5 68,30 C 68,65 40,80 0,80 C -40,80 -68,65 -68,30 C -68,-5 -10,-60 0,-78 Z';
+
 const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   squircle: { duration: 1150 },
   cercle: { duration: 1150 },
@@ -92,7 +95,7 @@ const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   livre: { duration: 1150 },
   hexagone: { duration: 1150 },
   nuage: { duration: 1150 },
-  goutte: { duration: 1180 },
+  goutte: { duration: 1150 },
   galet: { duration: 1150 },
   capsule: { duration: 1180 },
   triangle: { duration: 1150 },
@@ -313,14 +316,15 @@ export const BloubMascot = React.memo(function BloubMascot({
       svg.querySelector('[data-body]')?.setAttribute('opacity', String(frame.bodyAlpha));
       svg.querySelector('[data-mask-body]')?.setAttribute('d', frame.bodyPath);
 
-      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle, hexagone)
+      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle, hexagone, goutte)
       const isCustomShape =
         normShape === 'cercle' ||
         normShape === 'squircle' ||
         normShape === 'soleil' ||
         normShape === 'nuage' ||
         normShape === 'triangle' ||
-        normShape === 'hexagone';
+        normShape === 'hexagone' ||
+        normShape === 'goutte';
 
       if (isCustomShape && svg) {
         let tx0 = -24, ty0 = -6, tx1 = 24, ty1 = -6;
@@ -338,7 +342,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           }
         }
 
-        const shapeYOffset = normShape === 'triangle' ? 28 : 0;
+        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : 0;
         const ey0 = ty0 + shapeYOffset;
         const ey1 = ty1 + shapeYOffset;
 
@@ -378,7 +382,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           normShape !== 'soleil' &&
           normShape !== 'nuage' &&
           normShape !== 'triangle' &&
-          normShape !== 'hexagone'
+          normShape !== 'hexagone' &&
+          normShape !== 'goutte'
         ) {
           for (const eye of frame.eyes) {
             const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -495,10 +500,10 @@ export const BloubMascot = React.memo(function BloubMascot({
 
   const isThinking = state === 'thinking';
 
-  const renderLiveFace = (isTriangle = false) => {
-    const initEyeY = isTriangle ? 22 : -6;
-    const initCheekY = isTriangle ? 44 : 16;
-    const initMouthY = isTriangle ? 42 : 14;
+  const renderLiveFace = (isLowerBelly = false) => {
+    const initEyeY = isLowerBelly ? 20 : -6;
+    const initCheekY = isLowerBelly ? 42 : 16;
+    const initMouthY = isLowerBelly ? 40 : 14;
 
     return (
       <g data-live-face="" className="mascot-live-face-rig">
@@ -1171,41 +1176,106 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-shadow-nuage { animation: tapShadowNuage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-nuage { animation: tapFaceNuage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
-        /* ── 7. GOUTTE: Viscous Honey/Water Ripple ── */
+        /* ── 7. GOUTTE: Liquid Viscous Ripple & Water-Tension Calm Pulse ── */
         @keyframes idleGoutte {
-          0%, 100% { transform: scale(1) translateY(0); }
-          50% { transform: scaleX(0.97) scaleY(1.03) translateY(-5px); }
+          0% {
+            transform: scale(1) translateY(0);
+          }
+          25% {
+            transform: scaleX(0.96) scaleY(1.08) translateY(-4px);
+          }
+          75% {
+            transform: scale(1.02) translateY(-1px);
+          }
+          100% {
+            transform: scale(1) translateY(0);
+          }
         }
         @keyframes idleShadowGoutte {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.90); opacity: 0.22; }
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          25% {
+            transform: scale(0.90);
+            opacity: 0.22;
+          }
+          75% {
+            transform: scale(0.96);
+            opacity: 0.26;
+          }
         }
         @keyframes tapBurstGoutte {
-          0% { transform: scale(1) translateY(0); }
-          30% { transform: translateY(-16px) scaleX(0.91) scaleY(1.10); }
-          60% { transform: translateY(0px) scaleX(1.04) scaleY(0.96); }
-          78% { transform: translateY(4px) scaleX(1.12) scaleY(0.90); }
-          100% { transform: scale(1) translateY(0); }
+          0% {
+            transform: scale(1) translateY(0) skewX(0deg);
+          }
+          17% {
+            transform: scaleX(1.16) scaleY(0.84) translateY(6px) skewX(0deg);
+          }
+          45% {
+            transform: scaleX(0.80) scaleY(1.15) translateY(-20px) skewX(0deg);
+          }
+          74% {
+            transform: scale(1.04) translateX(3px) translateY(-8px) skewX(-4deg);
+          }
+          87% {
+            transform: scaleX(1.18) scaleY(0.92) translateY(4px) skewX(0deg);
+          }
+          100% {
+            transform: scale(1) translateY(0) skewX(0deg);
+          }
         }
         @keyframes tapShadowGoutte {
-          0% { transform: scale(1); opacity: 0.3; }
-          30% { transform: scale(0.72); opacity: 0.16; }
-          60% { transform: scale(0.98); opacity: 0.30; }
-          78% { transform: scale(1.14); opacity: 0.38; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          17% {
+            transform: scale(1.18) translateX(0);
+            opacity: 0.45;
+          }
+          45% {
+            transform: scale(0.62) translateX(0);
+            opacity: 0.14;
+          }
+          74% {
+            transform: scale(0.92) translateX(3px);
+            opacity: 0.24;
+          }
+          87% {
+            transform: scale(1.20) translateX(0);
+            opacity: 0.42;
+          }
+          100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
         }
         @keyframes tapFaceGoutte {
-          0% { transform: translateY(0); }
-          30% { transform: translateY(-11px) scaleX(0.94) scaleY(1.06); }
-          60% { transform: translateY(-2px); }
-          78% { transform: translateY(2px) scaleY(0.88); }
-          100% { transform: translateY(0); }
+          0% {
+            transform: translate(0, 0) skewX(0deg);
+          }
+          17% {
+            transform: translateY(3px) scaleY(0.84);
+          }
+          45% {
+            transform: translateY(-16px) scaleX(0.92) scaleY(1.10);
+          }
+          74% {
+            transform: translateX(2px) translateY(-6px) skewX(-3deg);
+          }
+          87% {
+            transform: translateY(3px) scaleX(1.12) scaleY(0.90);
+          }
+          100% {
+            transform: translate(0, 0) skewX(0deg);
+          }
         }
-        .idle-goutte { animation: idleGoutte 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-goutte { animation: idleShadowGoutte 5.0s ease-in-out infinite; }
-        .tap-burst-goutte { animation: tapBurstGoutte 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
-        .tap-shadow-goutte { animation: tapShadowGoutte 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-goutte { animation: tapFaceGoutte 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-goutte { animation: idleGoutte 5.2s ease-in-out infinite; transform-origin: 0px 30px; }
+        .idle-shadow-goutte { animation: idleShadowGoutte 5.2s ease-in-out infinite; }
+        .tap-burst-goutte { animation: tapBurstGoutte 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 30px; }
+        .tap-shadow-goutte { animation: tapShadowGoutte 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-goutte { animation: tapFaceGoutte 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 30px; }
 
         /* ── 8. GALET: Slow Riverbed Rocking ── */
         @keyframes idleGalet {
@@ -1563,7 +1633,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && (
+        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && (
           <>
             <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
             <path
@@ -1847,6 +1917,59 @@ export const BloubMascot = React.memo(function BloubMascot({
             {/* Live Dynamic Kawaii Face */}
             <g className={isTapping ? 'tap-face-hexagone' : ''}>
               {renderLiveFace(false)}
+            </g>
+          </g>
+        )}
+
+        {/* ── 7. GOUTTE: Smooth Water Droplet + Liquid Viscous Ripple + Dynamic Live Face ── */}
+        {normShape === 'goutte' && (
+          <g className="goutte-water-rig" style={{ pointerEvents: 'none' }}>
+            {/* Cyan radiant aura under airborne loft */}
+            <circle
+              cx="0"
+              cy="30"
+              r="60"
+              fill="rgba(56, 189, 248, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+
+            {/* Layer 1: Subtle Base Depth Shadow */}
+            <path
+              d={GOUTTE_PATH}
+              transform="translate(0, 5)"
+              fill="#000"
+              opacity="0.08"
+            />
+
+            {/* Layer 2: Plump Drop Body */}
+            <path
+              d={GOUTTE_PATH}
+              fill={bodyHex === '#0a0a0c' ? '#38bdf8' : bodyHex}
+              style={{
+                filter: 'drop-shadow(0 4px 12px rgba(56, 189, 248, 0.22))',
+              }}
+            />
+
+            {/* Layer 3: Specular Glints */}
+            {/* Glossy glint along the upper left contour */}
+            <ellipse
+              cx="-26"
+              cy="-24"
+              rx="14"
+              ry="6.5"
+              transform="rotate(-52 -26 -24)"
+              fill="#fff"
+              opacity="0.45"
+            />
+            <circle cx="-14" cy="-44" r="3.2" fill="#fff" opacity="0.5" />
+
+            {/* Subtle right cheek glint */}
+            <circle cx="36" cy="2" r="3.6" fill="#fff" opacity="0.38" />
+
+            {/* Live Dynamic Kawaii Face (positioned in wide lower belly) */}
+            <g className={isTapping ? 'tap-face-goutte' : ''}>
+              {renderLiveFace(true)}
             </g>
           </g>
         )}
