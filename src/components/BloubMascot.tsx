@@ -60,8 +60,8 @@ function hexToRgba(hex: string, alpha: number): string {
 
 const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   squircle: { duration: 1150 },
-  cercle: { duration: 1180 },
-  soleil: { duration: 1200 },
+  cercle: { duration: 1150 },
+  soleil: { duration: 1150 },
   livre: { duration: 1150 },
   hexagone: { duration: 1150 },
   nuage: { duration: 1200 },
@@ -545,41 +545,106 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-shadow-squircle { animation: tapShadowSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-squircle { animation: tapFaceSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
-        /* ── 2. CERCLE: Slow Marshmallow Bounce ── */
+        /* ── 2. CERCLE: Smooth, Viscous Marshmallow Calm Bounce ── */
         @keyframes idleCercle {
-          0%, 100% { transform: scale(1) translateY(0); }
-          50% { transform: scaleX(0.98) scaleY(1.03) translateY(-6px); }
+          0% {
+            transform: scale(1) translateY(0);
+          }
+          25% {
+            transform: scaleX(0.96) scaleY(1.06) translateY(-4px);
+          }
+          75% {
+            transform: scale(1) translateY(-1px);
+          }
+          100% {
+            transform: scale(1) translateY(0);
+          }
         }
         @keyframes idleShadowCercle {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.90); opacity: 0.22; }
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          25% {
+            transform: scale(0.92);
+            opacity: 0.22;
+          }
+          75% {
+            transform: scale(0.97);
+            opacity: 0.27;
+          }
         }
         @keyframes tapBurstCercle {
-          0% { transform: scale(1) translateY(0); }
-          18% { transform: scaleX(1.14) scaleY(0.88) translateY(6px); }
-          46% { transform: scale(1.02) translateY(-20px); }
-          72% { transform: scaleX(1.08) scaleY(0.94) translateY(3px); }
-          100% { transform: scale(1) translateY(0); }
+          0% {
+            transform: scale(1) translateY(0);
+          }
+          17% {
+            transform: scaleX(1.14) scaleY(0.88) translateY(6px);
+          }
+          45% {
+            transform: scaleX(0.92) scaleY(1.12) translateY(-20px);
+          }
+          74% {
+            transform: scale(1) translateY(-4px);
+          }
+          87% {
+            transform: scaleX(1.08) scaleY(0.94) translateY(4px);
+          }
+          100% {
+            transform: scale(1) translateY(0);
+          }
         }
         @keyframes tapShadowCercle {
-          0% { transform: scale(1); opacity: 0.3; }
-          18% { transform: scale(1.14); opacity: 0.42; }
-          46% { transform: scale(0.68); opacity: 0.14; }
-          72% { transform: scale(1.08); opacity: 0.35; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+          17% {
+            transform: scale(1.15);
+            opacity: 0.45;
+          }
+          45% {
+            transform: scale(0.70);
+            opacity: 0.15;
+          }
+          74% {
+            transform: scale(0.94);
+            opacity: 0.26;
+          }
+          87% {
+            transform: scale(1.10);
+            opacity: 0.40;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
         }
         @keyframes tapFaceCercle {
-          0% { transform: translateY(0); }
-          18% { transform: translateY(3px) scaleY(0.82); }
-          46% { transform: translateY(-12px); }
-          72% { transform: translateY(1px); }
-          100% { transform: translateY(0); }
+          0% {
+            transform: scale(1) translateY(0);
+          }
+          17% {
+            transform: scaleX(1.12) scaleY(0.80) translateY(5px);
+          }
+          45% {
+            transform: scaleX(0.95) scaleY(1.08) translateY(-15px);
+          }
+          74% {
+            transform: translateY(-3px);
+          }
+          87% {
+            transform: scaleX(1.06) scaleY(0.90) translateY(3px);
+          }
+          100% {
+            transform: scale(1) translateY(0);
+          }
         }
-        .idle-cercle { animation: idleCercle 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-cercle { animation: idleShadowCercle 5.0s ease-in-out infinite; }
-        .tap-burst-cercle { animation: tapBurstCercle 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
-        .tap-shadow-cercle { animation: tapShadowCercle 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-cercle { animation: tapFaceCercle 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-cercle { animation: idleCercle 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-cercle { animation: idleShadowCercle 5.2s ease-in-out infinite; }
+        .tap-burst-cercle { animation: tapBurstCercle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-cercle { animation: tapShadowCercle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-cercle { animation: tapFaceCercle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
         /* ── 3. SOLEIL: Luminous Warm Pulse & Gentle Scallop Drift ── */
         @keyframes idleSoleil {
@@ -1167,6 +1232,55 @@ export const BloubMascot = React.memo(function BloubMascot({
               strokeWidth="3"
               strokeLinecap="round"
               fill={isTapping ? "#e11d48" : "none"}
+            />
+          </g>
+        )}
+
+        {/* Cercle marshmallow glossy specular highlight & soft blush cheeks */}
+        {normShape === 'cercle' && (
+          <g className="cercle-marshmallow-rig" style={{ pointerEvents: 'none' }}>
+            {/* Glossy top-left specular highlight */}
+            <ellipse
+              cx="-26"
+              cy="-28"
+              rx="15"
+              ry="7"
+              transform="rotate(-38 -26 -28)"
+              fill="#fff"
+              opacity="0.45"
+            />
+            <circle
+              cx="-12"
+              cy="-38"
+              r="3.5"
+              fill="#fff"
+              opacity="0.5"
+            />
+            {/* Kawaii Rosy Cheeks */}
+            <circle
+              cx="-28"
+              cy="14"
+              r="8"
+              fill="#fb7185"
+              opacity={isTapping ? 0.75 : 0.45}
+              style={{ transition: 'opacity 0.2s ease' }}
+            />
+            <circle
+              cx="28"
+              cy="14"
+              r="8"
+              fill="#fb7185"
+              opacity={isTapping ? 0.75 : 0.45}
+              style={{ transition: 'opacity 0.2s ease' }}
+            />
+            {/* Gentle centered smile */}
+            <path
+              d={isTapping ? "M -7,16 Q 0,25 7,16" : "M -6,15 Q 0,21 6,15"}
+              stroke="#000"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              fill={isTapping ? "#e11d48" : "none"}
+              opacity="0.4"
             />
           </g>
         )}
