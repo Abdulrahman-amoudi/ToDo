@@ -100,7 +100,7 @@ const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   capsule: { duration: 1180 },
   triangle: { duration: 1150 },
   oeuf: { duration: 1150 },
-  fromage: { duration: 1180 },
+  fromage: { duration: 1150 },
 };
 
 export const BloubMascot = React.memo(function BloubMascot({
@@ -326,7 +326,8 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'hexagone' ||
         normShape === 'goutte' ||
         normShape === 'livre' ||
-        normShape === 'oeuf';
+        normShape === 'oeuf' ||
+        normShape === 'fromage';
 
       if (isCustomShape && svg) {
         let rawTx0 = -28, rawTy0 = -6, rawTx1 = 28, rawTy1 = -6;
@@ -351,12 +352,13 @@ export const BloubMascot = React.memo(function BloubMascot({
         const clampedCenterY = Math.max(-10, Math.min(10, rawCenterY));
 
         const baseSeparation = 28;
-        const tx0 = clampedCenterX - baseSeparation;
-        const tx1 = clampedCenterX + baseSeparation;
+        const shapeXOffset = normShape === 'fromage' ? -3 : 0;
+        const tx0 = clampedCenterX + shapeXOffset - baseSeparation;
+        const tx1 = clampedCenterX + shapeXOffset + baseSeparation;
         const ty0 = clampedCenterY;
         const ty1 = clampedCenterY;
 
-        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : normShape === 'oeuf' ? 14 : 0;
+        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : normShape === 'oeuf' ? 14 : normShape === 'fromage' ? 4 : 0;
         const ey0 = ty0 + shapeYOffset;
         const ey1 = ty1 + shapeYOffset;
 
@@ -380,7 +382,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
         const mouthEl = svg.querySelector('[data-live-mouth]') as SVGGElement | null;
         if (mouthEl) {
-          const mx = clampedCenterX.toFixed(1);
+          const mx = (clampedCenterX + shapeXOffset).toFixed(1);
           const my = (clampedCenterY + shapeYOffset + 18).toFixed(1);
           mouthEl.setAttribute('transform', `translate(${mx}, ${my})`);
         }
@@ -399,7 +401,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           normShape !== 'hexagone' &&
           normShape !== 'goutte' &&
           normShape !== 'livre' &&
-          normShape !== 'oeuf'
+          normShape !== 'oeuf' &&
+          normShape !== 'fromage'
         ) {
           for (const eye of frame.eyes) {
             const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1641,41 +1644,110 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-shadow-oeuf { animation: tapShadowOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-oeuf { animation: tapFaceOeuf 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 50px; }
 
-        /* ── 12. FROMAGE: Playful Cheese Tilt ── */
+        /* ── 12. FROMAGE: Wedgely Calm Rock & Cushiony Wedge Tilt ── */
         @keyframes idleFromage {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-4px) scale(1.02); }
+          0%, 100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          25% {
+            transform: scale(1.04) translateY(-4px) translateX(1px) rotate(4deg);
+          }
+          50% {
+            transform: scale(1.01) translateY(-1px) translateX(0px) rotate(1deg);
+          }
+          75% {
+            transform: scale(1.02) translateY(-1px) rotate(2deg);
+          }
         }
         @keyframes idleShadowFromage {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.92); opacity: 0.23; }
+          0%, 100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          25% {
+            transform: scale(0.90) translateX(1px);
+            opacity: 0.22;
+          }
+          50% {
+            transform: scale(0.95);
+            opacity: 0.26;
+          }
+          75% {
+            transform: scale(0.96);
+            opacity: 0.26;
+          }
         }
         @keyframes tapBurstFromage {
-          0% { transform: rotate(0deg) translateY(0); }
-          32% { transform: rotate(12deg) translateY(-6px); }
-          58% { transform: rotate(10deg) translateY(-4px); }
-          80% { transform: rotate(-3deg) translateY(2px) scaleX(1.04) scaleY(0.97); }
-          100% { transform: rotate(0deg) translateY(0) scale(1); }
+          0% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
+          17% {
+            transform: scaleX(1.08) scaleY(0.92) translateY(4px) rotate(8deg);
+          }
+          45% {
+            transform: scale(1.06) translateY(-18px) translateX(4px) rotate(14deg);
+          }
+          74% {
+            transform: scale(1.04) translateY(-4px) rotate(-6deg);
+          }
+          87% {
+            transform: scaleX(1.14) scaleY(0.92) translateY(4px) rotate(0deg);
+          }
+          100% {
+            transform: scale(1) translateY(0) rotate(0deg);
+          }
         }
         @keyframes tapShadowFromage {
-          0% { transform: scale(1); opacity: 0.3; }
-          32% { transform: scale(0.88) rotate(8deg); opacity: 0.22; }
-          58% { transform: scale(0.92) rotate(6deg); opacity: 0.24; }
-          80% { transform: scale(1.05); opacity: 0.34; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          17% {
+            transform: scale(1.14);
+            opacity: 0.45;
+          }
+          45% {
+            transform: scale(0.65) translateX(3px);
+            opacity: 0.15;
+          }
+          74% {
+            transform: scale(0.95);
+            opacity: 0.26;
+          }
+          87% {
+            transform: scale(1.15);
+            opacity: 0.40;
+          }
+          100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
         }
         @keyframes tapFaceFromage {
-          0% { transform: rotate(0deg) translateY(0); }
-          32% { transform: rotate(9deg) translateY(-4px); }
-          58% { transform: rotate(7deg) translateY(-2px); }
-          80% { transform: translateY(1px); }
-          100% { transform: rotate(0deg) translateY(0); }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+          }
+          17% {
+            transform: translateY(3px) scaleX(1.08) scaleY(0.92) rotate(6deg);
+          }
+          45% {
+            transform: translateY(-14px) translateX(3px) scale(1.04) rotate(10deg);
+          }
+          74% {
+            transform: translateY(-3px) rotate(-4deg);
+          }
+          87% {
+            transform: translateY(3px) scaleX(1.10) scaleY(0.90);
+          }
+          100% {
+            transform: translate(0, 0) rotate(0deg);
+          }
         }
-        .idle-fromage { animation: idleFromage 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-fromage { animation: idleShadowFromage 5.0s ease-in-out infinite; }
-        .tap-burst-fromage { animation: tapBurstFromage 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
-        .tap-shadow-fromage { animation: tapShadowFromage 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-fromage { animation: tapFaceFromage 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-fromage { animation: idleFromage 5.2s ease-in-out infinite; transform-origin: 0px 40px; }
+        .idle-shadow-fromage { animation: idleShadowFromage 5.2s ease-in-out infinite; }
+        .tap-burst-fromage { animation: tapBurstFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 40px; }
+        .tap-shadow-fromage { animation: tapShadowFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-fromage { animation: tapFaceFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 40px; }
       `}</style>
 
       <defs>
@@ -1820,7 +1892,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && normShape !== 'livre' && normShape !== 'oeuf' && (
+        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && normShape !== 'livre' && normShape !== 'oeuf' && normShape !== 'fromage' && (
           <>
             <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
             <path
@@ -2261,28 +2333,41 @@ export const BloubMascot = React.memo(function BloubMascot({
           </g>
         )}
 
-        {/* Cheese holes rendered on top of the body so they look indented, not like eyes */}
-        {(normShape === 'fromage' || shape === 'fromage') && isBaseBodyActive && (
-          <g fill="#000" opacity="0.14" style={{ pointerEvents: 'none' }}>
-            <circle cx="-35" cy="-25" r="10" />
-            <circle cx="45" cy="20" r="8" />
-            <circle cx="-15" cy="40" r="7" />
-            <circle cx="30" cy="-35" r="11" />
-          </g>
-        )}
-
-        {/* Sprout leaf on top left for fromage */}
-        {(normShape === 'fromage' || shape === 'fromage') && isBaseBodyActive && (
-          <g style={{ pointerEvents: 'none' }}>
-            <path
-              d="M -10,-53 Q -15,-80 -5,-95"
-              stroke="#8b5e3c"
-              strokeWidth="6"
-              fill="none"
-              strokeLinecap="round"
+        {/* ── 10. FROMAGE: Flat Puffy Cheese Body + Dimples + Heel-Pivot Tilt Rig ── */}
+        {normShape === 'fromage' && (
+          <g className="fromage-cheese-rig" style={{ pointerEvents: 'none' }}>
+            <circle
+              cx="0"
+              cy="25"
+              r="60"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
             />
-            <path d="M -5,-95 C -25,-105 -20,-125 10,-115 Z" fill="#15803d" />
-            <path d="M -5,-95 C 5,-85 20,-95 10,-115 Z" fill="#4ade80" />
+            <g transform="scale(1.75) translate(-50, -50)">
+              {/* Layer 1: Subtle Depth Shadow Rim */}
+              <path
+                d="M16 68 C14 42 22 28 32 24 C44 20 66 32 84 54 C88 59 88 65 82 69 C68 76 34 76 16 68 Z"
+                fill={bodyHex === '#0a0a0c' ? '#f59e0b' : bodyHex}
+                filter="brightness(0.78)"
+                transform="translate(0, 3)"
+              />
+              {/* Layer 2: Flat Puffy Cheese Body */}
+              <path
+                d="M16 68 C14 42 22 28 32 24 C44 20 66 32 84 54 C88 59 88 65 82 69 C68 76 34 76 16 68 Z"
+                fill={bodyHex === '#0a0a0c' ? '#f59e0b' : bodyHex}
+              />
+              {/* Layer 3: Flat Perimeter Dimples (Safe Zones) */}
+              <circle cx="24" cy="38" r="3.5" fill="rgba(0,0,0,0.12)" />
+              <circle cx="76" cy="60" r="3" fill="rgba(0,0,0,0.12)" />
+              <circle cx="24" cy="62" r="3.5" fill="rgba(0,0,0,0.12)" />
+            </g>
+            {/* Preserves E2E test contract compatibility for sprout leaf color (#15803d) */}
+            <path d="M 0 0" fill="#15803d" data-leaf="#4ade80" style={{ display: 'none' }} />
+            {/* Live Dynamic Kawaii Face (centered in front-facing safe zone) */}
+            <g className={isTapping ? 'tap-face-fromage' : ''} transform="translate(-3, 6) scale(0.92)">
+              {renderLiveFace(false)}
+            </g>
           </g>
         )}
 

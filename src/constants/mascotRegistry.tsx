@@ -127,7 +127,7 @@ export const SHAPE_PATHS: Record<string, string> = {
   soleil:
     'M 50.00 9.00 C 52.93 9.00 55.38 16.24 58.80 17.16 C 62.22 18.07 67.96 13.03 70.50 14.49 C 73.04 15.96 71.54 23.46 74.04 25.96 C 76.54 28.46 84.04 26.96 85.51 29.50 C 86.97 32.04 81.93 37.78 82.84 41.20 C 83.76 44.62 91.00 47.07 91.00 50.00 C 91.00 52.93 83.76 55.38 82.84 58.80 C 81.93 62.22 86.97 67.96 85.51 70.50 C 84.04 73.04 76.54 71.54 74.04 74.04 C 71.54 76.54 73.04 84.04 70.50 85.51 C 67.96 86.97 62.22 81.93 58.80 82.84 C 55.38 83.76 52.93 91.00 50.00 91.00 C 47.07 91.00 44.62 83.76 41.20 82.84 C 37.78 81.93 32.04 86.97 29.50 85.51 C 26.96 84.04 28.46 76.54 25.96 74.04 C 23.46 71.54 15.96 73.04 14.49 70.50 C 13.03 67.96 18.07 62.22 17.16 58.80 C 16.24 55.38 9.00 52.93 9.00 50.00 C 9.00 47.07 16.24 44.62 17.16 41.20 C 18.07 37.78 13.03 32.04 14.49 29.50 C 15.96 26.96 23.46 28.46 25.96 25.96 C 28.46 23.46 26.96 15.96 29.50 14.49 C 32.04 13.03 37.78 18.07 41.20 17.16 C 44.62 16.24 47.07 9.00 50.00 9.00 Z',
   fromage:
-    'M18 78 C14 78 12 74 14 70 L26 32 C28 26 34 22 42 22 L76 34 C84 37 88 44 86 52 L82 72 C80 76 76 78 72 78 Z',
+    'M16 68 C14 42 22 28 32 24 C44 20 66 32 84 54 C88 59 88 65 82 69 C68 76 34 76 16 68 Z',
   livre:
     'M14 24 C14 19 18 15 24 15 C35 15 45 18 50 23 C55 18 65 15 76 15 C82 15 86 19 86 24 L86 70 C86 75 82 78 76 78 C65 78 55 76 50 81 C45 76 35 78 24 78 C18 78 14 75 14 70 Z',
 };
@@ -149,7 +149,7 @@ export const FACE_CONFIGS: Record<string, FaceConfig> = {
   goutte:   { dx: 0, dy: 7, scale: 0.80 },
   oeuf:     { dx: 0, dy: 7, scale: 0.86 },
   soleil:   { dx: 0, dy: 0, scale: 0.85 },
-  fromage:  { dx: 0, dy: 3, scale: 0.80 },
+  fromage:  { dx: -2, dy: 4, scale: 0.88 },
   livre:    { dx: 0, dy: -2, scale: 0.95 },
 };
 
@@ -220,6 +220,17 @@ export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNod
       />
     </g>
   ),
+  fromage: (bodyHex: string) => (
+    <g style={{ pointerEvents: 'none' }}>
+      {/* Layer 1 — Subtle Depth Shadow Rim */}
+      <path
+        d="M16 68 C14 42 22 28 32 24 C44 20 66 32 84 54 C88 59 88 65 82 69 C68 76 34 76 16 68 Z"
+        fill={bodyHex}
+        filter="brightness(0.78)"
+        transform="translate(0, 3)"
+      />
+    </g>
+  ),
 };
 
 /**
@@ -229,13 +240,10 @@ export const SHAPE_UNDERLAYS: Record<string, (bodyHex: string) => React.ReactNod
 export const SHAPE_EXTRAS: Record<string, () => React.ReactNode> = {
   fromage: () => (
     <g style={{ pointerEvents: 'none' }}>
-      {/* 3 subtle cutout cheese holes placed in the outer corners */}
-      <circle cx="72" cy="40" r="4" fill="#000" opacity="0.16" />
-      <circle cx="25" cy="69" r="4.5" fill="#000" opacity="0.16" />
-      <circle cx="73" cy="71" r="3.5" fill="#000" opacity="0.16" />
-      {/* Top green leaf/stem accent */}
-      <path d="M42 22 Q40 12 46 6" stroke="#8b5e3c" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      <path d="M46 6 C40 2 40 -2 50 0 C54 6 50 8 46 6 Z" fill="#22c55e" />
+      {/* Layer 3 — Flat Perimeter Dimples (Safe Zones) */}
+      <circle cx="24" cy="38" r="3.5" fill="rgba(0,0,0,0.12)" />
+      <circle cx="76" cy="60" r="3" fill="rgba(0,0,0,0.12)" />
+      <circle cx="24" cy="62" r="3.5" fill="rgba(0,0,0,0.12)" />
     </g>
   ),
   livre: () => (
