@@ -10,6 +10,8 @@ import {
   normalizeShape,
   normalizeExpression,
   resolveColor,
+  FACE_CONFIGS,
+  SHAPE_PATHS,
 } from '@/constants/mascotRegistry';
 
 export interface BloubMascotProps {
@@ -58,29 +60,30 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function generateSunburstPath(rays = 12, outerR = 98, innerR = 66): string {
+function generateScallopedPetalPath(petals = 12, outerR = 94, innerR = 68): string {
   const points: string[] = [];
-  const step = (Math.PI * 2) / rays;
-  for (let i = 0; i < rays; i++) {
-    const tipAngle = i * step - Math.PI / 2;
-    const valAngle = tipAngle + step / 2;
-    const prevValAngle = tipAngle - step / 2;
-    const vx0 = (Math.cos(prevValAngle) * innerR).toFixed(1);
-    const vy0 = (Math.sin(prevValAngle) * innerR).toFixed(1);
-    const tx = (Math.cos(tipAngle) * outerR).toFixed(1);
-    const ty = (Math.sin(tipAngle) * outerR).toFixed(1);
-    const vx1 = (Math.cos(valAngle) * innerR).toFixed(1);
-    const vy1 = (Math.sin(valAngle) * innerR).toFixed(1);
+  const step = (Math.PI * 2) / petals;
+  for (let i = 0; i < petals; i++) {
+    const angle = i * step - Math.PI / 2;
+    const nextAngle = (i + 1) * step - Math.PI / 2;
+    const x0 = (Math.cos(angle) * innerR).toFixed(1);
+    const y0 = (Math.sin(angle) * innerR).toFixed(1);
+    const cp1x = (Math.cos(angle + step * 0.2) * (outerR + 2)).toFixed(1);
+    const cp1y = (Math.sin(angle + step * 0.2) * (outerR + 2)).toFixed(1);
+    const cp2x = (Math.cos(nextAngle - step * 0.2) * (outerR + 2)).toFixed(1);
+    const cp2y = (Math.sin(nextAngle - step * 0.2) * (outerR + 2)).toFixed(1);
+    const x1 = (Math.cos(nextAngle) * innerR).toFixed(1);
+    const y1 = (Math.sin(nextAngle) * innerR).toFixed(1);
     if (i === 0) {
-      points.push(`M ${vx0},${vy0} Q ${tx},${ty} ${vx1},${vy1}`);
+      points.push(`M ${x0},${y0} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${x1},${y1}`);
     } else {
-      points.push(`Q ${tx},${ty} ${vx1},${vy1}`);
+      points.push(`C ${cp1x},${cp1y} ${cp2x},${cp2y} ${x1},${y1}`);
     }
   }
   return points.join(' ') + ' Z';
 }
 
-const SUNBURST_PATH = generateSunburstPath(12, 98, 66);
+const SUNBURST_PATH = generateScallopedPetalPath(12, 94, 68);
 
 const HEXAGONE_PATH =
   'M 29.0,-77.9 Q 45.0,-77.9 53.0,-64.1 L 82.0,-13.9 Q 90.0,0.0 82.0,13.9 L 53.0,64.1 Q 45.0,77.9 29.0,77.9 L -29.0,77.9 Q -45.0,77.9 -53.0,64.1 L -82.0,13.9 Q -90.0,0.0 -82.0,-13.9 L -53.0,-64.1 Q -45.0,-77.9 -29.0,-77.9 Z';
@@ -97,7 +100,7 @@ const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   nuage: { duration: 1150 },
   goutte: { duration: 1150 },
   galet: { duration: 1150 },
-  capsule: { duration: 1180 },
+  capsule: { duration: 1150 },
   triangle: { duration: 1150 },
   oeuf: { duration: 1150 },
   fromage: { duration: 1150 },
@@ -119,7 +122,6 @@ export const BloubMascot = React.memo(function BloubMascot({
   style = {},
 }: Props) {
   const uid = useId().replace(/:/g, '');
-  const maskId = `bot-mask-${uid}`;
   const VB = DEMI_VIEWBOX;
   const R = RAYON;
 
@@ -314,9 +316,8 @@ export const BloubMascot = React.memo(function BloubMascot({
       svg.querySelector('[data-body]')?.setAttribute('d', frame.bodyPath);
       svg.querySelector('[data-body]')?.setAttribute('fill', ink);
       svg.querySelector('[data-body]')?.setAttribute('opacity', String(frame.bodyAlpha));
-      svg.querySelector('[data-mask-body]')?.setAttribute('d', frame.bodyPath);
 
-      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle, hexagone, goutte, livre)
+      // Update dynamic live face for all 12 shapes
       const isCustomShape =
         normShape === 'cercle' ||
         normShape === 'squircle' ||
@@ -327,7 +328,9 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'goutte' ||
         normShape === 'livre' ||
         normShape === 'oeuf' ||
-        normShape === 'fromage';
+        normShape === 'fromage' ||
+        normShape === 'galet' ||
+        normShape === 'capsule';
 
       if (isCustomShape && svg) {
         let rawTx0 = -28, rawTy0 = -6, rawTx1 = 28, rawTy1 = -6;
@@ -358,7 +361,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         const ty0 = clampedCenterY;
         const ty1 = clampedCenterY;
 
-        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : normShape === 'oeuf' ? 14 : normShape === 'fromage' ? 4 : 0;
+        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : normShape === 'livre' ? -4 : normShape === 'oeuf' ? 14 : normShape === 'fromage' ? 4 : (normShape === 'galet' || normShape === 'capsule') ? 2 : 0;
         const ey0 = ty0 + shapeYOffset;
         const ey1 = ty1 + shapeYOffset;
 
@@ -385,33 +388,6 @@ export const BloubMascot = React.memo(function BloubMascot({
           const mx = (clampedCenterX + shapeXOffset).toFixed(1);
           const my = (clampedCenterY + shapeYOffset + 18).toFixed(1);
           mouthEl.setAttribute('transform', `translate(${mx}, ${my})`);
-        }
-      }
-
-      // Eyes (inside mask — cut holes through body for shapes using BotEngine face)
-      const maskEyes = svg.querySelector('[data-mask-eyes]');
-      if (maskEyes) {
-        maskEyes.innerHTML = '';
-        if (
-          normShape !== 'cercle' &&
-          normShape !== 'squircle' &&
-          normShape !== 'soleil' &&
-          normShape !== 'nuage' &&
-          normShape !== 'triangle' &&
-          normShape !== 'hexagone' &&
-          normShape !== 'goutte' &&
-          normShape !== 'livre' &&
-          normShape !== 'oeuf' &&
-          normShape !== 'fromage'
-        ) {
-          for (const eye of frame.eyes) {
-            const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            p.setAttribute('d', eye.d);
-            p.setAttribute('transform', eye.matrix);
-            p.setAttribute('opacity', String(eye.alpha));
-            p.setAttribute('fill', '#000');
-            maskEyes.appendChild(p);
-          }
         }
       }
 
@@ -520,21 +496,50 @@ export const BloubMascot = React.memo(function BloubMascot({
   const isThinking = state === 'thinking';
 
   const renderLiveFace = (isLowerBelly = false) => {
-    const initEyeY = isLowerBelly ? 20 : -6;
-    const initCheekY = isLowerBelly ? 42 : 16;
-    const initMouthY = isLowerBelly ? 40 : 14;
+    const initEyeY = isLowerBelly
+      ? 28
+      : normShape === 'livre'
+      ? -4
+      : normShape === 'oeuf'
+      ? 14
+      : normShape === 'fromage'
+      ? 4
+      : normShape === 'galet' || normShape === 'capsule'
+      ? 2
+      : -6;
+    const initCheekY = initEyeY + 22;
+    const initMouthY = initEyeY + 18;
     const isTimide = normExpr === 'timide';
 
     return (
       <g data-live-face="" className="mascot-live-face-rig">
         {/* Left Eye Group - Cyber-Kawaii Digital Visor Eye */}
         <g data-live-eye-left="" transform={`translate(-28, ${initEyeY}) scale(1, 1)`}>
-          {/* Normal upright digital aperture eye */}
+          {/* Normal upright digital aperture eye or expression eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
-            {/* Top-left subtle specular gleam matching UI border highlights */}
-            <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
-            <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
+            {normExpr === 'hilare' ? (
+              <path d="M -7,-5 L 0,0 L -7,5" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            ) : normExpr === 'somnolent' ? (
+              <path d="M -7,-2 Q 0,5 7,-2" stroke="#12111A" strokeWidth="3" strokeLinecap="round" fill="none" />
+            ) : normExpr === 'fier' ? (
+              <path d="M -7,2 Q 0,-4 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+            ) : normExpr === 'mefiant' ? (
+              <rect x="-8" y="-4" width="16" height="8" rx="3" fill="#12111A" />
+            ) : normExpr === 'surpris' ? (
+              <>
+                <ellipse cx="0" cy="0" rx="7" ry="9" fill="#12111A" />
+                <circle cx="-1" cy="-3" r="2.2" fill="#fff" />
+              </>
+            ) : normExpr === 'excite' ? (
+              <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            ) : (
+              <>
+                <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
+                {/* Top-left subtle specular gleam matching UI border highlights */}
+                <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
+                <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
+              </>
+            )}
           </g>
           {/* Peaceful soft blink eye */}
           <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
@@ -552,12 +557,31 @@ export const BloubMascot = React.memo(function BloubMascot({
 
         {/* Right Eye Group - Cyber-Kawaii Digital Visor Eye */}
         <g data-live-eye-right="" transform={`translate(28, ${initEyeY}) scale(1, 1)`}>
-          {/* Normal upright digital aperture eye */}
+          {/* Normal upright digital aperture eye or expression eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
-            {/* Top-left subtle specular gleam matching UI border highlights */}
-            <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
-            <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
+            {normExpr === 'hilare' ? (
+              <path d="M 7,-5 L 0,0 L 7,5" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            ) : normExpr === 'somnolent' ? (
+              <path d="M -7,-2 Q 0,5 7,-2" stroke="#12111A" strokeWidth="3" strokeLinecap="round" fill="none" />
+            ) : normExpr === 'fier' ? (
+              <path d="M -7,2 Q 0,-4 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+            ) : normExpr === 'mefiant' ? (
+              <rect x="-8" y="-4" width="16" height="8" rx="3" fill="#12111A" />
+            ) : normExpr === 'surpris' ? (
+              <>
+                <ellipse cx="0" cy="0" rx="7" ry="9" fill="#12111A" />
+                <circle cx="-1" cy="-3" r="2.2" fill="#fff" />
+              </>
+            ) : normExpr === 'excite' ? (
+              <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            ) : (
+              <>
+                <rect x="-6.5" y="-13" width="13" height="26" rx="3.5" fill="#12111A" />
+                {/* Top-left subtle specular gleam matching UI border highlights */}
+                <circle cx="-2.5" cy="-5" r="2.2" fill="#fff" opacity="0.9" />
+                <circle cx="2" cy="4.5" r="1.3" fill="#fff" opacity="0.45" />
+              </>
+            )}
           </g>
           {/* Peaceful soft blink eye */}
           <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
@@ -571,6 +595,53 @@ export const BloubMascot = React.memo(function BloubMascot({
           <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
             <path d="M 0,-9 Q 0,-2 5,-2 Q 0,-2 0,5 Q 0,-2 -5,-2 Q 0,-2 0,-9 Z" fill="#fff" stroke="#12111A" strokeWidth="1" />
           </g>
+        </g>
+
+        {/* Distinct Facial Expression Features (Brows, Accessories) */}
+        <g className="mascot-face-features" style={{ pointerEvents: 'none' }}>
+          {normExpr === 'colere' && (
+            <g>
+              <path d={`M -38,${initEyeY - 14} L -18,${initEyeY - 8}`} stroke="#12111A" strokeWidth="4" strokeLinecap="round" />
+              <path d={`M 38,${initEyeY - 14} L 18,${initEyeY - 8}`} stroke="#12111A" strokeWidth="4" strokeLinecap="round" />
+            </g>
+          )}
+          {normExpr === 'triste' && (
+            <g>
+              <path d={`M -38,${initEyeY - 8} Q -28,${initEyeY - 14} -18,${initEyeY - 12}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+              <path d={`M 38,${initEyeY - 8} Q 28,${initEyeY - 14} 18,${initEyeY - 12}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+              <path className="tear-drip" d={`M 36,${initEyeY + 6} C 36,${initEyeY + 6} 41,${initEyeY + 14} 41,${initEyeY + 17} A 4 4 0 1 1 33,${initEyeY + 17} C 33,${initEyeY + 14} 36,${initEyeY + 6} Z`} fill="#38BDF8" />
+            </g>
+          )}
+          {normExpr === 'surpris' && (
+            <g>
+              <path d={`M -36,${initEyeY - 16} Q -28,${initEyeY - 22} -20,${initEyeY - 16}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+              <path d={`M 20,${initEyeY - 16} Q 28,${initEyeY - 22} 36,${initEyeY - 16}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            </g>
+          )}
+          {normExpr === 'curieux' && (
+            <path d={`M 18,${initEyeY - 18} Q 28,${initEyeY - 24} 38,${initEyeY - 18}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+          )}
+          {normExpr === 'effraye' && (
+            <g>
+              <path d={`M -37,${initEyeY - 14} Q -28,${initEyeY - 18} -19,${initEyeY - 13}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+              <path d={`M 37,${initEyeY - 14} Q 28,${initEyeY - 18} 19,${initEyeY - 13}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            </g>
+          )}
+          {normExpr === 'blase' && (
+            <g>
+              <path d={`M -40,${initEyeY - 4} L 40,${initEyeY - 4}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" />
+              <rect x="-38" y={initEyeY - 6} width="20" height="15" rx="3.5" fill="#12111A" />
+              <rect x="18" y={initEyeY - 6} width="20" height="15" rx="3.5" fill="#12111A" />
+              <line x1="-34" y1={initEyeY + 4} x2="-28" y2={initEyeY - 3} stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" />
+              <line x1="22" y1={initEyeY + 4} x2="28" y2={initEyeY - 3} stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" />
+            </g>
+          )}
+          {normExpr === 'somnolent' && (
+            <g className="sleep-zzz">
+              <text x="36" y={initEyeY - 16} fill="#12111A" fontSize="12" fontWeight="900" fontFamily="sans-serif">z</text>
+              <text x="46" y={initEyeY - 26} fill="#12111A" fontSize="16" fontWeight="900" fontFamily="sans-serif">Z</text>
+            </g>
+          )}
         </g>
 
         {/* Subtle Cyber-Kawaii Blush (strictly for 'timide' expression, no clownish hot-pink) */}
@@ -595,16 +666,101 @@ export const BloubMascot = React.memo(function BloubMascot({
           </>
         )}
 
-        {/* Sweet centered smile */}
+        {/* Expression-Aware Mouth Rig */}
         <g data-live-mouth="" transform={`translate(0, ${initMouthY})`}>
-          <path
-            d="M -7,-2 Q 0,5 7,-2"
-            stroke="#12111A"
-            strokeWidth="2.8"
-            strokeLinecap="round"
-            fill="none"
-            className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
-          />
+          {normExpr === 'hilare' ? (
+            <path
+              d="M -8,-2 L 8,-2 C 8,8 -8,8 -8,-2 Z"
+              fill="#e11d48"
+              stroke="#12111A"
+              strokeWidth="2.2"
+              strokeLinejoin="round"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'surpris' ? (
+            <ellipse
+              cx="0"
+              cy="0"
+              rx="4.5"
+              ry="5.5"
+              fill="#12111A"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'colere' || normExpr === 'triste' ? (
+            <path
+              d="M -6,2 Q 0,-2 6,2"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              fill="none"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'effraye' ? (
+            <path
+              d="M -8,0 Q -4,-3 0,0 T 8,0"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              fill="none"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'mefiant' || normExpr === 'blase' ? (
+            <line
+              x1="-6"
+              y1="0"
+              x2="6"
+              y2="0"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'fier' ? (
+            <path
+              d="M -6,0 Q 0,4 6,-3"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              fill="none"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'curieux' ? (
+            <path
+              d="M -5,1 Q 0,3 5,-2"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              fill="none"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'timide' ? (
+            <path
+              d="M -5,0 Q 0,2.5 5,0"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              fill="none"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : normExpr === 'somnolent' ? (
+            <circle
+              cx="0"
+              cy="0"
+              r="3"
+              fill="#12111A"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          ) : (
+            <path
+              d="M -7,-2 Q 0,5 7,-2"
+              stroke="#12111A"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              fill="none"
+              className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+            />
+          )}
+
           {/* Happy Open Mouth during airborne loft */}
           <ellipse
             cx="0"
@@ -705,7 +861,7 @@ export const BloubMascot = React.memo(function BloubMascot({
           transform-origin: 0px 0px;
         }
         .mascot-shadow-rig {
-          transform-origin: 0px 114px;
+          transform-origin: 0px 110px;
         }
 
         /* ── Unified Kawaii Face Layers (Cercle, Squircle, Soleil) ── */
@@ -822,8 +978,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           75% { transform: perspective(600px) translateY(1px) rotateY(360deg); }
           100% { transform: perspective(600px) translateY(0) rotateY(360deg); }
         }
-        .idle-squircle { animation: idleSquircle 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-squircle { animation: idleShadowSquircle 5.0s ease-in-out infinite; }
+        .idle-squircle { animation: idleSquircle 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-squircle { animation: idleShadowSquircle 5.2s ease-in-out infinite; }
         .tap-burst-squircle { animation: tapBurstSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-squircle { animation: tapShadowSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-squircle { animation: tapFaceSquircle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
@@ -932,8 +1088,8 @@ export const BloubMascot = React.memo(function BloubMascot({
         /* ── 3. SOLEIL: Luminous Warm Pulse & Gentle Scallop Drift ── */
         @keyframes idleSoleil {
           0%, 100% { transform: scale(1) rotate(0deg) translateY(0); }
-          33% { transform: scale(1.05) rotate(-5deg) translateY(-6px); }
-          66% { transform: scale(1.02) rotate(4deg) translateY(-3px); }
+          33% { transform: scale(1.04) rotate(-5deg) translateY(-4px); }
+          66% { transform: scale(1.02) rotate(4deg) translateY(-2px); }
         }
         @keyframes idleShadowSoleil {
           0%, 100% { transform: scale(1); opacity: 0.3; }
@@ -942,22 +1098,22 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
         @keyframes tapBurstSoleil {
           0% { transform: scale(1) rotate(0deg) translateY(0); }
-          15% { transform: scaleX(1.10) scaleY(0.90) rotate(-12deg) translateY(4px); }
-          40% { transform: scale(1.10) rotate(140deg) translateY(-22px); }
-          65% { transform: scale(1.04) rotate(270deg) translateY(-8px); }
-          85% { transform: scaleX(1.16) scaleY(0.88) rotate(360deg) translateY(3px); }
+          17% { transform: scaleX(1.10) scaleY(0.90) rotate(-12deg) translateY(4px); }
+          45% { transform: scale(1.10) rotate(360deg) translateY(-22px); }
+          75% { transform: scale(1.04) rotate(360deg) translateY(-8px); }
+          87% { transform: scaleX(1.16) scaleY(0.88) rotate(360deg) translateY(3px); }
           100% { transform: scale(1) rotate(360deg) translateY(0); }
         }
         @keyframes tapShadowSoleil {
           0% { transform: scale(1); opacity: 0.3; }
-          15% { transform: scale(1.14); opacity: 0.42; }
-          40% { transform: scale(0.66); opacity: 0.14; }
-          65% { transform: scale(0.78); opacity: 0.18; }
-          85% { transform: scale(1.18); opacity: 0.38; }
+          17% { transform: scale(1.15); opacity: 0.42; }
+          45% { transform: scale(0.66); opacity: 0.14; }
+          75% { transform: scale(0.88); opacity: 0.24; }
+          87% { transform: scale(1.18); opacity: 0.40; }
           100% { transform: scale(1); opacity: 0.3; }
         }
-        .idle-soleil { animation: idleSoleil 4.8s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-soleil { animation: idleShadowSoleil 4.8s ease-in-out infinite; }
+        .idle-soleil { animation: idleSoleil 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-soleil { animation: idleShadowSoleil 5.2s ease-in-out infinite; }
         .tap-burst-soleil { animation: tapBurstSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-soleil { animation: tapShadowSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
@@ -1433,8 +1589,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           76% { transform: rotate(-1.5deg); }
           100% { transform: rotate(0deg) translateY(0); }
         }
-        .idle-galet { animation: idleGalet 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-galet { animation: idleShadowGalet 5.0s ease-in-out infinite; }
+        .idle-galet { animation: idleGalet 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-galet { animation: idleShadowGalet 5.2s ease-in-out infinite; }
         .tap-burst-galet { animation: tapBurstGalet 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-galet { animation: tapShadowGalet 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-galet { animation: tapFaceGalet 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
@@ -1469,11 +1625,11 @@ export const BloubMascot = React.memo(function BloubMascot({
           78% { transform: rotate(-2deg); }
           100% { transform: rotate(0deg) translateY(0); }
         }
-        .idle-capsule { animation: idleCapsule 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-capsule { animation: idleShadowCapsule 5.0s ease-in-out infinite; }
-        .tap-burst-capsule { animation: tapBurstCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
-        .tap-shadow-capsule { animation: tapShadowCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-capsule { animation: tapFaceCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-capsule { animation: idleCapsule 5.2s ease-in-out infinite; transform-origin: 0px 0px; }
+        .idle-shadow-capsule { animation: idleShadowCapsule 5.2s ease-in-out infinite; }
+        .tap-burst-capsule { animation: tapBurstCapsule 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .tap-shadow-capsule { animation: tapShadowCapsule 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tap-face-capsule { animation: tapFaceCapsule 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
         /* ── 10. TRIANGLE: Smooth, Viscous Onigiri Sway & Corner Pivot ── */
         @keyframes idleTriangle {
@@ -1750,34 +1906,6 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-face-fromage { animation: tapFaceFromage 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 40px; }
       `}</style>
 
-      <defs>
-        <mask
-          id={maskId}
-          maskUnits="userSpaceOnUse"
-          x={-VB}
-          y={-VB}
-          width={VB * 2}
-          height={VB * 2}
-        >
-          <g
-            key={`${normShape}-${tapCount}-mask`}
-            className={`mascot-mask-sync ${
-              isTapping ? `tap-burst-${normShape}` : isStatic ? '' : `idle-${normShape}`
-            }`}
-          >
-            {/* White body shape — fills the mask */}
-            <path data-mask-body="" fill="#fff" />
-            {/* Black eye holes — cut through the body */}
-            <g
-              data-mask-eyes=""
-              className={`mascot-face-rig ${
-                isTapping ? `tap-face-${normShape}` : ''
-              }`}
-            />
-          </g>
-        </mask>
-      </defs>
-
       {/* Grok Typing Dots: Smooth Cross-fade and Spring Scale */}
       <g
         className="grok-typing-dots-container"
@@ -1891,25 +2019,28 @@ export const BloubMascot = React.memo(function BloubMascot({
             'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && normShape !== 'hexagone' && normShape !== 'goutte' && normShape !== 'livre' && normShape !== 'oeuf' && normShape !== 'fromage' && (
-          <>
-            <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
-            <path
-              data-body=""
-              mask={`url(#${maskId})`}
-              style={{
-                filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.18))',
-                transition: 'fill 0.2s ease',
-              }}
-            />
-          </>
-        )}
+        {/* Core data-body structural layer preserved for DOM contracts (zero mask, zero backing disc) */}
+        <path
+          data-body=""
+          style={{
+            display: 'none',
+          }}
+        />
 
-        {/* ── 1. SOLEIL: 12-Pointed Vibrant Sunburst + Sunny Yellow Core Disc + Dynamic Live Face ── */}
+        {/* ── 1. SOLEIL: Dual-Tone Sunflower + Scalloped Petals + Amber Core Disc + Golden Bloom Aura ── */}
         {normShape === 'soleil' && (
           <g className="soleil-sun-rig" style={{ pointerEvents: 'none' }}>
-            {/* 12 Radiant Rays Sunburst in Warm Orange */}
+            {/* Radiant Golden Bloom Aura during Airborne Loft */}
+            <circle
+              cx="0"
+              cy="20"
+              r="72"
+              fill="rgba(253, 224, 71, 0.55)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(14px)' }}
+            />
+
+            {/* 12 Radiant Scalloped Petals Crown in Warm Orange */}
             <path
               d={SUNBURST_PATH}
               fill="#f97316"
@@ -1920,12 +2051,12 @@ export const BloubMascot = React.memo(function BloubMascot({
               }}
             />
 
-            {/* Sunny Core Disc in Vibrant Warm Yellow */}
+            {/* Sunny Core Disc in Vibrant Warm Yellow / Amber (radius 64) */}
             <circle
               cx="0"
               cy="0"
               r="64"
-              fill={bodyHex === '#0a0a0c' ? '#fde047' : '#fde047'}
+              fill="#fde047"
               stroke="#ea580c"
               strokeWidth="2.5"
               style={{
@@ -1935,8 +2066,10 @@ export const BloubMascot = React.memo(function BloubMascot({
             {/* Inner Core Soft Warm Glow */}
             <circle cx="0" cy="0" r="58" fill="#fef08a" opacity="0.45" />
 
-            {/* Live Dynamic Kawaii Face */}
-            {renderLiveFace(false)}
+            {/* Live Dynamic Kawaii Face with Non-Clipping Center Anchor (scale 0.85) */}
+            <g transform="scale(0.85)">
+              {renderLiveFace(false)}
+            </g>
           </g>
         )}
 
@@ -2259,7 +2392,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               {/* Layer 2: Swallowtail Ribbon Bookmark Tail (Bottom Spine) */}
               <path
                 d="M45 76 L55 76 L55 92 L50 87 L45 92 Z"
-                fill="#FF4D6D"
+                fill="#ef4444"
                 data-ribbon="#ef4444"
                 strokeLinejoin="round"
                 className={isTapping ? 'tap-livre-ribbon' : isStatic ? '' : 'idle-livre-ribbon'}
@@ -2366,6 +2499,104 @@ export const BloubMascot = React.memo(function BloubMascot({
             <path d="M 0 0" fill="#15803d" data-leaf="#4ade80" style={{ display: 'none' }} />
             {/* Live Dynamic Kawaii Face (centered in front-facing safe zone) */}
             <g className={isTapping ? 'tap-face-fromage' : ''} transform="translate(-3, 6) scale(0.92)">
+              {renderLiveFace(false)}
+            </g>
+          </g>
+        )}
+
+        {/* ── 11. GALET: Smooth Rounded Pebble Body + Depth Rim + Specular Highlight + Foreground Live Face ── */}
+        {normShape === 'galet' && (
+          <g className="galet-pebble-rig" style={{ pointerEvents: 'none' }}>
+            {/* Golden radiant aura under airborne loft */}
+            <circle
+              cx="0"
+              cy="25"
+              r="60"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+            <g transform="scale(1.75) translate(-50, -50)">
+              {/* Layer 1: Subtle Depth Rim */}
+              <path
+                d={SHAPE_PATHS.galet}
+                fill={bodyHex === '#0a0a0c' ? '#a3a3a3' : bodyHex}
+                filter="brightness(0.80)"
+                transform="translate(0, 3)"
+              />
+              {/* Layer 2: Pebble Body */}
+              <path
+                d={SHAPE_PATHS.galet}
+                fill={bodyHex === '#0a0a0c' ? '#a3a3a3' : bodyHex}
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}
+              />
+              {/* Layer 3: Specular Highlight */}
+              <ellipse
+                cx="38"
+                cy="28"
+                rx="12"
+                ry="5"
+                transform="rotate(-20 38 28)"
+                fill="#fff"
+                opacity="0.45"
+              />
+              <circle cx="48" cy="24" r="2.5" fill="#fff" opacity="0.5" />
+            </g>
+            {/* Live Dynamic Kawaii Face in Foreground */}
+            <g className={isTapping ? 'tap-face-galet' : ''} transform="translate(0, 2)">
+              {renderLiveFace(false)}
+            </g>
+          </g>
+        )}
+
+        {/* ── 12. CAPSULE: Smooth Horizontal Pill Body (rx="48") + Specular Highlight + Foreground Live Face ── */}
+        {normShape === 'capsule' && (
+          <g className="capsule-pill-rig" style={{ pointerEvents: 'none' }}>
+            {/* Golden radiant aura under airborne loft */}
+            <circle
+              cx="0"
+              cy="25"
+              r="60"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
+            {/* Layer 1: Subtle Base Depth Shadow */}
+            <rect
+              x="-84"
+              y="-44"
+              width="168"
+              height="96"
+              rx="48"
+              ry="48"
+              fill="#000"
+              opacity="0.08"
+            />
+            {/* Layer 2: Smooth Horizontal Pill Body (un-aliased, rx=48) */}
+            <rect
+              x="-84"
+              y="-48"
+              width="168"
+              height="96"
+              rx="48"
+              ry="48"
+              fill={bodyHex === '#0a0a0c' ? '#8b5cf6' : bodyHex}
+              style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}
+            />
+            {/* Layer 3: Top-left Specular Highlight */}
+            <ellipse
+              cx="-38"
+              cy="-24"
+              rx="20"
+              ry="7"
+              transform="rotate(-15 -38 -24)"
+              fill="#fff"
+              opacity="0.45"
+            />
+            <circle cx="-18" cy="-30" r="3.2" fill="#fff" opacity="0.5" />
+
+            {/* Live Dynamic Kawaii Face in Foreground */}
+            <g className={isTapping ? 'tap-face-capsule' : ''} transform="translate(0, 2)">
               {renderLiveFace(false)}
             </g>
           </g>
