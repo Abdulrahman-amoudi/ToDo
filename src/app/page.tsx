@@ -2040,7 +2040,7 @@ export default function Home() {
                     const heroExpr = autoMoodEnabled ? computeReactiveMood() : (mascotExpression || 'heureux');
                     return (
                       <BloubMascot 
-                        size={64}
+                        size={84}
                         state={animState} 
                         expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
                         shape={heroShape} 
@@ -2777,7 +2777,7 @@ export default function Home() {
                 const catExpr = showListHero ? (catSettings[activeCategory]?.expression) : null;
                 const heroExpr = autoMoodEnabled ? computeReactiveMood() : (catExpr || mascotExpression || 'neutre');
                 return (
-                  <BloubMascot size={showAddModal ? 64 : 88}
+                  <BloubMascot size={showAddModal ? 96 : 160}
                     state={animState} 
                     expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
                     shape={heroShape} 
@@ -3280,11 +3280,11 @@ export default function Home() {
                   {/* Mascot Preview & XP Bar */}
                   <div className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] mb-2">
                     <div 
-                      className="w-16 h-16 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                      className="w-20 h-20 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => triggerMascot('idle', 'heureux')}
                     >
                       <BloubMascot 
-                        size={64} 
+                        size={80} 
                         state={animState} 
                         expression={animState !== 'idle' ? (animExpression || mascotExpression) : (autoMoodEnabled ? computeReactiveMood() : mascotExpression)} 
                         shape={mascotShape} 
@@ -3387,11 +3387,11 @@ export default function Home() {
                   <div className={`p-5 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
                     <div className="flex items-center gap-4">
                       <div 
-                        className="w-14 h-14 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                        className="w-18 h-18 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
                         onClick={() => triggerMascot('idle', 'heureux')}
                       >
                         <BloubMascot 
-                          size={56} 
+                          size={72} 
                           state={animState} 
                           expression={animState !== 'idle' ? (animExpression || mascotExpression) : ((catSettings[activeCategory]?.expression || mascotExpression || 'neutre') as ExpressionId)} 
                           shape={catSettings[activeCategory]?.shape || mascotShape || 'squircle'} 

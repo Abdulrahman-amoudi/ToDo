@@ -58,6 +58,30 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function generateSunburstPath(rays = 12, outerR = 98, innerR = 66): string {
+  const points: string[] = [];
+  const step = (Math.PI * 2) / rays;
+  for (let i = 0; i < rays; i++) {
+    const tipAngle = i * step - Math.PI / 2;
+    const valAngle = tipAngle + step / 2;
+    const prevValAngle = tipAngle - step / 2;
+    const vx0 = (Math.cos(prevValAngle) * innerR).toFixed(1);
+    const vy0 = (Math.sin(prevValAngle) * innerR).toFixed(1);
+    const tx = (Math.cos(tipAngle) * outerR).toFixed(1);
+    const ty = (Math.sin(tipAngle) * outerR).toFixed(1);
+    const vx1 = (Math.cos(valAngle) * innerR).toFixed(1);
+    const vy1 = (Math.sin(valAngle) * innerR).toFixed(1);
+    if (i === 0) {
+      points.push(`M ${vx0},${vy0} Q ${tx},${ty} ${vx1},${vy1}`);
+    } else {
+      points.push(`Q ${tx},${ty} ${vx1},${vy1}`);
+    }
+  }
+  return points.join(' ') + ' Z';
+}
+
+const SUNBURST_PATH = generateSunburstPath(12, 98, 66);
+
 const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   squircle: { duration: 1150 },
   cercle: { duration: 1150 },
@@ -223,25 +247,29 @@ export const BloubMascot = React.memo(function BloubMascot({
     }
   }, [gaze, state]);
 
-  // Pointer follow (window-wide)
+  // Pointer follow (window-wide, relative to mascot center)
   useEffect(() => {
     if (isStatic || !animated) return;
 
     const handleMove = (e: PointerEvent) => {
-      if (!engineRef.current) return;
-      const hw = window.innerWidth / 2;
-      const hh = window.innerHeight / 2;
-      const yaw = ((e.clientX - hw) / hw) * 35;
-      const pitch = -((e.clientY - hh) / hh) * 22;
+      if (!engineRef.current || !svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const maxDist = Math.max(window.innerWidth / 2, 250);
+      const dx = (e.clientX - cx) / maxDist;
+      const dy = (e.clientY - cy) / maxDist;
+      const yaw = Math.max(-45, Math.min(45, dx * 45));
+      const pitch = Math.max(-32, Math.min(32, -dy * 32));
       engineRef.current.setLook(
-        { yaw, pitch, mix: 0.5, spin: 0, wander: 0.1 },
+        { yaw, pitch, mix: 0.88, spin: 0, wander: 0.05 },
         clockRef.current,
-        0.25
+        0.18
       );
     };
 
     const handleLeave = () => {
-      engineRef.current?.setLook(null, clockRef.current, 0.6);
+      engineRef.current?.setLook(null, clockRef.current, 0.5);
     };
 
     window.addEventListener('pointermove', handleMove);
@@ -282,6 +310,60 @@ export const BloubMascot = React.memo(function BloubMascot({
       svg.querySelector('[data-body]')?.setAttribute('opacity', String(frame.bodyAlpha));
       svg.querySelector('[data-mask-body]')?.setAttribute('d', frame.bodyPath);
 
+      // Update dynamic live face for custom shapes (cercle, squircle, soleil, nuage, triangle)
+      const isCustomShape =
+        normShape === 'cercle' ||
+        normShape === 'squircle' ||
+        normShape === 'soleil' ||
+        normShape === 'nuage' ||
+        normShape === 'triangle';
+
+      if (isCustomShape && svg) {
+        let tx0 = -24, ty0 = -6, tx1 = 24, ty1 = -6;
+        let k0 = 1, k1 = 1;
+        if (frame.eyes && frame.eyes.length >= 2) {
+          const p0 = frame.eyes[0].matrix.slice(7, -1).split(',');
+          const p1 = frame.eyes[1].matrix.slice(7, -1).split(',');
+          if (p0.length >= 6 && p1.length >= 6) {
+            tx0 = parseFloat(p0[4]) || -24;
+            ty0 = parseFloat(p0[5]) || -6;
+            tx1 = parseFloat(p1[4]) || 24;
+            ty1 = parseFloat(p1[5]) || -6;
+            k0 = Math.abs(parseFloat(p0[3])) || 1;
+            k1 = Math.abs(parseFloat(p1[3])) || 1;
+          }
+        }
+
+        const shapeYOffset = normShape === 'triangle' ? 28 : 0;
+        const ey0 = ty0 + shapeYOffset;
+        const ey1 = ty1 + shapeYOffset;
+
+        const eyeLeftEl = svg.querySelector('[data-live-eye-left]') as SVGGElement | null;
+        if (eyeLeftEl) {
+          eyeLeftEl.setAttribute('transform', `translate(${tx0.toFixed(1)}, ${ey0.toFixed(1)}) scale(1, ${k0.toFixed(2)})`);
+        }
+        const eyeRightEl = svg.querySelector('[data-live-eye-right]') as SVGGElement | null;
+        if (eyeRightEl) {
+          eyeRightEl.setAttribute('transform', `translate(${tx1.toFixed(1)}, ${ey1.toFixed(1)}) scale(1, ${k1.toFixed(2)})`);
+        }
+        const cheekLeftEl = svg.querySelector('[data-live-cheek-left]') as SVGCircleElement | null;
+        if (cheekLeftEl) {
+          cheekLeftEl.setAttribute('cx', (tx0 - 13).toFixed(1));
+          cheekLeftEl.setAttribute('cy', (ey0 + 22).toFixed(1));
+        }
+        const cheekRightEl = svg.querySelector('[data-live-cheek-right]') as SVGCircleElement | null;
+        if (cheekRightEl) {
+          cheekRightEl.setAttribute('cx', (tx1 + 13).toFixed(1));
+          cheekRightEl.setAttribute('cy', (ey1 + 22).toFixed(1));
+        }
+        const mouthEl = svg.querySelector('[data-live-mouth]') as SVGGElement | null;
+        if (mouthEl) {
+          const mx = ((tx0 + tx1) / 2).toFixed(1);
+          const my = (((ey0 + ey1) / 2) + 20).toFixed(1);
+          mouthEl.setAttribute('transform', `translate(${mx}, ${my})`);
+        }
+      }
+
       // Eyes (inside mask — cut holes through body for shapes using BotEngine face)
       const maskEyes = svg.querySelector('[data-mask-eyes]');
       if (maskEyes) {
@@ -290,7 +372,8 @@ export const BloubMascot = React.memo(function BloubMascot({
           normShape !== 'cercle' &&
           normShape !== 'squircle' &&
           normShape !== 'soleil' &&
-          normShape !== 'nuage'
+          normShape !== 'nuage' &&
+          normShape !== 'triangle'
         ) {
           for (const eye of frame.eyes) {
             const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -406,6 +489,87 @@ export const BloubMascot = React.memo(function BloubMascot({
   );
 
   const isThinking = state === 'thinking';
+
+  const renderLiveFace = (isTriangle = false) => {
+    const initEyeY = isTriangle ? 22 : -6;
+    const initCheekY = isTriangle ? 44 : 16;
+    const initMouthY = isTriangle ? 42 : 14;
+
+    return (
+      <g data-live-face="" className="mascot-live-face-rig">
+        {/* Left Eye Group */}
+        <g data-live-eye-left="" transform={`translate(-24, ${initEyeY}) scale(1, 1)`}>
+          {/* Normal upright pill eye */}
+          <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
+            <rect x="-7" y="-13" width="14" height="26" rx="7" fill="#1e1b4b" />
+            <circle cx="-2.5" cy="-4.5" r="3.2" fill="#fff" />
+            <circle cx="2" cy="4" r="1.6" fill="#fff" opacity="0.8" />
+          </g>
+          {/* Peaceful soft blink eye */}
+          <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
+            <path d="M -8,-2 Q 0,4 8,-2" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" fill="none" />
+          </g>
+          {/* Soft squint eye (> <) during squeeze & impact */}
+          <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
+            <path d="M -8,-6 L 0,-1 L -8,4" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </g>
+          {/* Star sparkles (✦) during loft */}
+          <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
+            <path d="M 0,-10 Q 0,-2 6,-2 Q 0,-2 0,6 Q 0,-2 -6,-2 Q 0,-2 0,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
+          </g>
+        </g>
+
+        {/* Right Eye Group */}
+        <g data-live-eye-right="" transform={`translate(24, ${initEyeY}) scale(1, 1)`}>
+          {/* Normal upright pill eye */}
+          <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
+            <rect x="-7" y="-13" width="14" height="26" rx="7" fill="#1e1b4b" />
+            <circle cx="-2.5" cy="-4.5" r="3.2" fill="#fff" />
+            <circle cx="2" cy="4" r="1.6" fill="#fff" opacity="0.8" />
+          </g>
+          {/* Peaceful soft blink eye */}
+          <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
+            <path d="M -8,-2 Q 0,4 8,-2" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" fill="none" />
+          </g>
+          {/* Soft squint eye (> <) during squeeze & impact */}
+          <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
+            <path d="M 8,-6 L 0,-1 L 8,4" stroke="#1e1b4b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </g>
+          {/* Star sparkles (✦) during loft */}
+          <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
+            <path d="M 0,-10 Q 0,-2 6,-2 Q 0,-2 0,6 Q 0,-2 -6,-2 Q 0,-2 0,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
+          </g>
+        </g>
+
+        {/* Rosy Kawaii Blush Cheeks */}
+        <circle data-live-cheek-left="" cx="-37" cy={initCheekY} r="9.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
+        <circle data-live-cheek-right="" cx="37" cy={initCheekY} r="9.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
+
+        {/* Sweet centered smile */}
+        <g data-live-mouth="" transform={`translate(0, ${initMouthY})`}>
+          <path
+            d="M -7,-2 Q 0,5 7,-2"
+            stroke="#1e1b4b"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            fill="none"
+            className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
+          />
+          {/* Happy Open Mouth during airborne loft */}
+          <ellipse
+            cx="0"
+            cy="0"
+            rx="4.5"
+            ry="5.5"
+            fill="#e11d48"
+            stroke="#1e1b4b"
+            strokeWidth="1.6"
+            className={`mascot-mouth-open ${isTapping ? 'tap-mouth-open' : ''}`}
+          />
+        </g>
+      </g>
+    );
+  };
 
   return (
     <svg
@@ -728,33 +892,24 @@ export const BloubMascot = React.memo(function BloubMascot({
         }
         @keyframes tapBurstSoleil {
           0% { transform: scale(1) rotate(0deg) translateY(0); }
-          14% { transform: scaleX(1.10) scaleY(0.90) rotate(-10deg) translateY(4px); }
-          38% { transform: scale(1.10) rotate(120deg) translateY(-22px); }
-          62% { transform: scale(1.04) rotate(260deg) translateY(-10px); }
-          82% { transform: scaleX(1.18) scaleY(0.88) rotate(360deg) translateY(3px); }
+          15% { transform: scaleX(1.10) scaleY(0.90) rotate(-12deg) translateY(4px); }
+          40% { transform: scale(1.10) rotate(140deg) translateY(-22px); }
+          65% { transform: scale(1.04) rotate(270deg) translateY(-8px); }
+          85% { transform: scaleX(1.16) scaleY(0.88) rotate(360deg) translateY(3px); }
           100% { transform: scale(1) rotate(360deg) translateY(0); }
         }
         @keyframes tapShadowSoleil {
           0% { transform: scale(1); opacity: 0.3; }
-          14% { transform: scale(1.14); opacity: 0.42; }
-          38% { transform: scale(0.66); opacity: 0.14; }
-          62% { transform: scale(0.78); opacity: 0.18; }
-          82% { transform: scale(1.18); opacity: 0.38; }
+          15% { transform: scale(1.14); opacity: 0.42; }
+          40% { transform: scale(0.66); opacity: 0.14; }
+          65% { transform: scale(0.78); opacity: 0.18; }
+          85% { transform: scale(1.18); opacity: 0.38; }
           100% { transform: scale(1); opacity: 0.3; }
-        }
-        @keyframes tapFaceSoleil {
-          0% { transform: rotate(0deg) translateY(0); }
-          14% { transform: rotate(-8deg) translateY(2px) scaleY(0.85); }
-          38% { transform: rotate(120deg) translateY(-14px) scale(1.05); }
-          62% { transform: rotate(260deg) translateY(-6px); }
-          82% { transform: rotate(360deg) translateY(2px) scaleX(1.1) scaleY(0.9); }
-          100% { transform: rotate(360deg) translateY(0); }
         }
         .idle-soleil { animation: idleSoleil 4.8s ease-in-out infinite; transform-origin: 0px 0px; }
         .idle-shadow-soleil { animation: idleShadowSoleil 4.8s ease-in-out infinite; }
         .tap-burst-soleil { animation: tapBurstSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
         .tap-shadow-soleil { animation: tapShadowSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-soleil { animation: tapFaceSoleil 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
         /* ── 4. LIVRE: Graceful Storybook Page Turn ── */
         @keyframes idleLivre {
@@ -1041,41 +1196,69 @@ export const BloubMascot = React.memo(function BloubMascot({
         .tap-shadow-capsule { animation: tapShadowCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-face-capsule { animation: tapFaceCapsule 1180ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
-        /* ── 10. TRIANGLE: Soft Onigiri Corner Sway ── */
+        /* ── 10. TRIANGLE: Smooth, Viscous Onigiri Sway & Corner Pivot ── */
         @keyframes idleTriangle {
-          0%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
-          50% { transform: translateY(-4px) scale(1.02); }
+          0% {
+            transform: scale(1) translate(0, 0) rotate(0deg);
+          }
+          25% {
+            transform: scaleX(0.98) scaleY(1.04) translateY(-4px) rotate(-3deg);
+          }
+          75% {
+            transform: scale(1.02) translateX(2px) translateY(-2px) rotate(2deg);
+          }
+          100% {
+            transform: scale(1) translate(0, 0) rotate(0deg);
+          }
         }
         @keyframes idleShadowTriangle {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(0.92); opacity: 0.22; }
+          0%, 100% { transform: scale(1) translateX(0); opacity: 0.3; }
+          25% { transform: scale(0.92) translateX(0); opacity: 0.22; }
+          75% { transform: scale(0.96) translateX(2px); opacity: 0.26; }
         }
         @keyframes tapBurstTriangle {
-          0% { transform: rotate(0deg) translateY(0) scale(1); }
-          26% { transform: rotate(-10deg) translateY(-5px); }
-          54% { transform: rotate(8deg) translateY(-4px); }
-          78% { transform: rotate(0deg) translateY(2px) scaleX(1.06) scaleY(0.95); }
-          100% { transform: rotate(0deg) translateY(0) scale(1); }
+          0% {
+            transform-origin: 50% 80%;
+            transform: scale(1) translate(0, 0) rotate(0deg);
+          }
+          17% {
+            /* Anticipation Squeeze */
+            transform-origin: 50% 80%;
+            transform: scaleX(1.12) scaleY(0.88) translateY(6px) rotate(0deg);
+          }
+          45% {
+            /* Corner Lift & Float (LOFT) on bottom-left corner */
+            transform-origin: 22% 82%;
+            transform: scale(1.06) translateY(-14px) rotate(-15deg);
+          }
+          74% {
+            /* Sway Across (Graceful Roll-Over) to bottom-right corner */
+            transform-origin: 78% 82%;
+            transform: scale(1.06) translateY(-8px) rotate(15deg);
+          }
+          87% {
+            /* Soft Ground Cushion Impact */
+            transform-origin: 50% 80%;
+            transform: scaleX(1.14) scaleY(0.92) translateY(4px) rotate(0deg);
+          }
+          100% {
+            /* Dampened Return */
+            transform-origin: 50% 80%;
+            transform: scale(1) translate(0, 0) rotate(0deg);
+          }
         }
         @keyframes tapShadowTriangle {
-          0% { transform: scale(1); opacity: 0.3; }
-          26% { transform: scale(0.95) rotate(-8deg); opacity: 0.26; }
-          54% { transform: scale(0.96) rotate(6deg); opacity: 0.27; }
-          78% { transform: scale(1.08); opacity: 0.36; }
-          100% { transform: scale(1); opacity: 0.3; }
+          0% { transform: scale(1) translateX(0); opacity: 0.3; }
+          17% { transform: scale(1.14) translateX(0); opacity: 0.45; }
+          45% { transform: scale(0.65) translateX(-8px); opacity: 0.12; }
+          74% { transform: scale(0.85) translateX(6px); opacity: 0.25; }
+          87% { transform: scale(1.18) translateX(0); opacity: 0.42; }
+          100% { transform: scale(1) translateX(0); opacity: 0.3; }
         }
-        @keyframes tapFaceTriangle {
-          0% { transform: rotate(0deg) translateY(0); }
-          26% { transform: rotate(-7deg) translateY(-3px); }
-          54% { transform: rotate(6deg) translateY(-2px); }
-          78% { transform: translateY(1px) scaleY(0.92); }
-          100% { transform: rotate(0deg) translateY(0); }
-        }
-        .idle-triangle { animation: idleTriangle 5.0s ease-in-out infinite; transform-origin: 0px 0px; }
-        .idle-shadow-triangle { animation: idleShadowTriangle 5.0s ease-in-out infinite; }
-        .tap-burst-triangle { animation: tapBurstTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
+        .idle-triangle { animation: idleTriangle 5.2s ease-in-out infinite; transform-origin: 50% 80%; }
+        .idle-shadow-triangle { animation: idleShadowTriangle 5.2s ease-in-out infinite; }
+        .tap-burst-triangle { animation: tapBurstTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tap-shadow-triangle { animation: tapShadowTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tap-face-triangle { animation: tapFaceTriangle 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: 0px 0px; }
 
         /* ── 11. OEUF: Gentle Cradle Rock ── */
         @keyframes idleOeuf {
@@ -1254,9 +1437,9 @@ export const BloubMascot = React.memo(function BloubMascot({
       {/* Dynamic floor shadow */}
       <ellipse
         cx="0"
-        cy="114"
-        rx="48"
-        ry="9"
+        cy="110"
+        rx="66"
+        ry="12"
         fill="#000"
         className={`mascot-shadow-rig ${
           isTapping
@@ -1295,9 +1478,9 @@ export const BloubMascot = React.memo(function BloubMascot({
         }}
       >
         {/* Standard body & backing disc ONLY for shapes using BotEngine mesh */}
-        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && (
+        {normShape !== 'cercle' && normShape !== 'squircle' && normShape !== 'soleil' && normShape !== 'nuage' && normShape !== 'triangle' && (
           <>
-            <circle cx="0" cy="0" r="50" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
+            <circle cx="0" cy="0" r="75" fill="#18181b" opacity="0.95" style={{ pointerEvents: 'none' }} />
             <path
               data-body=""
               mask={`url(#${maskId})`}
@@ -1309,368 +1492,221 @@ export const BloubMascot = React.memo(function BloubMascot({
           </>
         )}
 
-        {/* ── 1. SOLEIL: 10 Rounded Daisy Petal Lobes + Sunny Core Disc + Kawaii Face ── */}
+        {/* ── 1. SOLEIL: 12-Pointed Vibrant Sunburst + Sunny Yellow Core Disc + Dynamic Live Face ── */}
         {normShape === 'soleil' && (
-          <g className="soleil-flower-rig" style={{ pointerEvents: 'none' }}>
-            {/* 10 Plump Rounded Petal Lobes in Golden Amber */}
-            <g className="soleil-petals-cluster">
-              {Array.from({ length: 10 }, (_, i) => {
-                const angleDeg = i * 36;
-                const angleRad = (angleDeg * Math.PI) / 180;
-                const px = 46 * Math.cos(angleRad);
-                const py = 46 * Math.sin(angleRad);
-                return (
-                  <circle
-                    key={`petal-${i}`}
-                    cx={px}
-                    cy={py}
-                    r="27"
-                    fill={ink}
-                    stroke="#d97706"
-                    strokeWidth="1.5"
-                    style={{
-                      filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.12))',
-                    }}
-                  />
-                );
-              })}
-            </g>
+          <g className="soleil-sun-rig" style={{ pointerEvents: 'none' }}>
+            {/* 12 Radiant Rays Sunburst in Warm Orange */}
+            <path
+              d={SUNBURST_PATH}
+              fill="#f97316"
+              stroke="#ea580c"
+              strokeWidth="2.5"
+              style={{
+                filter: 'drop-shadow(0 3px 8px rgba(234, 88, 12, 0.35))',
+              }}
+            />
 
-            {/* Sunny Core Disc */}
+            {/* Sunny Core Disc in Vibrant Warm Yellow */}
             <circle
               cx="0"
               cy="0"
-              r="54"
+              r="64"
               fill={bodyHex === '#0a0a0c' ? '#fde047' : '#fde047'}
-              stroke={ink}
+              stroke="#ea580c"
               strokeWidth="2.5"
               style={{
                 filter: 'drop-shadow(0 2px 6px rgba(245, 158, 11, 0.4))',
               }}
             />
             {/* Inner Core Soft Warm Glow */}
-            <circle cx="0" cy="0" r="48" fill="#fef08a" opacity="0.35" />
+            <circle cx="0" cy="0" r="58" fill="#fef08a" opacity="0.45" />
 
-            {/* Kawaii Face Rig */}
-            <g className="mascot-face-rig">
-              {/* Normal upright pill eyes */}
-              <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-                <rect x="-24" y="-9" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <rect x="16" y="-9" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <circle cx="-21" cy="-5" r="2.2" fill="#fff" />
-                <circle cx="19" cy="-5" r="2.2" fill="#fff" />
-              </g>
-
-              {/* Peaceful soft blink eyes */}
-              <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
-                <path d="M -25,-2 Q -20,2 -15,-2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-                <path d="M 15,-2 Q 20,2 25,-2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-              </g>
-
-              {/* Soft squint eyes (> <) during squeeze & impact */}
-              <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
-                <path d="M -25,-6 L -17,-2 L -25,2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d="M 25,-6 L 17,-2 L 25,2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </g>
-
-              {/* Star sparkles (✦ ✦) during airborne bloom */}
-              <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
-                <path d="M -20,-10 Q -20,-3 -14,-3 Q -20,-3 -20,4 Q -20,-3 -26,-3 Q -20,-3 -20,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
-                <path d="M 20,-10 Q 20,-3 26,-3 Q 20,-3 20,4 Q 20,-3 14,-3 Q 20,-3 20,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
-              </g>
-
-              {/* Rosy Kawaii Blush Cheeks */}
-              <circle cx="-32" cy="14" r="8.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
-              <circle cx="32" cy="14" r="8.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
-
-              {/* Sweet Curved Smile */}
-              <path
-                d="M -7,16 Q 0,23 7,16"
-                stroke="#854d0e"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                fill="none"
-                className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
-              />
-              {/* Happy Open Mouth during bloom */}
-              <ellipse
-                cx="0"
-                cy="19"
-                rx="4.5"
-                ry="5.5"
-                fill="#e11d48"
-                stroke="#854d0e"
-                strokeWidth="1.8"
-                className={`mascot-mouth-open ${isTapping ? 'tap-mouth-open' : ''}`}
-              />
-            </g>
+            {/* Live Dynamic Kawaii Face */}
+            {renderLiveFace(false)}
           </g>
         )}
 
-        {/* ── 2. CERCLE: Smooth Marshmallow Body + Specular Highlight + Kawaii Face ── */}
+        {/* ── 2. CERCLE: Smooth Marshmallow Body + Specular Highlight + Dynamic Live Face ── */}
         {normShape === 'cercle' && (
           <g className="cercle-marshmallow-rig" style={{ pointerEvents: 'none' }}>
             {/* Golden radiant aura under airborne loft */}
             <circle
               cx="0"
-              cy="25"
-              r="46"
+              cy="30"
+              r="60"
               fill="rgba(253, 224, 71, 0.45)"
               className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
-              style={{ filter: 'blur(10px)' }}
+              style={{ filter: 'blur(12px)' }}
             />
 
             {/* Soft Circular Body */}
             <circle
               cx="0"
               cy="0"
-              r="52"
+              r="88"
               fill={ink}
-              style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.2))' }}
+              style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
             />
             {/* Subtle Depth Shadow */}
-            <circle cx="0" cy="4" r="51" fill="#000" opacity="0.08" />
+            <circle cx="0" cy="5" r="86" fill="#000" opacity="0.08" />
 
             {/* Glossy top-left specular highlight */}
             <ellipse
-              cx="-26"
-              cy="-28"
-              rx="15"
-              ry="7"
-              transform="rotate(-38 -26 -28)"
+              cx="-38"
+              cy="-42"
+              rx="22"
+              ry="10"
+              transform="rotate(-38 -38 -42)"
               fill="#fff"
               opacity="0.45"
             />
-            <circle cx="-12" cy="-38" r="3.5" fill="#fff" opacity="0.5" />
+            <circle cx="-20" cy="-56" r="4.5" fill="#fff" opacity="0.5" />
 
-            {/* Kawaii Face Rig */}
-            <g className="mascot-face-rig">
-              {/* Normal upright pill eyes */}
-              <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-                <rect x="-24" y="-9" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <rect x="16" y="-9" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <circle cx="-21" cy="-5" r="2.2" fill="#fff" />
-                <circle cx="19" cy="-5" r="2.2" fill="#fff" />
-              </g>
-
-              {/* Peaceful soft blink eyes */}
-              <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
-                <path d="M -25,-2 Q -20,2 -15,-2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-                <path d="M 15,-2 Q 20,2 25,-2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-              </g>
-
-              {/* Soft squint eyes (> <) during squeeze & impact */}
-              <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
-                <path d="M -25,-6 L -17,-2 L -25,2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d="M 25,-6 L 17,-2 L 25,2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </g>
-
-              {/* Star sparkles (✦ ✦) during airborne loft */}
-              <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
-                <path d="M -20,-10 Q -20,-3 -14,-3 Q -20,-3 -20,4 Q -20,-3 -26,-3 Q -20,-3 -20,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
-                <path d="M 20,-10 Q 20,-3 26,-3 Q 20,-3 20,4 Q 20,-3 14,-3 Q 20,-3 20,-10 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
-              </g>
-
-              {/* Kawaii Rosy Cheeks */}
-              <circle cx="-28" cy="14" r="8" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
-              <circle cx="28" cy="14" r="8" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
-
-              {/* Gentle centered smile */}
-              <path
-                d="M -6,15 Q 0,21 6,15"
-                stroke="#1e1b4b"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                fill="none"
-                className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
-              />
-              {/* Happy Open Mouth during airborne loft */}
-              <ellipse
-                cx="0"
-                cy="18"
-                rx="4"
-                ry="5"
-                fill="#e11d48"
-                stroke="#1e1b4b"
-                strokeWidth="1.5"
-                className={`mascot-mouth-open ${isTapping ? 'tap-mouth-open' : ''}`}
-              />
-            </g>
+            {/* Live Dynamic Kawaii Face */}
+            {renderLiveFace(false)}
           </g>
         )}
 
-        {/* ── 3. SQUIRCLE: Puffy Squircle Body + Specular Highlight + Kawaii Face ── */}
+        {/* ── 3. SQUIRCLE: Puffy Squircle Body + Specular Highlight + Dynamic Live Face ── */}
         {normShape === 'squircle' && (
           <g className="squircle-puffy-rig" style={{ pointerEvents: 'none' }}>
             {/* Puffy Squircle Body */}
             <rect
-              x="-52"
-              y="-52"
-              width="104"
-              height="104"
-              rx="34"
-              ry="34"
+              x="-86"
+              y="-86"
+              width="172"
+              height="172"
+              rx="56"
+              ry="56"
               fill={bodyHex === '#0a0a0c' ? '#fef9ee' : bodyHex}
-              style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))' }}
+              style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}
             />
             {/* Subtle Depth Shadow */}
-            <rect x="-52" y="-48" width="104" height="104" rx="34" ry="34" fill="#000" opacity="0.08" />
+            <rect x="-86" y="-80" width="172" height="172" rx="56" ry="56" fill="#000" opacity="0.08" />
 
             {/* Glossy top-left specular highlight */}
             <ellipse
-              cx="-26"
-              cy="-28"
-              rx="14"
-              ry="7"
-              transform="rotate(-38 -26 -28)"
+              cx="-38"
+              cy="-42"
+              rx="22"
+              ry="10"
+              transform="rotate(-38 -38 -42)"
               fill="#fff"
               opacity="0.45"
             />
-            <circle cx="-13" cy="-38" r="3.2" fill="#fff" opacity="0.5" />
+            <circle cx="-20" cy="-56" r="4.5" fill="#fff" opacity="0.5" />
 
-            {/* Kawaii Face Rig */}
-            <g className="mascot-face-rig">
-              {/* Normal upright pill eyes */}
-              <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-                <rect x="-24" y="-9" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <rect x="16" y="-9" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <circle cx="-21" cy="-5" r="2.2" fill="#fff" />
-                <circle cx="19" cy="-5" r="2.2" fill="#fff" />
-              </g>
-
-              {/* Soft squint eyes (> <) during squeeze & impact */}
-              <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
-                <path d="M -25,-6 L -17,-2 L -25,2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d="M 25,-6 L 17,-2 L 25,2" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </g>
-
-              {/* Kawaii Rosy Cheeks */}
-              <circle cx="-26" cy="14" r="7.5" fill="#fb7185" opacity={isTapping ? 0.75 : 0.55} />
-              <circle cx="26" cy="14" r="7.5" fill="#fb7185" opacity={isTapping ? 0.75 : 0.55} />
-
-              {/* Sweet centered smile */}
-              <path
-                d="M -6,15 Q 0,21 6,15"
-                stroke="#1e1b4b"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </g>
+            {/* Live Dynamic Kawaii Face */}
+            {renderLiveFace(false)}
           </g>
         )}
 
-        {/* ── 4. NUAGE: Atmospheric Cumulus Cloud Body + Inner Creases + Kawaii Face ── */}
+        {/* ── 4. NUAGE: Atmospheric Cumulus Cloud Body + Inner Creases + Dynamic Live Face ── */}
         {normShape === 'nuage' && (
           <g className="nuage-fluffy-rig" style={{ pointerEvents: 'none' }}>
             {/* Golden radiant aura under airborne loft */}
             <circle
               cx="0"
-              cy="25"
-              r="48"
+              cy="30"
+              r="62"
               fill="rgba(253, 224, 71, 0.45)"
               className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
-              style={{ filter: 'blur(10px)' }}
+              style={{ filter: 'blur(12px)' }}
             />
 
             {/* Layer 1: Subtle Depth Shadow beneath base */}
             <path
-              d="M -50,22 C -64,22 -66,2 -52,-8 C -54,-24 -34,-34 -20,-24 C -10,-44 18,-44 28,-26 C 44,-34 62,-18 56,0 C 68,14 56,30 42,28 C 25,32 -25,32 -50,22 Z"
+              d="M -75,33 C -98,33 -102,1 -80,-15 C -84,-39 -52,-55 -30,-39 C -16,-69 28,-69 44,-41 C 68,-53 96,-29 86,-1 C 104,21 86,45 64,41 C 38,49 -38,49 -75,33 Z"
               fill="#000"
               opacity="0.08"
             />
 
             {/* Layer 2: Puffy Cloud Body */}
             <path
-              d="M -50,18 C -64,18 -66,-2 -52,-12 C -54,-28 -34,-38 -20,-28 C -10,-48 18,-48 28,-30 C 44,-38 62,-22 56,-4 C 68,10 56,26 42,24 C 25,28 -25,28 -50,18 Z"
+              d="M -75,28 C -98,28 -102,-4 -80,-20 C -84,-44 -52,-60 -30,-44 C -16,-74 28,-74 44,-46 C 68,-58 96,-34 86,-6 C 104,16 86,40 64,36 C 38,44 -38,44 -75,28 Z"
               fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex}
               style={{
-                filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.16))',
+                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.16))',
               }}
             />
 
             {/* Glossy top-left specular highlight */}
             <ellipse
-              cx="-24"
-              cy="-24"
-              rx="12"
-              ry="6"
-              transform="rotate(-28 -24 -24)"
+              cx="-34"
+              cy="-34"
+              rx="16"
+              ry="8"
+              transform="rotate(-28 -34 -34)"
               fill="#fff"
               opacity="0.45"
             />
 
             {/* Layer 3: Inner Creases (delicate puff divisions) */}
             <path
-              d="M -20,-16 C -18,-4 -24,8 -32,12"
+              d="M -30,-24 C -28,-6 -36,12 -48,18"
               stroke="#000"
-              strokeWidth="2.2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               fill="none"
               opacity="0.07"
             />
             <path
-              d="M 20,-18 C 22,-4 28,6 34,12"
+              d="M 30,-28 C 34,-6 42,10 52,18"
               stroke="#000"
-              strokeWidth="2.2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               fill="none"
               opacity="0.07"
             />
 
-            {/* Kawaii Face Rig */}
-            <g className="mascot-face-rig">
-              {/* Normal upright pill eyes */}
-              <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-                <rect x="-22" y="-8" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <rect x="14" y="-8" width="8" height="15" rx="4" fill="#1e1b4b" />
-                <circle cx="-19" cy="-4" r="2.2" fill="#fff" />
-                <circle cx="17" cy="-4" r="2.2" fill="#fff" />
-              </g>
+            {/* Live Dynamic Kawaii Face */}
+            {renderLiveFace(false)}
+          </g>
+        )}
 
-              {/* Peaceful soft blink eyes */}
-              <g className={`mascot-face-blink ${isTapping ? '' : isStatic ? '' : 'idle-face-blink'}`}>
-                <path d="M -23,-1 Q -18,3 -13,-1" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-                <path d="M 13,-1 Q 18,3 23,-1" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-              </g>
+        {/* ── 5. TRIANGLE: Soft Puffy Onigiri Body + Specular Highlight + Kawaii Belly Face ── */}
+        {normShape === 'triangle' && (
+          <g className="triangle-onigiri-rig" style={{ pointerEvents: 'none' }}>
+            {/* Golden radiant aura under airborne loft */}
+            <circle
+              cx="0"
+              cy="20"
+              r="55"
+              fill="rgba(253, 224, 71, 0.45)"
+              className={`mascot-golden-aura ${isTapping ? 'tap-golden-aura' : ''}`}
+              style={{ filter: 'blur(12px)' }}
+            />
 
-              {/* Soft squint eyes (> <) during squeeze & impact */}
-              <g className={`mascot-face-squint ${isTapping ? 'tap-face-squint' : ''}`}>
-                <path d="M -23,-5 L -15,-1 L -23,3" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d="M 23,-5 L 15,-1 L 23,3" stroke="#1e1b4b" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </g>
+            {/* Layer 1: Subtle Base Depth Shadow */}
+            <path
+              d="M -18,-60 C -8,-74 8,-74 18,-60 C 48,-16 74,40 86,70 C 92,82 80,88 64,88 C 32,88 -32,88 -64,88 C -80,88 -92,82 -86,70 C -74,40 -48,-16 -18,-60 Z"
+              fill="#000"
+              opacity="0.08"
+            />
 
-              {/* Star sparkles (✦ ✦) during airborne loft */}
-              <g className={`mascot-face-sparkle ${isTapping ? 'tap-face-sparkle' : ''}`}>
-                <path d="M -18,-9 Q -18,-2 -12,-2 Q -18,-2 -18,5 Q -18,-2 -24,-2 Q -18,-2 -18,-9 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
-                <path d="M 18,-9 Q 18,-2 24,-2 Q 18,-2 18,5 Q 18,-2 12,-2 Q 18,-2 18,-9 Z" fill="#fff" stroke="#1e1b4b" strokeWidth="1.2" />
-              </g>
+            {/* Layer 2: Puffy Onigiri Body */}
+            <path
+              d="M -18,-64 C -8,-78 8,-78 18,-64 C 48,-20 74,36 86,66 C 92,78 80,84 64,84 C 32,84 -32,84 -64,84 C -80,84 -92,78 -86,66 C -74,36 -48,-20 -18,-64 Z"
+              fill={bodyHex === '#0a0a0c' ? '#fdfbf7' : bodyHex}
+              style={{
+                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))',
+              }}
+            />
 
-              {/* Rosy Kawaii Blush Cheeks */}
-              <circle cx="-26" cy="12" r="7.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
-              <circle cx="26" cy="12" r="7.5" fill="#fb7185" opacity={isTapping ? 0.8 : 0.6} />
+            {/* Glossy top-left specular highlight */}
+            <ellipse
+              cx="-26"
+              cy="-40"
+              rx="14"
+              ry="7"
+              transform="rotate(-38 -26 -40)"
+              fill="#fff"
+              opacity="0.45"
+            />
+            <circle cx="-14" cy="-52" r="3.2" fill="#fff" opacity="0.5" />
 
-              {/* Sweet centered smile */}
-              <path
-                d="M -6,14 Q 0,20 6,14"
-                stroke="#1e1b4b"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                fill="none"
-                className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
-              />
-              {/* Happy Open Mouth during airborne loft */}
-              <ellipse
-                cx="0"
-                cy="17"
-                rx="4"
-                ry="5"
-                fill="#e11d48"
-                stroke="#1e1b4b"
-                strokeWidth="1.5"
-                className={`mascot-mouth-open ${isTapping ? 'tap-mouth-open' : ''}`}
-              />
-            </g>
+            {/* Live Dynamic Kawaii Face (positioned in wide belly) */}
+            {renderLiveFace(true)}
           </g>
         )}
 
