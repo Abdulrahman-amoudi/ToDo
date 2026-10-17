@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,6 +20,13 @@ const caveat = Caveat({
 const lemonada = Lemonada({
   variable: "--font-lemonada",
   subsets: ["arabic"],
+});
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const bricolage = Bricolage_Grotesque({
@@ -48,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

@@ -5,6 +5,7 @@ import React from 'react';
 interface StudyMarkdownRendererProps {
   content: string;
   className?: string;
+  fontSize?: 'normal' | 'large' | 'xl';
 }
 
 // Helper to determine if a block is primarily Arabic
@@ -13,12 +14,23 @@ function isArabicText(text: string): boolean {
   return arabicRegex.test(text);
 }
 
+// Clean and normalize arrow symbols in math or grammar rules
+function normalizeArrows(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\\?rightarrow|-->|->/gi, '←')
+    .replace(/\\?leftarrow|<--|<-/gi, '→')
+    .replace(/\\?Leftarrow|<==|<=/gi, '⇐')
+    .replace(/\\?Rightarrow|==>|=>/gi, '⇒');
+}
+
 // Helper to isolate embedded math equations, quantities with units, formulas, and Latin symbols in Arabic/mixed text
 function renderBiDiText(text: string): React.ReactNode[] {
   if (!text) return [];
+  const normalized = normalizeArrows(text);
   // If text does not contain any Latin letters or math symbols, return as is
-  if (!/[A-Za-z\=\×\*\/\+\-\^]/.test(text)) {
-    return [text];
+  if (!/[A-Za-z\=\×\*\/\+\-\^]/.test(normalized)) {
+    return [normalized];
   }
 
   // Matches:
@@ -28,7 +40,7 @@ function renderBiDiText(text: string): React.ReactNode[] {
   // 4. Latin variables or abbreviations e.g. P_max, P_avg, W, V, Hz
   const bidiPattern = /(\([A-Za-z0-9_\.\s\=\×\*\/\+\-\^]+\)|(?:[A-Za-z0-9_\.]+\s*[\=\×\*\/\+\-\^]\s*)+[A-Za-z0-9_\.\s]+|\b\d+(?:\.\d+)?\s*[A-Za-z]+(?:\/[A-Za-z]+)?\b|\b[A-Za-z]+(?:_[A-Za-z0-9]+)?\b)/g;
 
-  const parts = text.split(bidiPattern);
+  const parts = normalized.split(bidiPattern);
   return parts.map((p, idx) => {
     if (!p) return null;
     const isFormulaOrLatin = /^[A-Za-z0-9_\.\s\=\×\*\/\+\-\^\(\)]+$/.test(p.trim()) && /[A-Za-z\=\×\*\/\+\-\^]/.test(p);
@@ -37,7 +49,7 @@ function renderBiDiText(text: string): React.ReactNode[] {
         <bdi
           key={`bdi-${idx}`}
           dir="ltr"
-          className="inline-block font-sans [unicode-bidi:isolate] font-semibold text-zinc-100 mx-0.5"
+          className="inline-block font-mono [unicode-bidi:isolate] font-bold text-indigo-200 mx-0.5 px-1 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/25"
         >
           {p}
         </bdi>
@@ -61,21 +73,33 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
     if (!part) return null;
 
     if (part.startsWith('`') && part.endsWith('`')) {
+      const codeInner = normalizeArrows(part.slice(1, -1));
+      const isCodeAr = isArabicText(codeInner);
       return (
         <code
           key={idx}
-          dir="ltr"
-          className="font-mono text-[11px] bg-white/10 text-amber-300 px-1.5 py-0.5 rounded border border-white/10 mx-0.5 inline-block [unicode-bidi:isolate]"
+          dir={isCodeAr ? 'rtl' : 'ltr'}
+          className={`font-bold bg-amber-400/15 text-amber-300 px-2 py-0.5 rounded-lg border border-amber-400/30 mx-1 inline-block [unicode-bidi:isolate] shadow-xs ${
+            isCodeAr ? 'font-arabic text-[14px] sm:text-[15px]' : 'font-mono text-xs'
+          }`}
         >
-          {part.slice(1, -1)}
+          {codeInner}
         </code>
       );
     }
 
     if (part.startsWith('**') && part.endsWith('**')) {
       const boldText = part.slice(2, -2).trim();
+      const isBoldAr = isArabicText(boldText);
       return (
-        <strong key={idx} className="font-bold text-white tracking-wide">
+        <strong
+          key={idx}
+          className={`font-black text-white tracking-wide ${
+            isBoldAr
+              ? 'font-arabic text-amber-200 bg-amber-400/15 px-1.5 py-0.5 rounded-md border border-amber-400/25 inline-block mx-0.5 shadow-xs'
+              : 'font-bold'
+          }`}
+        >
           {renderBiDiText(boldText)}
         </strong>
       );
@@ -83,7 +107,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
 
     if (part.startsWith('*') && part.endsWith('*')) {
       return (
-        <em key={idx} className="italic text-zinc-300">
+        <em key={idx} className="italic text-zinc-200">
           {renderBiDiText(part.slice(1, -1))}
         </em>
       );
@@ -93,7 +117,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
       return (
         <span
           key={idx}
-          className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[var(--theme-primary,#6366f1)]/15 border border-[var(--theme-primary,#6366f1)]/30 text-[var(--theme-primary,#818cf8)] font-mono text-[10px] font-semibold mx-1 select-none [unicode-bidi:isolate]"
+          className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-[var(--theme-primary,#818cf8)] font-mono text-xs font-bold mx-1 select-none [unicode-bidi:isolate] shadow-xs"
         >
           {part.slice(1, -1)}
         </span>
@@ -104,7 +128,11 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
   });
 }
 
-export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ content, className = '' }) => {
+export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ 
+  content, 
+  className = '',
+  fontSize = 'normal'
+}) => {
   if (!content) return null;
 
   // Split into lines
@@ -113,6 +141,10 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
 
   let listBuffer: { type: 'ul' | 'ol'; items: string[] } | null = null;
 
+  // Size multipliers
+  const arBodySize = fontSize === 'xl' ? 'text-lg' : fontSize === 'large' ? 'text-[17px]' : 'text-[15px] sm:text-base';
+  const enBodySize = fontSize === 'xl' ? 'text-base' : fontSize === 'large' ? 'text-[15px]' : 'text-sm';
+
   const flushList = (key: number) => {
     if (!listBuffer) return null;
     const isUl = listBuffer.type === 'ul';
@@ -120,32 +152,36 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
     listBuffer = null;
 
     return isUl ? (
-      <ul key={`ul-${key}`} className="space-y-1.5 my-2.5 ps-3 list-none">
+      <ul key={`ul-${key}`} className="space-y-2.5 my-3 ps-3 list-none">
         {items.map((it, i) => {
           const isAr = isArabicText(it);
           return (
             <li
               key={i}
               dir={isAr ? 'rtl' : 'ltr'}
-              className="flex items-start gap-2.5 text-xs text-zinc-200 leading-relaxed"
+              className={`flex items-start gap-3 leading-[2.1] text-zinc-50 ${
+                isAr ? `font-arabic ${arBodySize} font-medium` : `font-sans ${enBodySize} font-normal`
+              }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary,#6366f1)] mt-1.5 shrink-0 shadow-sm" />
+              <span className="w-2 h-2 rounded-full bg-[var(--theme-primary,#6366f1)] mt-2.5 shrink-0 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
               <div className="flex-1">{renderInlineFormatting(it)}</div>
             </li>
           );
         })}
       </ul>
     ) : (
-      <ol key={`ol-${key}`} className="space-y-2 my-2.5 ps-1 list-none">
+      <ol key={`ol-${key}`} className="space-y-3 my-3 ps-1 list-none">
         {items.map((it, i) => {
           const isAr = isArabicText(it);
           return (
             <li
               key={i}
               dir={isAr ? 'rtl' : 'ltr'}
-              className="flex items-start gap-2 text-xs text-zinc-200 leading-relaxed bg-white/[0.02] border border-white/5 p-2 rounded-xl"
+              className={`flex items-start gap-3 leading-[2.1] text-zinc-50 bg-white/[0.03] border border-white/10 p-3 rounded-2xl shadow-xs ${
+                isAr ? `font-arabic ${arBodySize} font-medium` : `font-sans ${enBodySize} font-normal`
+              }`}
             >
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-[var(--theme-primary,#818cf8)] font-mono text-[10px] font-bold shrink-0 mt-0.5">
+              <span className="flex items-center justify-center w-6 h-6 rounded-xl bg-gradient-to-tr from-[var(--theme-primary,#6366f1)]/25 to-purple-500/25 border border-[var(--theme-primary,#6366f1)]/40 text-[var(--theme-primary,#818cf8)] font-bold text-xs shrink-0 mt-0.5 shadow-sm">
                 {i + 1}
               </span>
               <div className="flex-1">{renderInlineFormatting(it)}</div>
@@ -171,7 +207,7 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
     if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
       if (listBuffer) elements.push(flushList(index));
       elements.push(
-        <div key={`hr-${index}`} className="my-3 border-t border-white/10" />
+        <div key={`hr-${index}`} className="my-4 border-t border-indigo-500/20" />
       );
       return;
     }
@@ -189,10 +225,12 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
           <h3
             key={`h-${index}`}
             dir={isAr ? 'rtl' : 'ltr'}
-            className="text-sm font-bold text-white tracking-tight pt-3 pb-1 border-b border-white/10 flex items-center gap-2"
+            className={`font-black text-white tracking-normal pt-4 pb-2 border-b border-indigo-500/30 flex items-center gap-2.5 ${
+              isAr ? 'font-arabic text-lg sm:text-xl leading-[1.8]' : 'font-sans text-base'
+            }`}
           >
-            <span className="w-1.5 h-3.5 rounded-full bg-[var(--theme-primary,#6366f1)]" />
-            <span>{renderInlineFormatting(title)}</span>
+            <span className="w-2 h-5 rounded-full bg-gradient-to-b from-indigo-400 to-amber-400 shrink-0 shadow-sm" />
+            <span className="text-white drop-shadow-xs">{renderInlineFormatting(title)}</span>
           </h3>
         );
       } else {
@@ -200,10 +238,12 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
           <h4
             key={`h-${index}`}
             dir={isAr ? 'rtl' : 'ltr'}
-            className="text-xs font-bold text-zinc-100 tracking-tight pt-2.5 pb-0.5 flex items-center gap-2"
+            className={`font-extrabold text-amber-300 tracking-normal pt-3 pb-1 flex items-center gap-2 ${
+              isAr ? 'font-arabic text-base sm:text-lg leading-[1.8]' : 'font-sans text-sm'
+            }`}
           >
-            <span className="w-1 h-2.5 rounded-full bg-emerald-400" />
-            <span>{renderInlineFormatting(title)}</span>
+            <span className="w-1.5 h-3.5 rounded-full bg-emerald-400 shrink-0 shadow-sm" />
+            <span className="drop-shadow-xs">{renderInlineFormatting(title)}</span>
           </h4>
         );
       }
@@ -222,15 +262,15 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
         <div
           key={`q-${index}`}
           dir={isAr ? 'rtl' : 'ltr'}
-          className="my-2.5 p-3 rounded-xl bg-gradient-to-r from-[var(--theme-primary,#6366f1)]/10 to-transparent border-s-2 border-[var(--theme-primary,#6366f1)] bg-white/[0.02] border-white/5"
+          className="my-3.5 p-4 rounded-2xl bg-gradient-to-r from-[var(--theme-primary,#6366f1)]/15 via-white/[0.03] to-transparent border-s-4 border-[var(--theme-primary,#6366f1)] border border-white/10 shadow-md"
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-bold text-[var(--theme-primary,#818cf8)] tracking-wide uppercase">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`font-black text-[var(--theme-primary,#818cf8)] tracking-wide uppercase ${isAr ? 'font-arabic text-sm' : 'text-xs'}`}>
               {qPrefix}
             </span>
           </div>
           {qBody && (
-            <p className="text-xs text-zinc-100 font-medium leading-relaxed">
+            <p className={`text-white leading-[2.1] ${isAr ? `font-arabic ${arBodySize} font-semibold` : `${enBodySize} font-medium`}`}>
               {renderInlineFormatting(qBody)}
             </p>
           )}
@@ -276,8 +316,8 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
       <p
         key={`p-${index}`}
         dir={isAr ? 'rtl' : 'ltr'}
-        className={`text-xs text-zinc-200 leading-relaxed [unicode-bidi:plaintext] ${
-          isAr ? 'text-right font-sans' : 'text-left'
+        className={`leading-[2.1] text-zinc-50 [unicode-bidi:plaintext] my-2.5 ${
+          isAr ? `text-right font-arabic ${arBodySize} font-medium` : `text-left font-sans ${enBodySize} text-zinc-100 font-normal`
         }`}
       >
         {renderInlineFormatting(trimmed)}
@@ -290,7 +330,7 @@ export const StudyMarkdownRenderer: React.FC<StudyMarkdownRendererProps> = ({ co
   }
 
   return (
-    <div className={`space-y-2 font-sans ${className}`}>
+    <div className={`space-y-2.5 ${className}`}>
       {elements}
     </div>
   );

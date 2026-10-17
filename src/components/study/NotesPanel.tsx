@@ -152,6 +152,26 @@ export const NotesPanel = React.memo(function NotesPanel({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
+  // Font Size Scaler for AI Study Chat & Notes ('normal' | 'large' | 'xl')
+  const [studyFontSize, setStudyFontSize] = useState<'normal' | 'large' | 'xl'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('vibe_study_font_size');
+        if (saved === 'normal' || saved === 'large' || saved === 'xl') return saved;
+      } catch {}
+    }
+    return 'normal';
+  });
+
+  const handleSetStudyFontSize = (size: 'normal' | 'large' | 'xl') => {
+    setStudyFontSize(size);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('vibe_study_font_size', size);
+      } catch {}
+    }
+  };
+
   // In-Panel Quiz State
   const [quizData, setQuizData] = useState<QuizResponse | null>(null);
   const [quizLoading, setQuizLoading] = useState(false);
@@ -685,12 +705,12 @@ export const NotesPanel = React.memo(function NotesPanel({
         />
       </div>
 
-      {/* Multi-Page Continuity Awareness Pill */}
-      <div className="px-3 py-1.5 bg-[var(--theme-surface-elevated)]/40 border-b border-[var(--theme-border)]/60 flex items-center justify-between text-[11px] text-[var(--theme-text-muted)] select-none z-10 shrink-0">
+      {/* Multi-Page Continuity Awareness Pill & Font Size Controls */}
+      <div className="px-3 py-1.5 bg-[var(--theme-surface-elevated)]/40 border-b border-[var(--theme-border)]/60 flex items-center justify-between text-[11px] text-[var(--theme-text-muted)] select-none z-10 shrink-0 gap-2 flex-wrap sm:flex-nowrap">
         <div className="flex items-center gap-1.5 flex-wrap">
           <Layers size={12} className="text-[var(--theme-primary,#818cf8)] shrink-0" />
           <span className="font-semibold text-zinc-300">
-            {locale === 'ar' ? 'سياق الصفحات المتصلة:' : 'Connected Pages Context:'}
+            {locale === 'ar' ? 'سياق الصفحات:' : 'Connected Pages:'}
           </span>
           <div className="inline-flex items-center gap-1 font-mono text-[10px]">
             {prevPageContent ? (
@@ -708,11 +728,44 @@ export const NotesPanel = React.memo(function NotesPanel({
             ) : null}
           </div>
         </div>
-        {(prevPageContent || nextPageContent) && (
-          <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full hidden sm:inline-flex items-center gap-1">
-            <CheckCircle2 size={10} /> {locale === 'ar' ? 'الصفحات بالأعلى والأسفل مدمجة' : 'Pages above & below active'}
-          </span>
-        )}
+
+        <div className="flex items-center gap-2 shrink-0 ms-auto">
+          {/* Interactive Font Size Controls */}
+          <div className="flex items-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] rounded-lg px-2 py-0.5 gap-1.5 shadow-xs" title={locale === 'ar' ? 'تكبير وتصغير الخط' : 'Scale Text Size'}>
+            <span className="text-[10px] text-zinc-400 font-arabic font-medium">{locale === 'ar' ? 'الخط' : 'Font'}</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (studyFontSize === 'xl') handleSetStudyFontSize('large');
+                else if (studyFontSize === 'large') handleSetStudyFontSize('normal');
+              }}
+              disabled={studyFontSize === 'normal'}
+              className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
+              title="A- Smaller"
+            >
+              A-
+            </button>
+            <span className="text-[10px] font-mono text-amber-300 font-bold uppercase">{studyFontSize}</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (studyFontSize === 'normal') handleSetStudyFontSize('large');
+                else if (studyFontSize === 'large') handleSetStudyFontSize('xl');
+              }}
+              disabled={studyFontSize === 'xl'}
+              className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
+              title="A+ Larger"
+            >
+              A+
+            </button>
+          </div>
+
+          {(prevPageContent || nextPageContent) && (
+            <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full hidden sm:inline-flex items-center gap-1">
+              <CheckCircle2 size={10} /> {locale === 'ar' ? 'مدمجة' : 'Connected'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Quick Prompt Chips Bar */}
@@ -921,26 +974,57 @@ export const NotesPanel = React.memo(function NotesPanel({
               className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-150`}
             >
               {msg.role === 'user' ? (
-                <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs font-medium leading-relaxed bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-white shadow-sm">
+                <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm sm:text-[15px] font-semibold leading-relaxed bg-[var(--theme-primary,#6366f1)]/20 border border-[var(--theme-primary,#6366f1)]/40 text-white shadow-sm font-arabic">
                   <p dir="auto">{msg.text}</p>
                 </div>
               ) : (
-                <div className="w-full rounded-2xl rounded-tl-sm p-4 text-xs leading-relaxed bg-[var(--theme-surface-elevated)]/90 border border-[var(--theme-border)] backdrop-blur-xl text-[var(--theme-text-primary)] shadow-xl space-y-3">
+                <div className="w-full rounded-2xl rounded-tl-sm p-4 leading-relaxed bg-[var(--theme-surface-elevated)]/90 border border-[var(--theme-border)] backdrop-blur-xl text-[var(--theme-text-primary)] shadow-xl space-y-3">
                   {/* Identity header */}
                   <div className="flex items-center justify-between pb-2 border-b border-[var(--theme-border)] text-[10px] text-[var(--theme-text-muted)] select-none">
                     <div className="flex items-center gap-1.5 font-bold tracking-tight text-[var(--theme-primary,#818cf8)]">
                       <Sparkles size={11} />
                       <span>NotebookLM • Gemini 3.8 Flash</span>
                     </div>
-                    {msg.grounded && (
-                      <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 size={10} /> 100% Grounded
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] rounded-md px-1.5 py-0.5 gap-1 shadow-xs" title={locale === 'ar' ? 'حجم الخط' : 'Font size'}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (studyFontSize === 'xl') handleSetStudyFontSize('large');
+                            else if (studyFontSize === 'large') handleSetStudyFontSize('normal');
+                          }}
+                          disabled={studyFontSize === 'normal'}
+                          title="Decrease font size"
+                          className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
+                        >
+                          A-
+                        </button>
+                        <span className="text-[10px] text-zinc-500 select-none">|</span>
+                        <span className="text-[10px] font-mono text-amber-300 font-bold uppercase">{studyFontSize}</span>
+                        <span className="text-[10px] text-zinc-500 select-none">|</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (studyFontSize === 'normal') handleSetStudyFontSize('large');
+                            else if (studyFontSize === 'large') handleSetStudyFontSize('xl');
+                          }}
+                          disabled={studyFontSize === 'xl'}
+                          title="Increase font size"
+                          className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
+                        >
+                          A+
+                        </button>
+                      </div>
+                      {msg.grounded && (
+                        <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 size={10} /> 100% Grounded
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Rich Formatted Markdown with Arabic BiDi support */}
-                  <StudyMarkdownRenderer content={msg.text} />
+                  {/* Rich Formatted Markdown with Arabic BiDi support & Cairo typography */}
+                  <StudyMarkdownRenderer content={msg.text} fontSize={studyFontSize} />
 
                   {/* Footer with citations and actions */}
                   <div className="pt-2 border-t border-[var(--theme-border)] flex items-center justify-between text-[11px] text-[var(--theme-text-muted)]">
@@ -1038,7 +1122,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             placeholder={locale === 'ar' ? 'اسأل بلوب عن أي نقطة في المستند...' : `Ask Gemini about ${docTitle || 'document'}...`}
             disabled={isAiLoading}
             dir="auto"
-            className="flex-1 bg-transparent text-xs text-white placeholder:text-[var(--theme-text-muted)] outline-none font-sans"
+            className="flex-1 bg-transparent text-sm font-medium text-white placeholder:text-[var(--theme-text-muted)] outline-none font-arabic"
           />
           <button
             type="submit"
@@ -1069,9 +1153,9 @@ export const NotesPanel = React.memo(function NotesPanel({
         onChange={handleTextChange}
         placeholder={`Write your handwritten or markdown notes for Page ${pageNumber}...`}
         dir={localNote.lang === 'ar' ? 'rtl' : 'ltr'}
-        className={`flex-1 w-full p-6 bg-transparent outline-none resize-none leading-[32px] ${
+        className={`flex-1 w-full p-6 bg-transparent outline-none resize-none leading-[36px] ${
           localNote.lang === 'ar'
-            ? 'font-[family-name:var(--font-lemonada)] text-right text-[1.05rem]'
+            ? 'font-[family-name:var(--font-cairo)] text-right text-[1.15rem] font-semibold text-zinc-100'
             : 'font-[family-name:var(--font-caveat)] text-left text-xl tracking-wide'
         } ${
           isDark
