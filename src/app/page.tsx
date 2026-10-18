@@ -105,8 +105,6 @@ const SHAPE_IDS = [
   'hexagone',
   'nuage',
   'goutte',
-  'oeuf',
-  'fromage',
   'livre',
 ];
 
@@ -120,10 +118,37 @@ const SHAPE_LABELS: Record<string, string> = {
   hexagone: 'Hexagon',
   nuage: 'Cloud',
   goutte: 'Droplet',
-  oeuf: 'Egg',
-  fromage: 'Cheese',
   livre: 'Book',
 };
+
+const SETTINGS_EXPRESSIONS = [
+  'neutral',
+  'happy',
+  'excited',
+  'chill',
+  'shy',
+  'sleepy',
+  'surprised',
+  'angry',
+  'sad',
+  'proud',
+] as const;
+
+function isExprSelected(selectedExpr: string | undefined | null, btnExpr: string): boolean {
+  const norm = (selectedExpr || '').toLowerCase().trim();
+  if (norm === btnExpr) return true;
+  if (btnExpr === 'neutral' && (norm === 'neutre' || norm === 'neutral' || norm === 'attentif')) return true;
+  if (btnExpr === 'happy' && (norm === 'heureux' || norm === 'happy')) return true;
+  if (btnExpr === 'excited' && (norm === 'excite' || norm === 'excited' || norm === 'hilare')) return true;
+  if (btnExpr === 'chill' && (norm === 'chill' || norm === 'blase' || norm === 'mefiant')) return true;
+  if (btnExpr === 'shy' && (norm === 'shy' || norm === 'timide')) return true;
+  if (btnExpr === 'sleepy' && (norm === 'sleepy' || norm === 'somnolent')) return true;
+  if (btnExpr === 'surprised' && (norm === 'surpris' || norm === 'surprised')) return true;
+  if (btnExpr === 'angry' && (norm === 'colere' || norm === 'angry')) return true;
+  if (btnExpr === 'sad' && (norm === 'triste' || norm === 'sad')) return true;
+  if (btnExpr === 'proud' && (norm === 'fier' || norm === 'proud')) return true;
+  return false;
+}
 
 export default function Home() {
   const { locale, setLocale, t: tLang, isRTL } = useLanguage();
@@ -256,9 +281,9 @@ export default function Home() {
 
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const token = authOtpCode.trim();
-    if (!token || token.length < 6) {
-      setAuthError('Please enter the verification code sent to your email.');
+    const token = authOtpCode.trim().slice(0, 6);
+    if (!token || token.length !== 6) {
+      setAuthError('Please enter the 6-digit verification code sent to your email.');
       return;
     }
     setAuthLoading(true);
@@ -1762,23 +1787,23 @@ export default function Home() {
           ) : (
             /* Step 2: Segmented PIN Verification Form */
             <form onSubmit={handleVerifyOtp} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              {/* Segmented PIN Code Display */}
+              {/* Segmented PIN Code Display (Strict 6 Digits) */}
               <div className="relative flex justify-center py-1">
                 <input
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  maxLength={8}
+                  maxLength={6}
                   autoFocus
                   value={authOtpCode}
                   onChange={(e) => {
-                    const clean = e.target.value.replace(/[^0-9]/g, '');
+                    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
                     setAuthOtpCode(clean);
-                    if (clean.length === 8 || clean.length === 6) {
+                    if (clean.length === 6) {
                       setTimeout(() => {
                         supabase.auth.verifyOtp({ email: authEmail.trim(), token: clean, type: 'email' })
                           .then(({ data, error }: any) => {
-                            if (error && (clean.length === 8 || clean.length === 6)) {
+                            if (error && clean.length === 6) {
                               setAuthError(error.message);
                             } else if (data?.session) {
                               setSession(data.session);
@@ -1794,12 +1819,12 @@ export default function Home() {
                     }
                   }}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-                  aria-label="Verification code"
+                  aria-label="6-digit verification code"
                 />
 
-                {/* Individual Segmented Digit Cells */}
+                {/* Individual Segmented Digit Cells (Strict 6 Cells) */}
                 <div className="flex items-center gap-1.5 sm:gap-2">
-                  {Array.from({ length: authOtpCode.length > 6 ? 8 : 6 }).map((_, idx) => {
+                  {Array.from({ length: 6 }).map((_, idx) => {
                     const digit = authOtpCode[idx];
                     const isCurrent = idx === authOtpCode.length;
                     return (
@@ -1856,7 +1881,7 @@ export default function Home() {
               {/* Primary Verify Button */}
               <button
                 type="submit"
-                disabled={authLoading || authOtpCode.length < 6}
+                disabled={authLoading || authOtpCode.length !== 6}
                 className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShieldCheck size={16} />
@@ -2311,7 +2336,7 @@ export default function Home() {
             {/* Left side: HUGE MASCOT */}
             <div className="hidden md:flex md:sticky md:top-0 md:h-screen md:w-1/2 lg:w-3/5 flex-col items-center justify-center p-8 select-none bg-slate-900/30 relative overflow-visible">
               <div className="w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
-                <BloubMascot size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
+                <BloubMascot key={`settings-preview-lg-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 <div className="mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
                   <span className="font-bold text-white capitalize">{getLocalizedShape(resolveShape(targetShape), locale) || targetShape}</span>
                   <span className="text-slate-500">•</span>
@@ -2326,7 +2351,7 @@ export default function Home() {
               {/* Mascot Preview inside Settings */}
               <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
                 <div className="md:hidden w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
-                  <BloubMascot size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
+                  <BloubMascot key={`settings-preview-sm-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
 
                 {/* Horizontal Category Scroller */}
@@ -2340,8 +2365,8 @@ export default function Home() {
                         : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
                     }`}
                   >
-                    <div className="w-8 h-8 flex items-center justify-center pointer-events-none">
-                      <BloubMascot size={48} state="idle" expression={mascotExpression} shape={mascotShape} color={mascotColor} isStatic={true} />
+                    <div className="w-10 h-10 flex items-center justify-center pointer-events-none">
+                      <BloubMascot size={36} state="idle" expression={mascotExpression} shape={mascotShape} color={mascotColor} isStatic={true} />
                     </div>
                     <span className="text-[10px] font-bold mt-1 tracking-wide uppercase">Global</span>
                   </button>
@@ -2359,8 +2384,8 @@ export default function Home() {
                             : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
                         }`}
                       >
-                        <div className="w-8 h-8 flex items-center justify-center pointer-events-none">
-                          <BloubMascot size={48} state="idle" expression={cExpr} shape={cShape} color={cColor} isStatic={true} />
+                        <div className="w-10 h-10 flex items-center justify-center pointer-events-none">
+                          <BloubMascot size={36} state="idle" expression={cExpr} shape={cShape} color={cColor} isStatic={true} />
                         </div>
                         <span className="text-[10px] font-bold mt-1 tracking-wide uppercase truncate w-12 text-center">{cat.name}</span>
                       </button>
@@ -2421,7 +2446,7 @@ export default function Home() {
                     {getLocalizedShape(resolveShape(targetShape), locale) || targetShape}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                <div className="grid grid-cols-5 gap-2.5">
                   {SHAPE_IDS.map(s => {
                     const isSelected = targetShape === s || normalizeShape(targetShape) === s;
                     return (
@@ -2438,7 +2463,7 @@ export default function Home() {
                         }`}
                         title={getLocalizedShape(s, locale) || s}
                       >
-                        <BloubMascot size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
+                        <BloubMascot key={`shape-tile-${s}-${targetExpr}-${targetColor}`} size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
                         <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedShape(s, locale) || s}</span>
                       </button>
                     );
@@ -2492,25 +2517,28 @@ export default function Home() {
                     {getLocalizedExpression(targetExpr, locale) || targetExpr} {autoMoodEnabled && (locale === 'ar' ? '(تفاعلي تلقائي)' : '(Auto-Reactive)')}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {(['neutral', 'happy', 'excited', 'chill', 'shy', 'sleepy'] as const).map(expr => (
-                    <button
-                      key={expr}
-                      type="button"
-                      onClick={() => updateTargetExpr(expr)}
-                      className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
-                        normalizeExpression(targetExpr) === expr
-                          ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
-                          : isDark
-                            ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
-                            : 'bg-white border-gray-200 hover:border-gray-300'
-                      }`}
-                      title={getLocalizedExpression(expr, locale) || expr}
-                    >
-                      <BloubMascot size={36} state="idle" expression={expr} shape={targetShape} color={targetColor} isStatic={true} />
-                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedExpression(expr, locale) || expr}</span>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-5 gap-2.5">
+                  {SETTINGS_EXPRESSIONS.map(expr => {
+                    const isSelected = isExprSelected(targetExpr, expr);
+                    return (
+                      <button
+                        key={expr}
+                        type="button"
+                        onClick={() => updateTargetExpr(expr)}
+                        className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
+                          isSelected
+                            ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
+                            : isDark
+                              ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                        }`}
+                        title={getLocalizedExpression(expr, locale) || expr}
+                      >
+                        <BloubMascot key={`expr-tile-${expr}-${targetShape}-${targetColor}`} size={36} state="idle" expression={expr} shape={targetShape} color={targetColor} isStatic={true} />
+                        <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedExpression(expr, locale) || expr}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

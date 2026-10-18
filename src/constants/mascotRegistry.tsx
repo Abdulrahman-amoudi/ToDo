@@ -92,6 +92,7 @@ export type CanonicalShape =
 
 export function resolveShape(raw?: string | null): string {
   const norm = normalizeShape(raw);
+  if (norm === 'fromage' || norm === 'cheese' || norm === 'oeuf' || norm === 'egg') return 'soleil';
   if (norm === 'book' || norm === 'livre') return 'livre';
   if (norm === 'cloud' || norm === 'nuage') return 'nuage';
   return norm;

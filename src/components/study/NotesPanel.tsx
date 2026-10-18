@@ -713,22 +713,23 @@ export const NotesPanel = React.memo(function NotesPanel({
       </div>
 
       {/* Multi-Page Continuity Awareness Pill & Font Size Controls */}
-      <div className="px-3.5 py-2 bg-[var(--theme-surface-elevated)]/60 border-b border-[var(--theme-border)]/70 flex items-center justify-between text-xs text-[var(--theme-text-muted)] select-none z-10 shrink-0 gap-3 backdrop-blur-md">
+      {/* Refined Page Header & Typography Scale */}
+      <div className="px-4 py-2.5 bg-zinc-950/80 border-b border-white/10 flex items-center justify-between text-xs select-none z-10 shrink-0 gap-3 backdrop-blur-xl">
         {/* Page indicator & Connected Context Badge */}
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--theme-primary,#6366f1)]/15 border border-[var(--theme-primary,#6366f1)]/30 text-[var(--theme-primary,#818cf8)] font-bold shadow-xs">
-            <BookOpen size={13} className="shrink-0 text-[var(--theme-primary,#818cf8)]" />
-            <span className="text-xs tracking-tight text-white font-arabic">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-white shadow-xs">
+            <BookOpen size={13} className="shrink-0 text-[var(--theme-primary,#3b82f6)]" />
+            <span className="text-xs font-semibold tracking-tight">
               {locale === 'ar'
-                ? `صفحة ${pageNumber}${numPages && numPages > 1 ? ` من ${numPages}` : ''}`
-                : `Page ${pageNumber}${numPages && numPages > 1 ? ` of ${numPages}` : ''}`}
+                ? `صفحة ${pageNumber}${numPages && numPages > 1 ? ` / ${numPages}` : ''}`
+                : `Page ${pageNumber}${numPages && numPages > 1 ? ` / ${numPages}` : ''}`}
             </span>
           </div>
 
           {(prevPageContent || nextPageContent) && (
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-semibold">
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span>{locale === 'ar' ? 'السياق المترابط ±1' : '±1 Context Synced'}</span>
+              <span>{locale === 'ar' ? 'سياق متصل' : 'Synced'}</span>
               <span className="text-emerald-400/80 font-mono text-[10px]">
                 {prevPageContent ? `P.${prevPageNumber || pageNumber - 1}` : ''}
                 {prevPageContent && nextPageContent ? ' • ' : ''}
@@ -738,23 +739,23 @@ export const NotesPanel = React.memo(function NotesPanel({
           )}
         </div>
 
-        {/* Tactile 3-Position Segmented Font Size Controller */}
+        {/* Tactile Segmented Font Size Controller */}
         <div className="flex items-center gap-1.5 ms-auto shrink-0">
-          <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-0.5 shadow-inner" title={locale === 'ar' ? 'حجم خط المذاكرة' : 'Study Text Size'}>
+          <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5 shadow-inner gap-0.5" title={locale === 'ar' ? 'حجم خط المذاكرة' : 'Text Size'}>
             {(['normal', 'large', 'xl'] as const).map((size) => {
               const isSelected = studyFontSize === size;
-              const label = size === 'normal' ? 'Aa' : size === 'large' ? 'Aa+' : 'Aa++';
-              const title = size === 'normal' ? (locale === 'ar' ? 'حجم عادي' : 'Default Size') : size === 'large' ? (locale === 'ar' ? 'حجم كبير' : 'Large Size') : (locale === 'ar' ? 'حجم فائق' : 'Extra Large');
+              const label = size === 'normal' ? 'A' : size === 'large' ? 'A+' : 'A++';
+              const title = size === 'normal' ? (locale === 'ar' ? 'حجم عادي' : 'Standard') : size === 'large' ? (locale === 'ar' ? 'حجم كبير' : 'Large') : (locale === 'ar' ? 'حجم فائق' : 'Extra Large');
               return (
                 <button
                   key={size}
                   type="button"
                   onClick={() => handleSetStudyFontSize(size)}
                   title={title}
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all duration-150 active:scale-95 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer ${
                     isSelected
-                      ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-sm shadow-[var(--theme-primary)]/30 font-black'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                      ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm font-semibold'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {label}
@@ -983,19 +984,19 @@ export const NotesPanel = React.memo(function NotesPanel({
                       <span>NotebookLM • Gemini 3.8 Flash</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-0.5 shadow-inner" title={locale === 'ar' ? 'حجم الخط' : 'Font size'}>
+                      <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5 shadow-inner gap-0.5" title={locale === 'ar' ? 'حجم الخط' : 'Font size'}>
                         {(['normal', 'large', 'xl'] as const).map((size) => {
                           const isSelected = studyFontSize === size;
-                          const label = size === 'normal' ? 'Aa' : size === 'large' ? 'Aa+' : 'Aa++';
+                          const label = size === 'normal' ? 'A' : size === 'large' ? 'A+' : 'A++';
                           return (
                             <button
                               key={size}
                               type="button"
                               onClick={() => handleSetStudyFontSize(size)}
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all duration-150 active:scale-95 cursor-pointer ${
+                              className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer ${
                                 isSelected
-                                  ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-xs font-black'
-                                  : 'text-zinc-400 hover:text-zinc-200'
+                                  ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-xs font-semibold'
+                                  : 'text-zinc-400 hover:text-white'
                               }`}
                             >
                               {label}

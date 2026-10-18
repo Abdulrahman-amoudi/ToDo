@@ -132,6 +132,26 @@ export const BloubMascot = React.memo(function BloubMascot({
 
   const normShape = normalizeShape(shape);
   const normExpr = normalizeExpression(expression);
+  const rawExpr = (expression || 'neutral').toLowerCase().trim();
+
+  const isExpr = useCallback((name: string) => {
+    if (rawExpr === name) return true;
+    if (normExpr === name) return true;
+    if (name === 'happy' && (rawExpr === 'heureux' || rawExpr === 'joyeux' || rawExpr === 'happy')) return true;
+    if (name === 'excited' && (rawExpr === 'excite' || rawExpr === 'hyped' || rawExpr === 'excited' || rawExpr === 'vroum' || rawExpr === 'klaxon')) return true;
+    if (name === 'surprised' && (rawExpr === 'surpris' || rawExpr === 'surprised' || rawExpr === 'surprise')) return true;
+    if (name === 'laugh' && (rawExpr === 'hilare' || rawExpr === 'laugh' || rawExpr === 'laughing')) return true;
+    if (name === 'chill' && (rawExpr === 'chill' || rawExpr === 'blase' || rawExpr === 'cool' || rawExpr === 'bored' || rawExpr === 'unamused')) return true;
+    if (name === 'shy' && (rawExpr === 'shy' || rawExpr === 'timide')) return true;
+    if (name === 'sleepy' && (rawExpr === 'sleepy' || rawExpr === 'somnolent' || rawExpr === 'sleep' || rawExpr === 'drowsy')) return true;
+    if (name === 'angry' && (rawExpr === 'colere' || rawExpr === 'angry' || rawExpr === 'anger')) return true;
+    if (name === 'sad' && (rawExpr === 'triste' || rawExpr === 'sad' || rawExpr === 'sorrow')) return true;
+    if (name === 'suspicious' && (rawExpr === 'mefiant' || rawExpr === 'suspicious')) return true;
+    if (name === 'proud' && (rawExpr === 'fier' || rawExpr === 'proud')) return true;
+    if (name === 'curious' && (rawExpr === 'curieux' || rawExpr === 'curious')) return true;
+    if (name === 'scared' && (rawExpr === 'effraye' || rawExpr === 'scared' || rawExpr === 'fear')) return true;
+    return false;
+  }, [rawExpr, normExpr]);
 
   const bodyHex =
     resolveColor(color) ||
@@ -233,21 +253,93 @@ export const BloubMascot = React.memo(function BloubMascot({
     }
   }, [state, currentDuration]);
 
+  const syncFaceDOM = useCallback((svg: SVGSVGElement | null, frame?: ReturnType<BotEngine['sample']> | null) => {
+    if (!svg) return;
+    let rawTx0 = -28, rawTy0 = 0, rawTx1 = 28, rawTy1 = 0;
+    let k0 = 1, k1 = 1;
+    if (frame?.eyes && frame.eyes.length >= 2) {
+      const p0 = frame.eyes[0].matrix.slice(7, -1).split(',');
+      const p1 = frame.eyes[1].matrix.slice(7, -1).split(',');
+      if (p0.length >= 6 && p1.length >= 6) {
+        rawTx0 = parseFloat(p0[4]) || -28;
+        rawTy0 = parseFloat(p0[5]) || 0;
+        rawTx1 = parseFloat(p1[4]) || 28;
+        rawTy1 = parseFloat(p1[5]) || 0;
+        k0 = Math.abs(parseFloat(p0[3])) || 1;
+        k1 = Math.abs(parseFloat(p1[3])) || 1;
+      }
+    }
+
+    const rawCenterX = (rawTx0 + rawTx1) / 2;
+    const rawCenterY = (rawTy0 + rawTy1) / 2;
+    const clampedCenterX = Math.max(-14, Math.min(14, rawCenterX));
+    const clampedCenterY = Math.max(-10, Math.min(10, rawCenterY));
+
+    const baseSeparation = 28;
+    const tx0 = clampedCenterX - baseSeparation;
+    const tx1 = clampedCenterX + baseSeparation;
+
+    const baseInitEyeY =
+      normShape === 'triangle'
+        ? 28
+        : normShape === 'goutte'
+        ? 26
+        : normShape === 'livre' || normShape === 'book'
+        ? -4
+        : normShape === 'galet' || normShape === 'capsule'
+        ? 2
+        : -6;
+
+    const ey0 = baseInitEyeY + clampedCenterY;
+    const ey1 = baseInitEyeY + clampedCenterY;
+
+    const eyeLeftEl = svg.querySelector('[data-live-eye-left]') as SVGGElement | null;
+    if (eyeLeftEl) {
+      eyeLeftEl.setAttribute('transform', `translate(${tx0.toFixed(1)}, ${ey0.toFixed(1)}) scale(1, ${k0.toFixed(2)})`);
+    }
+    const eyeRightEl = svg.querySelector('[data-live-eye-right]') as SVGGElement | null;
+    if (eyeRightEl) {
+      eyeRightEl.setAttribute('transform', `translate(${tx1.toFixed(1)}, ${ey1.toFixed(1)}) scale(1, ${k1.toFixed(2)})`);
+    }
+    const cheekLeftEl = svg.querySelector('[data-live-cheek-left]') as SVGCircleElement | null;
+    if (cheekLeftEl) {
+      cheekLeftEl.setAttribute('cx', (tx0 - 10).toFixed(1));
+      cheekLeftEl.setAttribute('cy', (ey0 + 20).toFixed(1));
+    }
+    const cheekRightEl = svg.querySelector('[data-live-cheek-right]') as SVGCircleElement | null;
+    if (cheekRightEl) {
+      cheekRightEl.setAttribute('cx', (tx1 + 10).toFixed(1));
+      cheekRightEl.setAttribute('cy', (ey1 + 20).toFixed(1));
+    }
+    const mouthEl = svg.querySelector('[data-live-mouth]') as SVGGElement | null;
+    if (mouthEl) {
+      const mx = clampedCenterX.toFixed(1);
+      const my = (ey0 + 18).toFixed(1);
+      mouthEl.setAttribute('transform', `translate(${mx}, ${my})`);
+    }
+  }, [normShape]);
+
   // React to `expression` prop
   useEffect(() => {
     if (engineRef.current) {
       const expr = EXPRESSION_BY_ID.get(normExpr as ExpressionId) ?? null;
-      engineRef.current.setExpression(expr, clockRef.current, isStatic);
+      engineRef.current.setExpression(expr, clockRef.current, true);
     }
-  }, [normExpr, isStatic]);
+    if (svgRef.current) {
+      syncFaceDOM(svgRef.current, null);
+    }
+  }, [normExpr, isStatic, syncFaceDOM]);
 
   // React to `shape` prop
   useEffect(() => {
     if (engineRef.current) {
       const shapeRadii = SHAPE_BY_ID.get(normShape)?.radii ?? null;
-      engineRef.current.setShape(shapeRadii, clockRef.current, isStatic);
+      engineRef.current.setShape(shapeRadii, clockRef.current, true);
     }
-  }, [normShape, isStatic]);
+    if (svgRef.current) {
+      syncFaceDOM(svgRef.current, null);
+    }
+  }, [normShape, isStatic, syncFaceDOM]);
 
   // React to resting `gaze` prop when state is idle
   useEffect(() => {
@@ -346,62 +438,7 @@ export const BloubMascot = React.memo(function BloubMascot({
         normShape === 'capsule';
 
       if (isCustomShape && svg) {
-        let rawTx0 = -28, rawTy0 = -6, rawTx1 = 28, rawTy1 = -6;
-        let k0 = 1, k1 = 1;
-        if (frame.eyes && frame.eyes.length >= 2) {
-          const p0 = frame.eyes[0].matrix.slice(7, -1).split(',');
-          const p1 = frame.eyes[1].matrix.slice(7, -1).split(',');
-          if (p0.length >= 6 && p1.length >= 6) {
-            rawTx0 = parseFloat(p0[4]) || -28;
-            rawTy0 = parseFloat(p0[5]) || -6;
-            rawTx1 = parseFloat(p1[4]) || 28;
-            rawTy1 = parseFloat(p1[5]) || -6;
-            k0 = Math.abs(parseFloat(p0[3])) || 1;
-            k1 = Math.abs(parseFloat(p1[3])) || 1;
-          }
-        }
-
-        // Clamp face center displacement strictly so facial features never detach from the body
-        const rawCenterX = (rawTx0 + rawTx1) / 2;
-        const rawCenterY = (rawTy0 + rawTy1) / 2;
-        const clampedCenterX = Math.max(-14, Math.min(14, rawCenterX));
-        const clampedCenterY = Math.max(-10, Math.min(10, rawCenterY));
-
-        const baseSeparation = 28;
-        const shapeXOffset = normShape === 'fromage' ? -3 : 0;
-        const tx0 = clampedCenterX + shapeXOffset - baseSeparation;
-        const tx1 = clampedCenterX + shapeXOffset + baseSeparation;
-        const ty0 = clampedCenterY;
-        const ty1 = clampedCenterY;
-
-        const shapeYOffset = normShape === 'triangle' ? 28 : normShape === 'goutte' ? 26 : (normShape === 'livre' || normShape === 'book') ? -4 : normShape === 'oeuf' ? 14 : normShape === 'fromage' ? 4 : (normShape === 'galet' || normShape === 'capsule') ? 2 : 0;
-        const ey0 = ty0 + shapeYOffset;
-        const ey1 = ty1 + shapeYOffset;
-
-        const eyeLeftEl = svg.querySelector('[data-live-eye-left]') as SVGGElement | null;
-        if (eyeLeftEl) {
-          eyeLeftEl.setAttribute('transform', `translate(${tx0.toFixed(1)}, ${ey0.toFixed(1)}) scale(1, ${k0.toFixed(2)})`);
-        }
-        const eyeRightEl = svg.querySelector('[data-live-eye-right]') as SVGGElement | null;
-        if (eyeRightEl) {
-          eyeRightEl.setAttribute('transform', `translate(${tx1.toFixed(1)}, ${ey1.toFixed(1)}) scale(1, ${k1.toFixed(2)})`);
-        }
-        const cheekLeftEl = svg.querySelector('[data-live-cheek-left]') as SVGCircleElement | null;
-        if (cheekLeftEl) {
-          cheekLeftEl.setAttribute('cx', (tx0 - 10).toFixed(1));
-          cheekLeftEl.setAttribute('cy', (ey0 + 20).toFixed(1));
-        }
-        const cheekRightEl = svg.querySelector('[data-live-cheek-right]') as SVGCircleElement | null;
-        if (cheekRightEl) {
-          cheekRightEl.setAttribute('cx', (tx1 + 10).toFixed(1));
-          cheekRightEl.setAttribute('cy', (ey1 + 20).toFixed(1));
-        }
-        const mouthEl = svg.querySelector('[data-live-mouth]') as SVGGElement | null;
-        if (mouthEl) {
-          const mx = (clampedCenterX + shapeXOffset).toFixed(1);
-          const my = (clampedCenterY + shapeYOffset + 18).toFixed(1);
-          mouthEl.setAttribute('transform', `translate(${mx}, ${my})`);
-        }
+        syncFaceDOM(svg, frame);
       }
 
       // Dots (behind body or above body)
@@ -522,29 +559,31 @@ export const BloubMascot = React.memo(function BloubMascot({
       : -6;
     const initCheekY = initEyeY + 22;
     const initMouthY = initEyeY + 18;
-    const isTimide = normExpr === 'timide' || normExpr === 'shy';
+    const isTimide = isExpr('shy');
 
     return (
-      <g data-live-face="" className="mascot-live-face-rig">
+      <g data-live-face="" key={`${normShape}-${rawExpr}`} className="mascot-live-face-rig">
         {/* Left Eye Group - Cyber-Kawaii Digital Visor Eye */}
         <g data-live-eye-left="" transform={`translate(-28, ${initEyeY}) scale(1, 1)`}>
           {/* Normal upright digital aperture eye or expression eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            {normExpr === 'hilare' || normExpr === 'laugh' ? (
+            {isExpr('laugh') ? (
               <path d="M -7,-5 L 0,0 L -7,5" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            ) : normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep' ? (
+            ) : isExpr('sleepy') ? (
               <path d="M -7,-2 Q 0,5 7,-2" stroke="#12111A" strokeWidth="3" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'fier' || normExpr === 'proud' ? (
+            ) : isExpr('proud') ? (
               <path d="M -7,2 Q 0,-4 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'mefiant' || normExpr === 'suspicious' ? (
+            ) : isExpr('suspicious') ? (
               <rect x="-8" y="-4" width="16" height="8" rx="3" fill="#12111A" />
-            ) : normExpr === 'surpris' || normExpr === 'surprised' ? (
+            ) : isExpr('surprised') ? (
               <>
                 <ellipse cx="0" cy="0" rx="7" ry="9" fill="#12111A" />
                 <circle cx="-1" cy="-3" r="2.2" fill="#fff" />
               </>
-            ) : normExpr === 'excite' || normExpr === 'excited' || normExpr === 'hyped' ? (
+            ) : isExpr('excited') ? (
               <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            ) : isExpr('happy') ? (
+              <path d="M -7,2 Q 0,-5 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
             ) : (
               <>
                 <rect x="-6" y="-13" width="12" height="26" rx="4" fill="#12111A" />
@@ -570,21 +609,23 @@ export const BloubMascot = React.memo(function BloubMascot({
         <g data-live-eye-right="" transform={`translate(28, ${initEyeY}) scale(1, 1)`}>
           {/* Normal upright digital aperture eye or expression eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            {normExpr === 'hilare' || normExpr === 'laugh' ? (
+            {isExpr('laugh') ? (
               <path d="M 7,-5 L 0,0 L 7,5" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            ) : normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep' ? (
+            ) : isExpr('sleepy') ? (
               <path d="M -7,-2 Q 0,5 7,-2" stroke="#12111A" strokeWidth="3" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'fier' || normExpr === 'proud' ? (
+            ) : isExpr('proud') ? (
               <path d="M -7,2 Q 0,-4 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'mefiant' || normExpr === 'suspicious' ? (
+            ) : isExpr('suspicious') ? (
               <rect x="-8" y="-4" width="16" height="8" rx="3" fill="#12111A" />
-            ) : normExpr === 'surpris' || normExpr === 'surprised' ? (
+            ) : isExpr('surprised') ? (
               <>
                 <ellipse cx="0" cy="0" rx="7" ry="9" fill="#12111A" />
                 <circle cx="-1" cy="-3" r="2.2" fill="#fff" />
               </>
-            ) : normExpr === 'excite' || normExpr === 'excited' || normExpr === 'hyped' ? (
+            ) : isExpr('excited') ? (
               <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            ) : isExpr('happy') ? (
+              <path d="M -7,2 Q 0,-5 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
             ) : (
               <>
                 <rect x="-6" y="-13" width="12" height="26" rx="4" fill="#12111A" />
@@ -608,35 +649,35 @@ export const BloubMascot = React.memo(function BloubMascot({
 
         {/* Distinct Facial Expression Features (Brows, Accessories) */}
         <g className="mascot-face-features" style={{ pointerEvents: 'none' }}>
-          {(normExpr === 'colere' || normExpr === 'angry' || normExpr === 'anger') && (
+          {isExpr('angry') && (
             <g>
               <path d={`M -38,${initEyeY - 14} L -18,${initEyeY - 8}`} stroke="#12111A" strokeWidth="4" strokeLinecap="round" />
               <path d={`M 38,${initEyeY - 14} L 18,${initEyeY - 8}`} stroke="#12111A" strokeWidth="4" strokeLinecap="round" />
             </g>
           )}
-          {(normExpr === 'triste' || normExpr === 'sad' || normExpr === 'sorrow') && (
+          {isExpr('sad') && (
             <g>
               <path d={`M -38,${initEyeY - 8} Q -28,${initEyeY - 14} -18,${initEyeY - 12}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path d={`M 38,${initEyeY - 8} Q 28,${initEyeY - 14} 18,${initEyeY - 12}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path className="tear-drip" d={`M 36,${initEyeY + 6} C 36,${initEyeY + 6} 41,${initEyeY + 14} 41,${initEyeY + 17} A 4 4 0 1 1 33,${initEyeY + 17} C 33,${initEyeY + 14} 36,${initEyeY + 6} Z`} fill="#38BDF8" />
             </g>
           )}
-          {(normExpr === 'surpris' || normExpr === 'surprised' || normExpr === 'surprise') && (
+          {isExpr('surprised') && (
             <g>
               <path d={`M -36,${initEyeY - 16} Q -28,${initEyeY - 22} -20,${initEyeY - 16}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path d={`M 20,${initEyeY - 16} Q 28,${initEyeY - 22} 36,${initEyeY - 16}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             </g>
           )}
-          {(normExpr === 'curieux' || normExpr === 'curious') && (
+          {isExpr('curious') && (
             <path d={`M 18,${initEyeY - 18} Q 28,${initEyeY - 24} 38,${initEyeY - 18}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
           )}
-          {(normExpr === 'effraye' || normExpr === 'scared' || normExpr === 'fear') && (
+          {isExpr('scared') && (
             <g>
               <path d={`M -37,${initEyeY - 14} Q -28,${initEyeY - 18} -19,${initEyeY - 13}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path d={`M 37,${initEyeY - 14} Q 28,${initEyeY - 18} 19,${initEyeY - 13}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             </g>
           )}
-          {(normExpr === 'blase' || normExpr === 'chill' || normExpr === 'cool' || normExpr === 'bored' || normExpr === 'unamused') && (
+          {isExpr('chill') && (
             <g>
               <path d={`M -40,${initEyeY - 4} L 40,${initEyeY - 4}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" />
               <rect x="-38" y={initEyeY - 6} width="20" height="15" rx="3.5" fill="#12111A" />
@@ -645,7 +686,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               <line x1="22" y1={initEyeY + 4} x2="28" y2={initEyeY - 3} stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" />
             </g>
           )}
-          {(normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep') && (
+          {isExpr('sleepy') && (
             <g className="sleep-zzz">
               <text x="36" y={initEyeY - 16} fill="#12111A" fontSize="12" fontWeight="900" fontFamily="sans-serif">z</text>
               <text x="46" y={initEyeY - 26} fill="#12111A" fontSize="16" fontWeight="900" fontFamily="sans-serif">Z</text>
@@ -677,7 +718,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
         {/* Expression-Aware Mouth Rig */}
         <g data-live-mouth="" transform={`translate(0, ${initMouthY})`}>
-          {normExpr === 'hilare' || normExpr === 'laugh' ? (
+          {isExpr('laugh') ? (
             <path
               d="M -8,-2 L 8,-2 C 8,8 -8,8 -8,-2 Z"
               fill="#e11d48"
@@ -686,7 +727,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               strokeLinejoin="round"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'surpris' || normExpr === 'surprised' || normExpr === 'surprise' ? (
+          ) : isExpr('surprised') ? (
             <ellipse
               cx="0"
               cy="0"
@@ -695,7 +736,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="#12111A"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'colere' || normExpr === 'triste' || normExpr === 'angry' || normExpr === 'sad' ? (
+          ) : isExpr('angry') || isExpr('sad') ? (
             <path
               d="M -6,2 Q 0,-2 6,2"
               stroke="#12111A"
@@ -704,7 +745,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'effraye' || normExpr === 'scared' || normExpr === 'fear' ? (
+          ) : isExpr('scared') ? (
             <path
               d="M -8,0 Q -4,-3 0,0 T 8,0"
               stroke="#12111A"
@@ -713,7 +754,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'mefiant' || normExpr === 'blase' || normExpr === 'chill' || normExpr === 'suspicious' ? (
+          ) : isExpr('suspicious') || isExpr('chill') ? (
             <line
               x1="-6"
               y1="0"
@@ -724,7 +765,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               strokeLinecap="round"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'fier' || normExpr === 'proud' ? (
+          ) : isExpr('proud') ? (
             <path
               d="M -6,0 Q 0,4 6,-3"
               stroke="#12111A"
@@ -733,7 +774,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'curieux' || normExpr === 'curious' ? (
+          ) : isExpr('curious') ? (
             <path
               d="M -5,1 Q 0,3 5,-2"
               stroke="#12111A"
@@ -742,7 +783,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'timide' || normExpr === 'shy' ? (
+          ) : isExpr('shy') ? (
             <path
               d="M -5,0 Q 0,2.5 5,0"
               stroke="#12111A"
@@ -751,7 +792,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep' ? (
+          ) : isExpr('sleepy') ? (
             <circle
               cx="0"
               cy="0"
