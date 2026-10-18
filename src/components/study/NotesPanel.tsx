@@ -69,6 +69,8 @@ export interface NotesPanelProps {
   triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
   isBookMinimized?: boolean;
   onToggleBook?: () => void;
+  mascotShape?: string;
+  mascotColor?: string;
 }
 
 interface ChatMessage {
@@ -107,10 +109,15 @@ export const NotesPanel = React.memo(function NotesPanel({
   onClose,
   triggerMascot,
   isBookMinimized = false,
-  onToggleBook
+  onToggleBook,
+  mascotShape,
+  mascotColor,
 }: NotesPanelProps) {
   const { locale, t, isRTL } = useLanguage();
   const getDraftKey = useCallback((pg: number) => `note_draft_${docId}_${pg}`, [docId]);
+
+  const activeMascotShape = mascotShape || (typeof window !== 'undefined' ? (localStorage.getItem('vibe_mascotShape') || localStorage.getItem('guest_mascotShape') || 'soleil') : 'soleil');
+  const activeMascotColor = mascotColor || (typeof window !== 'undefined' ? (localStorage.getItem('vibe_mascotColor') || localStorage.getItem('guest_mascotColor') || 'ambre') : 'ambre');
 
   const [activeTab, setActiveTab] = useState<PanelTab>(initialTab || 'ai');
 
@@ -482,7 +489,7 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   const handleAppendToNotes = (text: string) => {
     const cleanAppend = text.replace(/###/g, '').trim();
-    const updatedText = localNote.text ? `${localNote.text}\n\n---\n${cleanAppend}` : cleanAppend;
+    const updatedText = localNote.text ? `${localNote.text}\n\n***\n${cleanAppend}` : cleanAppend;
     const updated: NoteData = { ...localNote, text: updatedText };
     setLocalNote(updated);
     localNoteRef.current = updated;
@@ -706,70 +713,60 @@ export const NotesPanel = React.memo(function NotesPanel({
       </div>
 
       {/* Multi-Page Continuity Awareness Pill & Font Size Controls */}
-      <div className="px-3 py-1.5 bg-[var(--theme-surface-elevated)]/40 border-b border-[var(--theme-border)]/60 flex items-center justify-between text-[11px] text-[var(--theme-text-muted)] select-none z-10 shrink-0 gap-2 flex-wrap sm:flex-nowrap">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Layers size={12} className="text-[var(--theme-primary,#818cf8)] shrink-0" />
-          <span className="font-semibold text-zinc-300">
-            {locale === 'ar' ? 'سياق الصفحات:' : 'Connected Pages:'}
-          </span>
-          <div className="inline-flex items-center gap-1 font-mono text-[10px]">
-            {prevPageContent ? (
-              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-white/5" title="Preceding page loaded into AI context">
-                Pg.{prevPageNumber || pageNumber - 1} ↑
-              </span>
-            ) : null}
-            <span className="px-1.5 py-0.5 rounded bg-[var(--theme-primary)]/20 text-white font-bold border border-[var(--theme-primary)]/40 shadow-xs">
-              Pg.{pageNumber} {locale === 'ar' ? '(الحالية)' : '(Active)'}
+      <div className="px-3.5 py-2 bg-[var(--theme-surface-elevated)]/60 border-b border-[var(--theme-border)]/70 flex items-center justify-between text-xs text-[var(--theme-text-muted)] select-none z-10 shrink-0 gap-3 backdrop-blur-md">
+        {/* Page indicator & Connected Context Badge */}
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--theme-primary,#6366f1)]/15 border border-[var(--theme-primary,#6366f1)]/30 text-[var(--theme-primary,#818cf8)] font-bold shadow-xs">
+            <BookOpen size={13} className="shrink-0 text-[var(--theme-primary,#818cf8)]" />
+            <span className="text-xs tracking-tight text-white font-arabic">
+              {locale === 'ar'
+                ? `صفحة ${pageNumber}${numPages && numPages > 1 ? ` من ${numPages}` : ''}`
+                : `Page ${pageNumber}${numPages && numPages > 1 ? ` of ${numPages}` : ''}`}
             </span>
-            {nextPageContent ? (
-              <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-white/5" title="Following page loaded into AI context">
-                Pg.{nextPageNumber || pageNumber + 1} ↓
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 ms-auto">
-          {/* Interactive Font Size Controls */}
-          <div className="flex items-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] rounded-lg px-2 py-0.5 gap-1.5 shadow-xs" title={locale === 'ar' ? 'تكبير وتصغير الخط' : 'Scale Text Size'}>
-            <span className="text-[10px] text-zinc-400 font-arabic font-medium">{locale === 'ar' ? 'الخط' : 'Font'}</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (studyFontSize === 'xl') handleSetStudyFontSize('large');
-                else if (studyFontSize === 'large') handleSetStudyFontSize('normal');
-              }}
-              disabled={studyFontSize === 'normal'}
-              className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
-              title="A- Smaller"
-            >
-              A-
-            </button>
-            <span className="text-[10px] font-mono text-amber-300 font-bold uppercase">{studyFontSize}</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (studyFontSize === 'normal') handleSetStudyFontSize('large');
-                else if (studyFontSize === 'large') handleSetStudyFontSize('xl');
-              }}
-              disabled={studyFontSize === 'xl'}
-              className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
-              title="A+ Larger"
-            >
-              A+
-            </button>
           </div>
 
           {(prevPageContent || nextPageContent) && (
-            <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full hidden sm:inline-flex items-center gap-1">
-              <CheckCircle2 size={10} /> {locale === 'ar' ? 'مدمجة' : 'Connected'}
-            </span>
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span>{locale === 'ar' ? 'السياق المترابط ±1' : '±1 Context Synced'}</span>
+              <span className="text-emerald-400/80 font-mono text-[10px]">
+                {prevPageContent ? `P.${prevPageNumber || pageNumber - 1}` : ''}
+                {prevPageContent && nextPageContent ? ' • ' : ''}
+                {nextPageContent ? `P.${nextPageNumber || pageNumber + 1}` : ''}
+              </span>
+            </div>
           )}
+        </div>
+
+        {/* Tactile 3-Position Segmented Font Size Controller */}
+        <div className="flex items-center gap-1.5 ms-auto shrink-0">
+          <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-0.5 shadow-inner" title={locale === 'ar' ? 'حجم خط المذاكرة' : 'Study Text Size'}>
+            {(['normal', 'large', 'xl'] as const).map((size) => {
+              const isSelected = studyFontSize === size;
+              const label = size === 'normal' ? 'Aa' : size === 'large' ? 'Aa+' : 'Aa++';
+              const title = size === 'normal' ? (locale === 'ar' ? 'حجم عادي' : 'Default Size') : size === 'large' ? (locale === 'ar' ? 'حجم كبير' : 'Large Size') : (locale === 'ar' ? 'حجم فائق' : 'Extra Large');
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => handleSetStudyFontSize(size)}
+                  title={title}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all duration-150 active:scale-95 cursor-pointer ${
+                    isSelected
+                      ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-sm shadow-[var(--theme-primary)]/30 font-black'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Quick Prompt Chips Bar */}
-      <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-2 overflow-x-auto hide-scrollbar shrink-0 bg-[var(--theme-surface-elevated)]/60 backdrop-blur-md relative z-10">
+      {/* Quick Prompt Chips Bar (Zero Scrollbar Native) */}
+      <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-2 overflow-x-auto no-scrollbar hide-scrollbar scrollbar-none shrink-0 bg-[var(--theme-surface-elevated)]/60 backdrop-blur-md relative z-10 scroll-smooth">
         <button
           type="button"
           onClick={() => handleAskAi(
@@ -779,7 +776,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'ask'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
           <Workflow size={12} className="text-purple-400" />
           <span>{t('conceptTree')}</span>
@@ -793,7 +790,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'ask'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
           <ScrollText size={12} className="text-amber-400" />
           <span>{t('storyMode')}</span>
@@ -807,7 +804,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'summarize'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
           <Zap size={12} className="text-sky-400" />
           <span>{t('summarizePage')}</span>
@@ -822,7 +819,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'key_takeaways'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
           <Lightbulb size={12} className="text-yellow-400" />
           <span>{t('keyTakeaways')}</span>
@@ -836,7 +833,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'ask'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
           <Search size={12} className="text-emerald-400" />
           <span>{t('explainConcepts')}</span>
@@ -858,7 +855,7 @@ export const NotesPanel = React.memo(function NotesPanel({
                 onClick={() => triggerMascot?.('bounce', 'heureux', true)}
                 title="Tap Mascot"
               >
-                <BloubMascot size={72} state="idle" expression="curieux" isStatic={false} />
+                <BloubMascot size={104} shape={activeMascotShape} color={activeMascotColor} state="idle" expression="curieux" isStatic={false} />
               </div>
             </div>
 
@@ -986,34 +983,25 @@ export const NotesPanel = React.memo(function NotesPanel({
                       <span>NotebookLM • Gemini 3.8 Flash</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] rounded-md px-1.5 py-0.5 gap-1 shadow-xs" title={locale === 'ar' ? 'حجم الخط' : 'Font size'}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (studyFontSize === 'xl') handleSetStudyFontSize('large');
-                            else if (studyFontSize === 'large') handleSetStudyFontSize('normal');
-                          }}
-                          disabled={studyFontSize === 'normal'}
-                          title="Decrease font size"
-                          className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
-                        >
-                          A-
-                        </button>
-                        <span className="text-[10px] text-zinc-500 select-none">|</span>
-                        <span className="text-[10px] font-mono text-amber-300 font-bold uppercase">{studyFontSize}</span>
-                        <span className="text-[10px] text-zinc-500 select-none">|</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (studyFontSize === 'normal') handleSetStudyFontSize('large');
-                            else if (studyFontSize === 'large') handleSetStudyFontSize('xl');
-                          }}
-                          disabled={studyFontSize === 'xl'}
-                          title="Increase font size"
-                          className="px-1 text-[11px] font-bold text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
-                        >
-                          A+
-                        </button>
+                      <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-0.5 shadow-inner" title={locale === 'ar' ? 'حجم الخط' : 'Font size'}>
+                        {(['normal', 'large', 'xl'] as const).map((size) => {
+                          const isSelected = studyFontSize === size;
+                          const label = size === 'normal' ? 'Aa' : size === 'large' ? 'Aa+' : 'Aa++';
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => handleSetStudyFontSize(size)}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all duration-150 active:scale-95 cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-xs font-black'
+                                  : 'text-zinc-400 hover:text-zinc-200'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
                       </div>
                       {msg.grounded && (
                         <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">

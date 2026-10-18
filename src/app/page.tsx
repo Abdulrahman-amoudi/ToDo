@@ -95,13 +95,34 @@ const getDynamicMascotProps = (shape: string, baseColor: string, pendingCount: n
 
 
 
-const SHAPE_IDS = ['cloud', 'book', 'squircle', 'spark'];
+const SHAPE_IDS = [
+  'soleil',
+  'cercle',
+  'squircle',
+  'galet',
+  'capsule',
+  'triangle',
+  'hexagone',
+  'nuage',
+  'goutte',
+  'oeuf',
+  'fromage',
+  'livre',
+];
 
 const SHAPE_LABELS: Record<string, string> = {
-  cloud: 'Cloud',
-  book: 'Book',
+  soleil: 'Sun',
+  cercle: 'Circle',
   squircle: 'Squircle',
-  spark: 'Spark',
+  galet: 'Pebble',
+  capsule: 'Capsule',
+  triangle: 'Triangle',
+  hexagone: 'Hexagon',
+  nuage: 'Cloud',
+  goutte: 'Droplet',
+  oeuf: 'Egg',
+  fromage: 'Cheese',
+  livre: 'Book',
 };
 
 export default function Home() {
@@ -1486,14 +1507,6 @@ export default function Home() {
     }
     if (isGlobalTarget) {
       setMascotShape(s);
-      // BUG 6 FIX: Sync global shape across all list categories so old overrides don't shadow Global
-      setCatSettings(prev => {
-        const next = { ...prev };
-        for (const key of Object.keys(next)) {
-          next[key] = { ...next[key], shape: s };
-        }
-        return next;
-      });
     } else {
       setCatSettings(prev => ({
         ...prev,
@@ -1516,14 +1529,6 @@ export default function Home() {
     }
     if (isGlobalTarget) {
       setMascotColor(c);
-      // BUG 6 FIX: Sync global color across all list categories
-      setCatSettings(prev => {
-        const next = { ...prev };
-        for (const key of Object.keys(next)) {
-          next[key] = { ...next[key], color: c };
-        }
-        return next;
-      });
     } else {
       setCatSettings(prev => ({
         ...prev,
@@ -1546,14 +1551,6 @@ export default function Home() {
     }
     if (isGlobalTarget) {
       setMascotExpression(expr as any);
-      // BUG 6 FIX: Sync global expression across all list categories
-      setCatSettings(prev => {
-        const next = { ...prev };
-        for (const key of Object.keys(next)) {
-          next[key] = { ...next[key], expression: expr };
-        }
-        return next;
-      });
     } else {
       setCatSettings(prev => ({
         ...prev,
@@ -2424,25 +2421,28 @@ export default function Home() {
                     {getLocalizedShape(resolveShape(targetShape), locale) || targetShape}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {SHAPE_IDS.map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => updateTargetShape(s)}
-                      className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
-                        targetShape === s
-                          ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
-                          : isDark
-                            ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
-                            : 'bg-white border-gray-200 hover:border-gray-300'
-                      }`}
-                      title={getLocalizedShape(s, locale) || s}
-                    >
-                      <BloubMascot size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
-                      <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedShape(s, locale) || s}</span>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  {SHAPE_IDS.map(s => {
+                    const isSelected = targetShape === s || normalizeShape(targetShape) === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => updateTargetShape(s)}
+                        className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-all duration-150 active:scale-95 p-1 ${
+                          isSelected
+                            ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
+                            : isDark
+                              ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                        }`}
+                        title={getLocalizedShape(s, locale) || s}
+                      >
+                        <BloubMascot size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
+                        <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedShape(s, locale) || s}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -3376,9 +3376,8 @@ export default function Home() {
                <div className="mb-4 flex items-center gap-2 text-xs font-medium text-[var(--theme-text-muted)]">
                  <button 
                    onClick={() => { setIsListView(true); setShowStudyExplorer(false); }} 
-                   className="hover:text-[var(--theme-text-primary)] transition-colors flex items-center gap-1"
+                   className="hover:text-[var(--theme-text-primary)] transition-colors"
                  >
-                   <ArrowLeft size={13} />
                    <span>Lists</span>
                  </button>
                  <span>/</span>
@@ -3474,6 +3473,8 @@ export default function Home() {
                           apiKey={geminiApiKey}
                           triggerMascot={triggerMascot}
                           onUpdateNote={handleUpdateNote}
+                          mascotShape={heroShape}
+                          mascotColor={heroColor}
                         />
                       </div>
 
@@ -3497,6 +3498,8 @@ export default function Home() {
                       isLoading={isFetchingNote}
                       apiKey={geminiApiKey}
                       triggerMascot={triggerMascot}
+                      mascotShape={heroShape}
+                      mascotColor={heroColor}
                       onClose={() => setSelectedNote(null)}
                       onStartQuiz={() => setShowQuizSession(true)}
                       onWikilinkClick={async (target) => {

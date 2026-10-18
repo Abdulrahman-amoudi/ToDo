@@ -45,6 +45,8 @@ interface NoteViewerProps {
   hideTopHeader?: boolean; // For dual-pane embedding
   apiKey?: string;
   triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
+  mascotShape?: string;
+  mascotColor?: string;
 }
 
 export default function NoteViewer({
@@ -57,7 +59,9 @@ export default function NoteViewer({
   isDark = true,
   hideTopHeader = false,
   apiKey,
-  triggerMascot
+  triggerMascot,
+  mascotShape,
+  mascotColor,
 }: NoteViewerProps) {
   const [showOutline, setShowOutline] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -923,6 +927,8 @@ export default function NoteViewer({
                   isDark={isDark} 
                   onUpdateNote={onUpdateNote}
                   triggerMascot={triggerMascot}
+                  mascotShape={mascotShape}
+                  mascotColor={mascotColor}
                 />
               ) : (
                 <div className={`flex-1 overflow-y-auto custom-scrollbar p-6 rounded-2xl border ${

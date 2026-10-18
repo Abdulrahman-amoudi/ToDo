@@ -16,55 +16,85 @@ export function normalizeId(str: string | undefined | null): string {
 }
 
 export const SHAPE_ALIASES: Record<string, string> = {
-  // 1. Cloud (Classic Companion)
+  // 1. Cloud / Nuage
   cloud: 'cloud',
-  nuage: 'cloud',
-  goutte: 'cloud',
-  drop: 'cloud',
-  droplet: 'cloud',
+  nuage: 'nuage',
 
-  // 2. Book (Study & Vault Companion)
+  // 2. Book / Livre
   book: 'book',
-  livre: 'book',
+  livre: 'livre',
 
-  // 3. Squircle (Minimalist OLED Hardware Pet)
+  // 3. Squircle
   squircle: 'squircle',
   square: 'squircle',
-  cercle: 'squircle',
-  circle: 'squircle',
-  round: 'squircle',
-  galet: 'squircle',
-  pebble: 'squircle',
-  capsule: 'squircle',
-  pill: 'squircle',
-  oeuf: 'squircle',
-  egg: 'squircle',
 
-  // 4. Spark (Focus & Streak Companion)
+  // 4. Cercle
+  cercle: 'cercle',
+  circle: 'cercle',
+  round: 'cercle',
+
+  // 5. Galet
+  galet: 'galet',
+  pebble: 'galet',
+
+  // 6. Capsule
+  capsule: 'capsule',
+  pill: 'capsule',
+
+  // 7. Triangle
+  triangle: 'triangle',
+
+  // 8. Hexagone
+  hexagone: 'hexagone',
+  hexagon: 'hexagone',
+
+  // 9. Goutte
+  goutte: 'goutte',
+  drop: 'goutte',
+  droplet: 'goutte',
+
+  // 10. Oeuf
+  oeuf: 'oeuf',
+  egg: 'oeuf',
+
+  // 11. Soleil & Spark
+  soleil: 'soleil',
+  sun: 'soleil',
   spark: 'spark',
-  soleil: 'spark',
-  sun: 'spark',
   star: 'spark',
-  hexagone: 'spark',
-  hexagon: 'spark',
-  triangle: 'spark',
-  fromage: 'spark',
-  cheese: 'spark',
+
+  // 12. Fromage
+  fromage: 'fromage',
+  cheese: 'fromage',
 };
 
 export function normalizeShape(shape: string | undefined | null): string {
   const norm = normalizeId(shape);
-  return SHAPE_ALIASES[norm] || 'cloud';
+  return SHAPE_ALIASES[norm] || 'soleil';
 }
 
-export type CanonicalShape = 'cloud' | 'book' | 'squircle' | 'spark';
+export type CanonicalShape =
+  | 'soleil'
+  | 'cercle'
+  | 'squircle'
+  | 'galet'
+  | 'capsule'
+  | 'triangle'
+  | 'hexagone'
+  | 'nuage'
+  | 'cloud'
+  | 'goutte'
+  | 'oeuf'
+  | 'spark'
+  | 'fromage'
+  | 'livre'
+  | 'book';
 
-export function resolveShape(raw?: string | null): CanonicalShape {
+export function resolveShape(raw?: string | null): string {
   const norm = normalizeShape(raw);
-  if (norm === 'book' || norm === 'livre') return 'book';
-  if (norm === 'squircle') return 'squircle';
-  if (norm === 'spark' || norm === 'soleil') return 'spark';
-  return 'cloud';
+  if (norm === 'book' || norm === 'livre') return 'livre';
+  if (norm === 'cloud' || norm === 'nuage') return 'nuage';
+  return norm;
 }
 
 export const EXPRESSION_ALIASES: Record<string, string> = {

@@ -34,6 +34,8 @@ interface PdfNotebookViewerProps {
   isDark?: boolean;
   onUpdateNote?: ((updatedContent: string) => void) | ((noteId: string, updates: { content?: string; frontmatter?: any }) => void);
   triggerMascot?: (action: any, expression?: any, temp?: boolean) => void;
+  mascotShape?: string;
+  mascotColor?: string;
 }
 
 export default function PdfNotebookViewer({ 
@@ -46,7 +48,9 @@ export default function PdfNotebookViewer({
   initialNotesStr, 
   isDark = true, 
   onUpdateNote,
-  triggerMascot
+  triggerMascot,
+  mascotShape,
+  mascotColor,
 }: PdfNotebookViewerProps) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -1718,6 +1722,8 @@ export default function PdfNotebookViewer({
           }}
           onClose={() => setShowNotes(false)}
           triggerMascot={triggerMascot}
+          mascotShape={mascotShape}
+          mascotColor={mascotColor}
         />
       </>
     )}

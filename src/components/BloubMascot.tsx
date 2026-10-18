@@ -522,7 +522,7 @@ export const BloubMascot = React.memo(function BloubMascot({
       : -6;
     const initCheekY = initEyeY + 22;
     const initMouthY = initEyeY + 18;
-    const isTimide = normExpr === 'timide';
+    const isTimide = normExpr === 'timide' || normExpr === 'shy';
 
     return (
       <g data-live-face="" className="mascot-live-face-rig">
@@ -530,20 +530,20 @@ export const BloubMascot = React.memo(function BloubMascot({
         <g data-live-eye-left="" transform={`translate(-28, ${initEyeY}) scale(1, 1)`}>
           {/* Normal upright digital aperture eye or expression eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            {normExpr === 'hilare' ? (
+            {normExpr === 'hilare' || normExpr === 'laugh' ? (
               <path d="M -7,-5 L 0,0 L -7,5" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            ) : normExpr === 'somnolent' ? (
+            ) : normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep' ? (
               <path d="M -7,-2 Q 0,5 7,-2" stroke="#12111A" strokeWidth="3" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'fier' ? (
+            ) : normExpr === 'fier' || normExpr === 'proud' ? (
               <path d="M -7,2 Q 0,-4 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'mefiant' ? (
+            ) : normExpr === 'mefiant' || normExpr === 'suspicious' ? (
               <rect x="-8" y="-4" width="16" height="8" rx="3" fill="#12111A" />
-            ) : normExpr === 'surpris' ? (
+            ) : normExpr === 'surpris' || normExpr === 'surprised' ? (
               <>
                 <ellipse cx="0" cy="0" rx="7" ry="9" fill="#12111A" />
                 <circle cx="-1" cy="-3" r="2.2" fill="#fff" />
               </>
-            ) : normExpr === 'excite' ? (
+            ) : normExpr === 'excite' || normExpr === 'excited' || normExpr === 'hyped' ? (
               <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             ) : (
               <>
@@ -570,20 +570,20 @@ export const BloubMascot = React.memo(function BloubMascot({
         <g data-live-eye-right="" transform={`translate(28, ${initEyeY}) scale(1, 1)`}>
           {/* Normal upright digital aperture eye or expression eye */}
           <g className={`mascot-face-normal ${isTapping ? 'tap-face-normal' : isStatic ? '' : 'idle-face-normal'}`}>
-            {normExpr === 'hilare' ? (
+            {normExpr === 'hilare' || normExpr === 'laugh' ? (
               <path d="M 7,-5 L 0,0 L 7,5" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            ) : normExpr === 'somnolent' ? (
+            ) : normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep' ? (
               <path d="M -7,-2 Q 0,5 7,-2" stroke="#12111A" strokeWidth="3" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'fier' ? (
+            ) : normExpr === 'fier' || normExpr === 'proud' ? (
               <path d="M -7,2 Q 0,-4 7,2" stroke="#12111A" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-            ) : normExpr === 'mefiant' ? (
+            ) : normExpr === 'mefiant' || normExpr === 'suspicious' ? (
               <rect x="-8" y="-4" width="16" height="8" rx="3" fill="#12111A" />
-            ) : normExpr === 'surpris' ? (
+            ) : normExpr === 'surpris' || normExpr === 'surprised' ? (
               <>
                 <ellipse cx="0" cy="0" rx="7" ry="9" fill="#12111A" />
                 <circle cx="-1" cy="-3" r="2.2" fill="#fff" />
               </>
-            ) : normExpr === 'excite' ? (
+            ) : normExpr === 'excite' || normExpr === 'excited' || normExpr === 'hyped' ? (
               <path d="M -7,4 Q 0,-7 7,4" stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             ) : (
               <>
@@ -608,35 +608,35 @@ export const BloubMascot = React.memo(function BloubMascot({
 
         {/* Distinct Facial Expression Features (Brows, Accessories) */}
         <g className="mascot-face-features" style={{ pointerEvents: 'none' }}>
-          {normExpr === 'colere' && (
+          {(normExpr === 'colere' || normExpr === 'angry' || normExpr === 'anger') && (
             <g>
               <path d={`M -38,${initEyeY - 14} L -18,${initEyeY - 8}`} stroke="#12111A" strokeWidth="4" strokeLinecap="round" />
               <path d={`M 38,${initEyeY - 14} L 18,${initEyeY - 8}`} stroke="#12111A" strokeWidth="4" strokeLinecap="round" />
             </g>
           )}
-          {normExpr === 'triste' && (
+          {(normExpr === 'triste' || normExpr === 'sad' || normExpr === 'sorrow') && (
             <g>
               <path d={`M -38,${initEyeY - 8} Q -28,${initEyeY - 14} -18,${initEyeY - 12}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path d={`M 38,${initEyeY - 8} Q 28,${initEyeY - 14} 18,${initEyeY - 12}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path className="tear-drip" d={`M 36,${initEyeY + 6} C 36,${initEyeY + 6} 41,${initEyeY + 14} 41,${initEyeY + 17} A 4 4 0 1 1 33,${initEyeY + 17} C 33,${initEyeY + 14} 36,${initEyeY + 6} Z`} fill="#38BDF8" />
             </g>
           )}
-          {normExpr === 'surpris' && (
+          {(normExpr === 'surpris' || normExpr === 'surprised' || normExpr === 'surprise') && (
             <g>
               <path d={`M -36,${initEyeY - 16} Q -28,${initEyeY - 22} -20,${initEyeY - 16}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path d={`M 20,${initEyeY - 16} Q 28,${initEyeY - 22} 36,${initEyeY - 16}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             </g>
           )}
-          {normExpr === 'curieux' && (
+          {(normExpr === 'curieux' || normExpr === 'curious') && (
             <path d={`M 18,${initEyeY - 18} Q 28,${initEyeY - 24} 38,${initEyeY - 18}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
           )}
-          {normExpr === 'effraye' && (
+          {(normExpr === 'effraye' || normExpr === 'scared' || normExpr === 'fear') && (
             <g>
               <path d={`M -37,${initEyeY - 14} Q -28,${initEyeY - 18} -19,${initEyeY - 13}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
               <path d={`M 37,${initEyeY - 14} Q 28,${initEyeY - 18} 19,${initEyeY - 13}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             </g>
           )}
-          {normExpr === 'blase' && (
+          {(normExpr === 'blase' || normExpr === 'chill' || normExpr === 'cool' || normExpr === 'bored' || normExpr === 'unamused') && (
             <g>
               <path d={`M -40,${initEyeY - 4} L 40,${initEyeY - 4}`} stroke="#12111A" strokeWidth="3.5" strokeLinecap="round" />
               <rect x="-38" y={initEyeY - 6} width="20" height="15" rx="3.5" fill="#12111A" />
@@ -645,7 +645,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               <line x1="22" y1={initEyeY + 4} x2="28" y2={initEyeY - 3} stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" />
             </g>
           )}
-          {normExpr === 'somnolent' && (
+          {(normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep') && (
             <g className="sleep-zzz">
               <text x="36" y={initEyeY - 16} fill="#12111A" fontSize="12" fontWeight="900" fontFamily="sans-serif">z</text>
               <text x="46" y={initEyeY - 26} fill="#12111A" fontSize="16" fontWeight="900" fontFamily="sans-serif">Z</text>
@@ -677,7 +677,7 @@ export const BloubMascot = React.memo(function BloubMascot({
 
         {/* Expression-Aware Mouth Rig */}
         <g data-live-mouth="" transform={`translate(0, ${initMouthY})`}>
-          {normExpr === 'hilare' ? (
+          {normExpr === 'hilare' || normExpr === 'laugh' ? (
             <path
               d="M -8,-2 L 8,-2 C 8,8 -8,8 -8,-2 Z"
               fill="#e11d48"
@@ -686,7 +686,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               strokeLinejoin="round"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'surpris' ? (
+          ) : normExpr === 'surpris' || normExpr === 'surprised' || normExpr === 'surprise' ? (
             <ellipse
               cx="0"
               cy="0"
@@ -695,7 +695,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="#12111A"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'colere' || normExpr === 'triste' ? (
+          ) : normExpr === 'colere' || normExpr === 'triste' || normExpr === 'angry' || normExpr === 'sad' ? (
             <path
               d="M -6,2 Q 0,-2 6,2"
               stroke="#12111A"
@@ -704,7 +704,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'effraye' ? (
+          ) : normExpr === 'effraye' || normExpr === 'scared' || normExpr === 'fear' ? (
             <path
               d="M -8,0 Q -4,-3 0,0 T 8,0"
               stroke="#12111A"
@@ -713,7 +713,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'mefiant' || normExpr === 'blase' ? (
+          ) : normExpr === 'mefiant' || normExpr === 'blase' || normExpr === 'chill' || normExpr === 'suspicious' ? (
             <line
               x1="-6"
               y1="0"
@@ -724,7 +724,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               strokeLinecap="round"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'fier' ? (
+          ) : normExpr === 'fier' || normExpr === 'proud' ? (
             <path
               d="M -6,0 Q 0,4 6,-3"
               stroke="#12111A"
@@ -733,7 +733,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'curieux' ? (
+          ) : normExpr === 'curieux' || normExpr === 'curious' ? (
             <path
               d="M -5,1 Q 0,3 5,-2"
               stroke="#12111A"
@@ -742,7 +742,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'timide' ? (
+          ) : normExpr === 'timide' || normExpr === 'shy' ? (
             <path
               d="M -5,0 Q 0,2.5 5,0"
               stroke="#12111A"
@@ -751,7 +751,7 @@ export const BloubMascot = React.memo(function BloubMascot({
               fill="none"
               className={`mascot-mouth-smile ${isTapping ? 'tap-mouth-smile' : ''}`}
             />
-          ) : normExpr === 'somnolent' ? (
+          ) : normExpr === 'somnolent' || normExpr === 'sleepy' || normExpr === 'sleep' ? (
             <circle
               cx="0"
               cy="0"

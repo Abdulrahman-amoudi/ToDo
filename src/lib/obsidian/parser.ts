@@ -36,6 +36,58 @@ function getDirname(filePath: string): string {
  * - Operates safely and efficiently on huge documents (> 25,000 words in < 10ms)
  * - 100% portable: zero node:fs or environment-specific dependencies
  */
+/**
+ * Quote-aware YAML frontmatter extractor.
+ * Prevents early termination on '---' markdown horizontal rules embedded inside JSON or quoted strings.
+ */
+function extractFrontmatter(rawContent: string): { yamlBlock: string; bodyContent: string; matchLength: number } | null {
+  if (!rawContent || !rawContent.startsWith('---')) return null;
+  const lines = rawContent.split(/\r?\n/);
+  if (lines[0].trim() !== '---') return null;
+
+  let inSingleQuotes = false;
+  let inDoubleQuotes = false;
+  let closingIndex = -1;
+  let runningLength = lines[0].length + (rawContent.includes('\r\n') ? 2 : 1);
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed === '---' && !inSingleQuotes && !inDoubleQuotes) {
+      closingIndex = i;
+      runningLength += line.length + (rawContent.includes('\r\n') ? 2 : 1);
+      break;
+    }
+
+    for (let c = 0; c < line.length; c++) {
+      const char = line[c];
+      if (char === "'" && !inDoubleQuotes) {
+        if (c + 1 < line.length && line[c + 1] === "'") {
+          c++; // skip escaped ''
+        } else {
+          inSingleQuotes = !inSingleQuotes;
+        }
+      } else if (char === '"' && !inSingleQuotes) {
+        if (c > 0 && line[c - 1] === '\\') {
+          // escaped double quote
+        } else {
+          inDoubleQuotes = !inDoubleQuotes;
+        }
+      }
+    }
+    runningLength += line.length + (rawContent.includes('\r\n') ? 2 : 1);
+  }
+
+  if (closingIndex === -1) return null;
+
+  const yamlLines = lines.slice(1, closingIndex);
+  const yamlBlock = yamlLines.join('\n');
+  const bodyContent = rawContent.slice(runningLength);
+
+  return { yamlBlock, bodyContent, matchLength: runningLength };
+}
+
 export function parseObsidianMarkdown(
   rawContent: string,
   relativePath: string,
@@ -64,11 +116,11 @@ export function parseObsidianMarkdown(
     };
   }
 
-  // 1. Extract YAML Frontmatter safely (tolerant to optional newlines and whitespace around delimiters)
-  const yamlMatch = rawContent.match(/^---[ \t]*\r?\n([\s\S]*?)(?:\r?\n)?[ \t]*---[ \t]*(?:\r?\n)?/);
-  if (yamlMatch) {
-    const yamlBlock = yamlMatch[1];
-    bodyContent = rawContent.slice(yamlMatch[0].length);
+  // 1. Extract YAML Frontmatter with quote-awareness
+  const fm = extractFrontmatter(rawContent);
+  if (fm) {
+    const yamlBlock = fm.yamlBlock;
+    bodyContent = fm.bodyContent;
 
     try {
       const lines = yamlBlock.split(/\r?\n/);
@@ -230,12 +282,11 @@ export function parseObsidianMarkdown(
  */
 export function updateFrontmatterField(content: string, key: string, value: string): string {
   const raw = content || '';
-  const yamlMatch = raw.match(/^---[ \t]*\r?\n([\s\S]*?)(?:\r?\n)?[ \t]*---[ \t]*(?:\r?\n)?/);
+  const fm = extractFrontmatter(raw);
   const newLine = `${key}: '${value.replace(/'/g, "''")}'`;
 
-  if (yamlMatch) {
-    const yamlBlock = yamlMatch[1];
-    const lines = yamlBlock.split(/\r?\n/);
+  if (fm) {
+    const lines = fm.yamlBlock.split(/\r?\n/);
     let replaced = false;
     const newLines: string[] = [];
 
@@ -254,8 +305,7 @@ export function updateFrontmatterField(content: string, key: string, value: stri
     }
 
     const updatedYamlBlock = newLines.join('\n');
-    const bodyContent = raw.slice(yamlMatch[0].length);
-    const cleanBody = bodyContent.replace(/^\r?\n+/, '');
+    const cleanBody = fm.bodyContent.replace(/^\r?\n+/, '');
     return `---\n${updatedYamlBlock.trim()}\n---\n\n${cleanBody}`;
   } else {
     return `---\n${newLine}\n---\n\n${raw}`;
