@@ -1668,10 +1668,11 @@ export default function Home() {
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-md bg-white border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.08)] rounded-3xl p-8 relative z-10 text-center flex flex-col items-center"
         >
-          {/* Framed Mascot Hero - Cloud mascot with vibrant indigo fill & happy expression */}
+          {/* Framed Mascot Hero - Sunflower mascot with vibrant blue fill & happy expression */}
           <div className="relative mb-5 flex items-center justify-center">
-            <div className="w-24 h-24 rounded-2xl bg-indigo-50/80 border border-indigo-100 p-3 flex items-center justify-center shadow-sm">
-              <BloubMascot size={80} state="idle" expression="happy" shape="cloud" color="#6366F1" isStatic={false} isTyping={false} />
+            <div className="absolute inset-0 rounded-full blur-2xl bg-blue-500/20 scale-125 pointer-events-none" />
+            <div className="w-32 h-32 rounded-3xl bg-blue-50/80 border border-blue-100/80 p-2 flex items-center justify-center shadow-md relative overflow-visible cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200">
+              <BloubMascot size={120} state="idle" expression="happy" shape="soleil" color="#3b82f6" isStatic={false} isTyping={false} />
             </div>
           </div>
 
