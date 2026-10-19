@@ -279,27 +279,57 @@ export default function Home() {
     }
   };
 
-  const handleVerifyOtp = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const token = authOtpCode.trim().slice(0, 6);
-    if (!token || token.length !== 6) {
-      setAuthError('Please enter the 6-digit verification code sent to your email.');
+  const otpDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const verifyWithFallback = async (tokenToVerify: string) => {
+    const cleanEmail = authEmail.trim();
+    const token = tokenToVerify.trim();
+    if (!token || token.length < 6 || token.length > 8) {
+      setAuthError('Please enter the verification code sent to your email.');
       return;
     }
     setAuthLoading(true);
     setAuthError(null);
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: authEmail.trim(),
+      // 1. Try 'email' (for confirmed / existing users)
+      let { data, error } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
         token,
         type: 'email'
       });
+
+      // 2. Fallback to 'signup' (crucial: signInWithOtp creates unconfirmed users with 'signup' token type)
+      if (error && (error.message?.toLowerCase().includes('invalid') || error.message?.toLowerCase().includes('expired') || error.status === 403 || error.status === 400)) {
+        const signupRes = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token,
+          type: 'signup'
+        });
+        if (!signupRes.error && signupRes.data?.session) {
+          data = signupRes.data;
+          error = null;
+        }
+      }
+
+      // 3. Fallback to 'magiclink'
+      if (error && (error.message?.toLowerCase().includes('invalid') || error.message?.toLowerCase().includes('expired') || error.status === 403 || error.status === 400)) {
+        const magicRes = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token,
+          type: 'magiclink'
+        });
+        if (!magicRes.error && magicRes.data?.session) {
+          data = magicRes.data;
+          error = null;
+        }
+      }
+
       if (error) throw error;
-      if (data.session) {
+      if (data?.session) {
         setSession(data.session);
         if (typeof window !== 'undefined') {
           if (rememberDevice) {
-            localStorage.setItem('vibe_remembered_email', authEmail.trim());
+            localStorage.setItem('vibe_remembered_email', cleanEmail);
             localStorage.setItem('vibe_remember_device', 'true');
             try {
               localStorage.setItem('vibe_persisted_session', JSON.stringify({
@@ -321,6 +351,12 @@ export default function Home() {
     } finally {
       setAuthLoading(false);
     }
+  };
+
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (otpDebounceRef.current) clearTimeout(otpDebounceRef.current);
+    await verifyWithFallback(authOtpCode);
   };
 
   const [selectedNote, setSelectedNote] = useState<ParsedObsidianNote | null>(null);
@@ -1788,50 +1824,40 @@ export default function Home() {
           ) : (
             /* Step 2: Segmented PIN Verification Form */
             <form onSubmit={handleVerifyOtp} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              {/* Segmented PIN Code Display (Strict 6 Digits) */}
+              {/* Segmented PIN Code Display (Supports 6 to 8 Digits) */}
               <div className="relative flex justify-center py-1">
                 <input
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  maxLength={6}
+                  maxLength={8}
                   autoFocus
                   value={authOtpCode}
                   onChange={(e) => {
-                    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
                     setAuthOtpCode(clean);
+                    if (otpDebounceRef.current) clearTimeout(otpDebounceRef.current);
                     if (clean.length === 6) {
-                      setTimeout(() => {
-                        supabase.auth.verifyOtp({ email: authEmail.trim(), token: clean, type: 'email' })
-                          .then(({ data, error }: any) => {
-                            if (error && clean.length === 6) {
-                              setAuthError(error.message);
-                            } else if (data?.session) {
-                              setSession(data.session);
-                              if (typeof window !== 'undefined' && rememberDevice) {
-                                try {
-                                  localStorage.setItem('vibe_remembered_email', authEmail.trim());
-                                  localStorage.setItem('vibe_remember_device', 'true');
-                                } catch {}
-                              }
-                            }
-                          });
-                      }, 120);
+                      otpDebounceRef.current = setTimeout(() => {
+                        verifyWithFallback(clean);
+                      }, 400);
+                    } else if (clean.length === 8) {
+                      verifyWithFallback(clean);
                     }
                   }}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-                  aria-label="6-digit verification code"
+                  aria-label="verification code"
                 />
 
-                {/* Individual Segmented Digit Cells (Strict 6 Cells) */}
+                {/* Individual Segmented Digit Cells (Smoothly adapts 6 or 8 cells) */}
                 <div className="flex items-center gap-1.5 sm:gap-2">
-                  {Array.from({ length: 6 }).map((_, idx) => {
+                  {Array.from({ length: authOtpCode.length > 6 ? 8 : 6 }).map((_, idx) => {
                     const digit = authOtpCode[idx];
                     const isCurrent = idx === authOtpCode.length;
                     return (
                       <div
                         key={idx}
-                        className={`w-10 h-13 sm:w-11 sm:h-14 rounded-xl border flex items-center justify-center font-mono text-xl sm:text-2xl font-bold transition-all ${
+                        className={`${authOtpCode.length > 6 ? 'w-8 h-12 sm:w-10 sm:h-13 text-lg sm:text-xl' : 'w-10 h-13 sm:w-11 sm:h-14 text-xl sm:text-2xl'} rounded-xl border flex items-center justify-center font-mono font-bold transition-all ${
                           digit 
                             ? 'bg-slate-50 border-slate-300 text-slate-900 shadow-sm' 
                             : isCurrent 
@@ -1882,7 +1908,7 @@ export default function Home() {
               {/* Primary Verify Button */}
               <button
                 type="submit"
-                disabled={authLoading || authOtpCode.length !== 6}
+                disabled={authLoading || authOtpCode.length < 6}
                 className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShieldCheck size={16} />
