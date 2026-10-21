@@ -874,3 +874,192 @@ body {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
+
+/* ==========================================================================
+   GRAPHITE NOTEBOOK — 2026 REDESIGN LAYER
+   Stationery look: dotted-grid paper, ink hairlines, marker-orange accent,
+   squarer "index card" shapes with a hard offset shadow, display headings,
+   mono micro-labels. Pure CSS on top of the existing classes, so every
+   feature, note, book and setting keeps working unchanged.
+   ========================================================================== */
+
+/* New signature theme (also the default for new devices) */
+[data-theme="bg-[#13110e]"],
+[data-theme="graphite-notebook"],
+.dark[data-theme="bg-[#13110e]"] {
+  --theme-bg: #13110e;
+  --theme-surface: #1c1a16;
+  --theme-surface-elevated: #25221d;
+  --theme-surface-subtle: rgba(255, 106, 61, 0.07);
+  --theme-surface-overlay: rgba(19, 17, 14, 0.95);
+  --theme-border: rgba(240, 230, 210, 0.16);
+  --theme-border-subtle: rgba(240, 230, 210, 0.08);
+  --theme-primary: #ff6a3d;
+  --theme-primary-hover: #ff875f;
+  --theme-text-primary: #f4efe4;
+  --theme-text-secondary: #d6cdbb;
+  --theme-text-muted: rgba(214, 205, 187, 0.62);
+  --theme-focus-ring: rgba(255, 106, 61, 0.38);
+  --spatial-card-bg: #1c1a16;
+  --spatial-card-border: rgba(240, 230, 210, 0.14);
+  --spatial-nav-bg: rgba(28, 26, 22, 0.94);
+  --spatial-input-bg: #16140f;
+  --spatial-input-border: rgba(240, 230, 210, 0.16);
+}
+
+/* Shape language: index cards instead of soft clay blobs */
+:root {
+  --radius-stage: 22px;
+  --radius-modal: 20px;
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-thumb: 10px;
+  --nb-ink-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.45);
+  --nb-ink-shadow-hover: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
+  --nb-hair: var(--theme-border, rgba(240, 230, 210, 0.16));
+}
+
+/* Dotted notebook paper behind everything */
+body {
+  background-image:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--theme-text-muted, #999) 22%, transparent) 1px, transparent 1.4px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+}
+html:not(.dark):not([data-theme-dark="true"]) body {
+  background-image: radial-gradient(circle at 1px 1px, rgba(17, 24, 39, 0.09) 1px, transparent 1.4px);
+}
+
+/* Headings in the display face, tighter and heavier */
+h1, h2, .text-2xl, .text-3xl, .text-4xl {
+  font-family: var(--font-bricolage), var(--font-plus-jakarta), sans-serif;
+  letter-spacing: -0.025em;
+}
+[dir="rtl"] h1, [dir="rtl"] h2 { font-family: var(--font-arabic); letter-spacing: 0; }
+
+/* Micro-labels (uppercase tracking text) become mono "stamp" labels */
+.uppercase.tracking-wider, .uppercase.tracking-widest, .uppercase.tracking-wide {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  letter-spacing: 0.14em;
+}
+
+/* Cards: flat paper, hairline, ink offset shadow */
+.clay-card,
+.dark .clay-card,
+[data-theme-dark="true"] .clay-card,
+.clay-card-interactive,
+.dark .clay-card-interactive,
+[data-theme-dark="true"] .clay-card-interactive {
+  border: 1px solid var(--nb-hair);
+  box-shadow: var(--nb-ink-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.clay-card-interactive { transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease, border-color .18s ease; }
+.clay-card-interactive:hover,
+.dark .clay-card-interactive:hover,
+[data-theme-dark="true"] .clay-card-interactive:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--nb-ink-shadow-hover);
+  border-color: color-mix(in srgb, var(--theme-primary, #ff6a3d) 55%, transparent);
+}
+.clay-card-interactive:active,
+.dark .clay-card-interactive:active,
+[data-theme-dark="true"] .clay-card-interactive:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.45);
+}
+.clay-card-muted {
+  border: 1px dashed var(--nb-hair);
+  box-shadow: none;
+}
+.theme-surface, .theme-surface-elevated {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.theme-surface-elevated { box-shadow: var(--nb-ink-shadow); }
+
+/* Buttons: solid marker colour, hard shadow, press-down feel */
+.clay-btn-primary,
+.clay-btn-purple,
+.clay-btn-emerald,
+.theme-btn-primary {
+  background: var(--theme-primary, #ff6a3d);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-control);
+}
+.clay-btn-purple { background: #8b6cff; }
+.clay-btn-emerald { background: #2fbf71; }
+.clay-btn-primary:hover, .clay-btn-purple:hover, .clay-btn-emerald:hover, .theme-btn-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.55);
+  filter: brightness(1.06);
+}
+.clay-btn-primary:active, .clay-btn-purple:active, .clay-btn-emerald:active, .theme-btn-primary:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.5);
+}
+.clay-fab {
+  border-radius: 14px !important;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+/* Bottom dock: a ruled tab strip */
+.spatial-nav-dock,
+[data-theme-dark="true"] .spatial-nav-dock {
+  border-radius: 16px;
+  border: 1px solid var(--nb-hair);
+  box-shadow: var(--nb-ink-shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Pills & inputs */
+.clay-pill, [data-theme-dark="true"] .clay-pill {
+  border-radius: 10px;
+  box-shadow: none;
+  border: 1px solid var(--nb-hair);
+}
+.clay-pill-active, [data-theme-dark="true"] .clay-pill-active {
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.45);
+}
+.clay-input, [data-theme-dark="true"] .clay-input {
+  border-radius: var(--radius-control);
+  box-shadow: none;
+  border: 1px solid var(--nb-hair);
+}
+.clay-input:focus, [data-theme-dark="true"] .clay-input:focus {
+  border-color: var(--theme-primary, #ff6a3d);
+  box-shadow: 0 0 0 3px var(--theme-focus-ring, rgba(255, 106, 61, 0.35));
+}
+
+/* Tailwind rounded-* used directly in markup: pull them toward the card scale */
+.rounded-3xl { border-radius: var(--radius-card); }
+.rounded-\[2rem\], .rounded-\[28px\], .rounded-\[32px\], .rounded-\[36px\] { border-radius: var(--radius-stage); }
+.rounded-2xl { border-radius: 14px; }
+
+/* Ambient glows replaced by a calm paper look */
+.ambient-halo { opacity: 0.35; filter: blur(80px); }
+
+/* Selection & focus */
+::selection { background: var(--theme-primary, #ff6a3d); color: #13110e; }
+:focus-visible { outline: 2px solid var(--theme-primary, #ff6a3d); outline-offset: 2px; }
+
+/* Scrollbar like a pencil line */
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--nb-hair); border-radius: 0; }
+
+/* Graphite Notebook: re-ink the hard-coded blue utilities with the marker accent */
+html[data-theme="bg-[#13110e]"] {
+  --color-blue-200: #ffd5c4;
+  --color-blue-300: #ffb393;
+  --color-blue-400: #ff8a5f;
+  --color-blue-500: #ff6a3d;
+  --color-blue-600: #e9532a;
+  --color-blue-700: #c4411d;
+  --color-blue-800: #8f2f15;
+  --color-blue-900: #5a1d0d;
+  --color-blue-950: #2e0f07;
+}

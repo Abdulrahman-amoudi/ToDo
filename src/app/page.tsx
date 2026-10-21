@@ -465,9 +465,9 @@ export default function Home() {
   // Settings
   const [bgTheme, setBgTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('vibe_bgTheme') || localStorage.getItem('guest_bgTheme') || 'bg-[#080d2a]';
+      return localStorage.getItem('vibe_bgTheme') || localStorage.getItem('guest_bgTheme') || 'bg-[#13110e]';
     }
-    return 'bg-[#080d2a]';
+    return 'bg-[#13110e]';
   });
   const [catSettings, setCatSettings] = useState<Record<string, {shape: string, color: string, expression?: string}>>(() => {
     if (typeof window !== 'undefined') {

@@ -51,6 +51,32 @@ export interface StitchThemeToken {
 
 export const STITCH_THEMES: readonly StitchThemeToken[] = [
   {
+    id: 'bg-[#13110e]',
+    slug: 'graphite-notebook',
+    name: 'Graphite Notebook',
+    category: 'Studio',
+    color: '#ff6a3d',
+    customColor: '#ff6a3d',
+    surfaceColor: '#1c1a16',
+    neutralColor: '#13110e',
+    colorVariant: 'EXPRESSIVE',
+    cssVariables: {
+      '--theme-bg': '#13110e',
+      '--theme-surface': '#1c1a16',
+      '--theme-surface-elevated': '#25221d',
+      '--theme-surface-subtle': 'rgba(255, 106, 61, 0.07)',
+      '--theme-surface-overlay': 'rgba(19, 17, 14, 0.95)',
+      '--theme-border': 'rgba(240, 230, 210, 0.16)',
+      '--theme-border-subtle': 'rgba(240, 230, 210, 0.08)',
+      '--theme-primary': '#ff6a3d',
+      '--theme-primary-hover': '#ff875f',
+      '--theme-text-primary': '#f4efe4',
+      '--theme-text-secondary': '#d6cdbb',
+      '--theme-text-muted': 'rgba(214, 205, 187, 0.62)',
+      '--theme-focus-ring': 'rgba(255, 106, 61, 0.38)',
+    },
+  },
+  {
     id: 'bg-[#080d2a]',
     slug: 'dark-blue',
     name: 'Dark Blue',
