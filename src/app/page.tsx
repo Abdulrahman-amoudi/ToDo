@@ -2491,518 +2491,171 @@ export default function Home() {
       )}
 
       {/* Main Content Area or Settings */}
-      {activeTab === 'settings' ? (
-          <div className="vs-settings flex-1 w-full flex flex-col overflow-hidden animate-in">
-            {/* Left side: HUGE MASCOT */}
-            <div className="hidden">
-              <div className="pn-polaroid w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
-                <BloubMascot key={`settings-preview-lg-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
-                <div className="pn-caption mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
-                  <span className="font-bold text-white capitalize">{getLocalizedShape(resolveShape(targetShape), locale) || targetShape}</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="text-slate-400 capitalize">{getLocalizedExpression(targetExpr, locale) || targetExpr}</span>
-                </div>
-              </div>
-            </div>
+      {activeTab === 'settings' ? (() => {
+          const ar = locale === 'ar';
+          const sw = (on: boolean, onClick: () => void, label: string) => (
+            <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={onClick} className={`st-switch ${on ? 'is-on' : ''}`}><i /></button>
+          );
+          const signOut = async () => {
+            hasHydratedRemoteSettingsRef.current = false;
+            document.documentElement.classList.remove('dark');
+            document.documentElement.removeAttribute('data-theme');
+            ['--theme-bg', '--theme-surface', '--theme-surface-elevated', '--theme-primary', '--theme-border'].forEach(v => document.documentElement.style.removeProperty(v));
+            document.body.style.backgroundColor = '#FFFFFF';
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#FFFFFF');
+            try {
+              localStorage.removeItem('vibe_persisted_session');
+              if (localStorage.getItem('vibe_remember_device') === 'false') localStorage.removeItem('vibe_remembered_email');
+            } catch {}
+            await supabase.auth.signOut();
+            setSession(null); setTodos([]); setCategories([]); setShowSettings(false);
+          };
+          const sections: [string, string][] = [['st-bloub', 'Bloub'], ['st-look', ar ? 'المظهر' : 'Appearance'], ['st-lang', ar ? 'اللغة' : 'Language'], ['st-notify', ar ? 'الإشعارات' : 'Notifications'], ['st-ai', ar ? 'الذكاء الاصطناعي' : 'AI'], ['st-adv', ar ? 'متقدم' : 'Advanced'], ['st-account', ar ? 'الحساب' : 'Account']];
+          const themeName = (() => { const tk = getThemeToken(bgTheme); const key = tk.slug || tk.id; const n = getLocalizedThemeName(key, locale); return (n && n !== key ? n : tk.name) || 'Default'; })();
+          return (
+          <div className="vs-settings st flex-1 w-full overflow-y-auto custom-scrollbar">
+            <div className="st-wrap">
+              <nav className="st-nav" aria-label="Settings sections">
+                {sections.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>{label}</a>)}
+              </nav>
+              <div className="st-main">
+                <h1 className="vs-h1">{ar ? 'الإعدادات' : 'Settings'}</h1>
 
-            {/* Right side: Settings controls */}
-            <div className="vs-settings-col w-full max-w-2xl mx-auto h-full overflow-y-auto custom-scrollbar pb-32 pt-8 px-5">
-              <h1 className="vs-h1 mb-6">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</h1>
-              
-              {/* Mascot Preview inside Settings */}
-              <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
-                <div className="pn-polaroid pn-polaroid-sm w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
-                  <BloubMascot key={`settings-preview-sm-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
-                </div>
-
-                {/* Horizontal Category Scroller */}
-                <div className="w-full flex gap-2.5 overflow-x-auto pb-4 pt-1 px-1 custom-scrollbar scroll-smooth border-t border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
-                  <button
-                    type="button"
-                    onClick={() => setSettingsTarget('global')}
-                    data-on={settingsTarget === 'global' ? '1' : undefined}
-                    className={`pn-opt flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
-                      settingsTarget === 'global'
-                        ? 'bg-[var(--theme-primary,#3b82f6)]/20 border-[var(--theme-primary,#3b82f6)] text-white shadow-md scale-105 ring-1 ring-[var(--theme-primary,#3b82f6)]/40'
-                        : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="w-10 h-10 flex items-center justify-center pointer-events-none">
-                      <BloubMascot size={36} state="idle" expression={mascotExpression} shape={mascotShape} color={mascotColor} isStatic={true} />
-                    </div>
-                    <span className="text-[10px] font-bold mt-1 tracking-wide uppercase">Global</span>
-                  </button>
-                  {categories.map(cat => {
-                    const { shape: cShape, color: cColor } = getListMascot(cat, catSettings, mascotShape, mascotColor);
-                    const cExpr = (catSettings[cat.id]?.expression as ExpressionId) || 'neutre';
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setSettingsTarget(cat.id)}
-                        data-on={settingsTarget === cat.id ? '1' : undefined}
-                        className={`pn-opt flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
-                          settingsTarget === cat.id
-                            ? 'bg-[var(--theme-primary,#3b82f6)]/20 border-[var(--theme-primary,#3b82f6)] text-white shadow-md scale-105 ring-1 ring-[var(--theme-primary,#3b82f6)]/40'
-                            : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="w-10 h-10 flex items-center justify-center pointer-events-none">
-                          <BloubMascot size={36} state="idle" expression={cExpr} shape={cShape} color={cColor} isStatic={true} />
-                        </div>
-                        <span className="text-[10px] font-bold mt-1 tracking-wide uppercase truncate w-12 text-center">{cat.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Language Selection Section */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 mb-6 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Globe size={15} className="text-[var(--theme-primary,#3b82f6)]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                      {tLang('language')}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 border border-[var(--theme-primary,#3b82f6)]/30 text-[var(--theme-primary,#3b82f6)]">
-                    {locale === 'ar' ? 'العربية' : 'English'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setLocale('en')}
-                    data-on={locale === 'en' ? '1' : undefined}
-                    className={`pn-seg flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] ${
-                      locale === 'en'
-                        ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/25'
-                        : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <span>🇬🇧 English</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLocale('ar')}
-                    data-on={locale === 'ar' ? '1' : undefined}
-                    className={`pn-seg flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] font-arabic ${
-                      locale === 'ar'
-                        ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/25'
-                        : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <span>🇸🇦 العربية (فصحى عصرية)</span>
-                  </button>
-                </div>
-                <p className="text-[10px] text-zinc-400 leading-relaxed">
-                  {tLang('languageDesc')}
-                </p>
-              </div>
-
-              {/* Shape Section */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    <Shapes size={14} /> {tLang('shape')}
-                  </span>
-                  <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
-                    {getLocalizedShape(resolveShape(targetShape), locale) || targetShape}
-                  </span>
-                </div>
-                <div className="grid grid-cols-5 gap-2.5">
-                  {SHAPE_IDS.map(s => {
-                    const isSelected = targetShape === s || normalizeShape(targetShape) === s;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => updateTargetShape(s)}
-                        data-on={isSelected ? '1' : undefined}
-                        className={`pn-opt flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-all duration-150 active:scale-95 p-1 ${
-                          isSelected
-                            ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
-                            : isDark
-                              ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
-                              : 'bg-white border-gray-200 hover:border-gray-300'
-                        }`}
-                        title={getLocalizedShape(s, locale) || s}
-                      >
-                        <BloubMascot key={`shape-tile-${s}-${targetExpr}-${targetColor}`} size={36} state="idle" expression={targetExpr} shape={s} color={targetColor} isStatic={true} />
-                        <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedShape(s, locale) || s}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Reactive Auto-Mood Toggle */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 mb-6 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center shrink-0">
-                    <Sparkles size={18} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-white">{tLang('autoMood')}</span>
-                      {autoMoodEnabled && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/20 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/30">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
-                      {tLang('autoMoodDesc')}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => updateAutoMood(!autoMoodEnabled)}
-                  data-on={autoMoodEnabled ? '1' : undefined}
-                  className={`pn-toggle w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer select-none active:scale-95 duration-75 ${
-                    autoMoodEnabled ? 'bg-[var(--theme-primary,#3b82f6)]' : 'bg-zinc-700'
-                  }`}
-                  aria-label="Toggle Auto-Mood Engine"
-                >
-                  <div 
-                    className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                      autoMoodEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`} 
-                    />
-                </button>
-              </div>
-
-              {/* Expression Section */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    <Smile size={14} /> {tLang('expression')}
-                  </span>
-                  <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider capitalize">
-                    {getLocalizedExpression(targetExpr, locale) || targetExpr} {autoMoodEnabled && (locale === 'ar' ? '(تفاعلي تلقائي)' : '(Auto-Reactive)')}
-                  </span>
-                </div>
-                <div className="grid grid-cols-5 gap-2.5">
-                  {SETTINGS_EXPRESSIONS.map(expr => {
-                    const isSelected = isExprSelected(targetExpr, expr);
-                    return (
-                      <button
-                        key={expr}
-                        type="button"
-                        onClick={() => updateTargetExpr(expr)}
-                        data-on={isSelected ? '1' : undefined}
-                        className={`pn-opt flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
-                          isSelected
-                            ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
-                            : isDark
-                              ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
-                              : 'bg-white border-gray-200 hover:border-gray-300'
-                        }`}
-                        title={getLocalizedExpression(expr, locale) || expr}
-                      >
-                        <BloubMascot key={`expr-tile-${expr}-${targetShape}-${targetColor}`} size={36} state="idle" expression={expr} shape={targetShape} color={targetColor} isStatic={true} />
-                        <span className="text-[9px] font-bold text-slate-400 capitalize truncate max-w-[50px] text-center mt-0.5">{getLocalizedExpression(expr, locale) || expr}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Color Section */}
-              <div className="mb-6">
-                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                  <PaintBucket size={14} /> {tLang('colour')}
-                </span>
-                <div className="flex flex-wrap gap-3">
-                  {COLORS.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => updateTargetColor(c.id)}
-                      data-on={targetColor === c.id ? '1' : undefined}
-                      className={`pn-dot flex aspect-square items-center justify-center rounded-full cursor-pointer select-none transition-transform duration-75 active:scale-95 ${
-                        targetColor === c.id
-                          ? 'ring-2 ring-blue-500 ring-offset-[3px] ring-offset-[#0f172a] scale-110 shadow-md'
-                          : 'hover:scale-110 hover:ring-2 hover:ring-slate-500 hover:ring-offset-[2px] hover:ring-offset-[#0f172a]'
-                      }`}
-                      aria-label={c.id}
-                      title={c.id}
-                    >
-                      <span
-                        className="block w-6 h-6 rounded-full ring-1 ring-black/20 ring-inset shadow-inner"
-                        style={{ backgroundColor: c.hex }}
-                      />
+                <section id="st-bloub" className="st-sec">
+                  <header><h2>Bloub</h2><p>{ar ? 'رفيقك في المذاكرة. خصّصه لكل التطبيق أو لقائمة واحدة.' : 'Your study buddy. Style him for the whole app or for one list.'}</p></header>
+                  <div className="st-bloub">
+                    <button type="button" className="st-bloub-stage" onClick={() => triggerMascot('idle', targetExpr)} aria-label="Play">
+                      <BloubMascot key={`st-prev-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={88} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Theme Studio Section */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                    <Palette size={14} className="text-[var(--theme-primary,#3b82f6)]" /> {tLang('themeStudio')}
-                  </span>
-                  <span className="text-[10px] font-mono text-[var(--theme-primary,#3b82f6)] uppercase tracking-wider font-bold">
-                    {(() => { const tk = getThemeToken(bgTheme); const key = tk.slug || tk.id; const n = getLocalizedThemeName(key, locale); return (n && n !== key ? n : tk.name) || 'Default'; })()}
-                  </span>
-                </div>
-
-                {/* Theme Category Filter Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-3 custom-scrollbar">
-                  {THEME_CATEGORIES.map(cat => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setThemeCategory(cat)}
-                      data-on={themeCategory === cat ? '1' : undefined}
-                      className={`pn-seg px-3 py-1 rounded-xl text-xs font-semibold cursor-pointer select-none flex-shrink-0 transition-transform duration-75 active:scale-95 ${
-                        themeCategory === cat
-                          ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm'
-                          : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      {getLocalizedThemeCategory(cat, locale)}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Theme Cards Grid */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {filteredThemes.map(theme => {
-                    const isSelected = bgTheme === theme.id;
-                    const themeKey = theme.slug || theme.id; const ln = getLocalizedThemeName(themeKey, locale); const localizedName = ln && ln !== themeKey ? ln : theme.name;
-                    const localizedCategory = getLocalizedThemeCategory(theme.category, locale);
-                    return (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => applyTheme(theme.id)}
-                        data-on={isSelected ? '1' : undefined}
-                        className={`pn-theme group relative flex items-center justify-between px-2.5 py-2.5 gap-2.5 rounded-xl border cursor-pointer select-none text-left transition-all duration-150 overflow-hidden active:scale-[0.98] ${
-                          isSelected
-                            ? 'bg-white/[0.08] border-[var(--theme-primary,#3b82f6)] shadow-sm shadow-[var(--theme-primary,#3b82f6)]/20 ring-1 ring-[var(--theme-primary,#3b82f6)]/40 text-white'
-                            : 'bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05] hover:border-white/15 text-zinc-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          {/* Compact Dual-Tone Swatch Preview */}
-                          <div 
-                            className="pn-chip w-7 h-7 rounded-lg flex items-center justify-center relative flex-shrink-0 bg-black/40 border border-white/10 overflow-hidden shadow-inner"
-                            style={{ backgroundColor: theme.bgColor }}
-                          >
-                            <div 
-                              className="w-3.5 h-3.5 rounded-full shadow-md transition-transform group-hover:scale-110"
-                              style={{ 
-                                backgroundColor: theme.accentColor, 
-                                boxShadow: `0 0 6px ${theme.accentColor}90` 
-                              }}
-                            />
-                          </div>
-                          
-                          <div className="min-w-0 flex-1">
-                            <span className={`text-[13px] font-medium block whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight ${isSelected ? 'text-[var(--theme-primary,#3b82f6)]' : 'text-zinc-100'}`}>
-                              {localizedName}
-                            </span>
-                            <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider block mt-0.5">
-                              {localizedCategory}
-                            </span>
-                          </div>
-                        </div>
-
-                        {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-[var(--theme-primary,#3b82f6)] text-white flex items-center justify-center flex-shrink-0 shadow-sm ml-auto">
-                            <CheckCircle2 size={12} className="text-white" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-
-              {/* Push Notifications Section */}
-              <div className="pt-2">
-                <div className="p-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.02] flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-300 shrink-0">
-                      <Bell size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-sm font-semibold text-white tracking-tight block">{tLang('pushNotifications')}</span>
-                      <span className="text-xs text-zinc-400 truncate block">{tLang('pushNotificationsDesc')}</span>
+                    <div className="st-bloub-meta">
+                      <label className="st-label" htmlFor="st-target">{ar ? 'تخصيص' : 'Customising'}</label>
+                      <select id="st-target" className="st-select" value={settingsTarget} onChange={e => setSettingsTarget(e.target.value)}>
+                        <option value="global">{ar ? 'كل التطبيق' : 'Whole app'}</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                      <p className="st-hint">{getLocalizedShape(resolveShape(targetShape), locale) || targetShape} · {getLocalizedExpression(targetExpr, locale) || targetExpr}</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handlePushToggle}
-                    data-on={isSubscribed ? '1' : undefined}
-                    className={`pn-toggle w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 p-0.5 ${
-                      isSubscribed ? 'bg-[var(--theme-primary,#3b82f6)]' : 'bg-zinc-800'
-                    }`}
-                    aria-label="Toggle Push Notifications"
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                        isSubscribed ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-                {isSubscribed && (
-                  <button
-                    type="button"
-                    onClick={sendTestPush}
-                    className="w-full mt-2 py-2 text-xs font-semibold text-[var(--theme-primary,#3b82f6)] hover:opacity-80 transition-opacity flex items-center justify-center gap-1.5"
-                  >
-                    <Smartphone size={12} />
-                    {tLang('sendTestPush')}
-                  </button>
-                )}
-              </div>
-  
-              {/* AI & CLI Configuration Section */}
-              <div className="mt-5 flex flex-col gap-4 relative">
-                
-                {/* NotebookLM API */}
-                <div className="p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-300">
-                      <Sparkles size={14} className="text-[var(--theme-primary,#3b82f6)]" /> {tLang('notebookLmApi')}
-                    </span>
-                    {geminiApiKey ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        {tLang('keyActive')}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-white/5 border border-white/10 text-zinc-400">
-                        {tLang('noKey')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type={showApiKey ? "text" : "password"}
-                        placeholder={tLang('apiKeyPlaceholder')}
-                        value={geminiApiKey}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setGeminiApiKey(val);
-                          try {
-                            localStorage.setItem('vibe_geminiApiKey', val);
-                            localStorage.setItem('guest_geminiApiKey', val);
-                          } catch {}
-                        }}
-                        className="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-black/40 border border-white/10 text-zinc-200 focus:outline-none focus:border-[var(--theme-primary,#3b82f6)]/60 placeholder:text-zinc-600 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors p-1"
-                        title={showApiKey ? "Hide Key" : "Show Key"}
-                      >
-                        {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
+
+                  <div className="st-field">
+                    <div className="st-field-head"><span>{tLang('shape')}</span></div>
+                    <div className="st-tiles">
+                      {SHAPE_IDS.map(sh => {
+                        const on = targetShape === sh || normalizeShape(targetShape) === sh;
+                        return (
+                          <button key={sh} type="button" className={`st-tile ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => updateTargetShape(sh)} title={getLocalizedShape(sh, locale) || sh}>
+                            <BloubMascot key={`st-shape-${sh}-${targetExpr}-${targetColor}`} size={46} state="idle" expression={targetExpr} shape={sh} color={targetColor} isStatic={true} />
+                            <span>{getLocalizedShape(sh, locale) || sh}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleSaveApiKey}
-                      className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold shrink-0 transition-all active:scale-95 ${
-                        apiKeySaved
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-[var(--theme-primary,#3b82f6)] text-white hover:opacity-90'
-                      }`}
-                    >
-                      {apiKeySaved ? tLang('saved') : tLang('save')}
-                    </button>
                   </div>
-                  <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">
-                    {tLang('apiKeyDesc')}
-                  </p>
-                </div>
-    
-                {/* Antigravity CLI Skill Option */}
-                <div className="p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                      <Terminal size={14} className="text-[var(--theme-primary,#3b82f6)]" /> ANTIGRAVITY /TODO SKILL
-                    </span>
-                    <a 
-                      href="/downloads/install-todo-skill.ps1" 
-                      download="install-todo-skill.ps1"
-                      className="text-[10px] font-semibold uppercase tracking-wider text-zinc-300 hover:text-white flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1 rounded-lg transition-colors"
-                    >
-                      Download <Download size={11} />
-                    </a>
+
+                  <div className="st-field">
+                    <div className="st-field-head"><span>{tLang('expression')}</span>{autoMoodEnabled && <em>{ar ? 'يتغيّر تلقائياً' : 'Changes automatically while auto-mood is on'}</em>}</div>
+                    <div className="st-tiles">
+                      {SETTINGS_EXPRESSIONS.map(ex => {
+                        const on = isExprSelected(targetExpr, ex);
+                        return (
+                          <button key={ex} type="button" className={`st-tile ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => updateTargetExpr(ex)} title={getLocalizedExpression(ex, locale) || ex}>
+                            <BloubMascot key={`st-expr-${ex}-${targetShape}-${targetColor}`} size={46} state="idle" expression={ex} shape={targetShape} color={targetColor} isStatic={true} />
+                            <span>{getLocalizedExpression(ex, locale) || ex}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    Control your tasks from any terminal with <code className="font-mono text-zinc-200 bg-white/5 px-1 py-0.5 rounded">/todo</code> inside Antigravity. Run in PowerShell:
-                  </p>
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-zinc-300">
-                    <code>.\install-todo-skill.ps1</code>
-                    <button
-                      type="button"
-                      onClick={handleCopyCli}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 active:scale-95"
-                    >
-                      {copiedCli ? (
-                        <>
-                          <Check size={12} className="text-emerald-400" />
-                          <span className="text-emerald-400">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={12} />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
+
+                  <div className="st-field">
+                    <div className="st-field-head"><span>{tLang('colour')}</span></div>
+                    <div className="st-colors">
+                      {COLORS.map(c => (
+                        <button key={c.id} type="button" className={`st-color ${targetColor === c.id ? 'is-on' : ''}`} aria-pressed={targetColor === c.id} aria-label={c.id} title={c.id} onClick={() => updateTargetColor(c.id)} style={{ ['--c' as string]: c.hex }} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-                
-                {/* Sign Out Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={async () => {
-                      hasHydratedRemoteSettingsRef.current = false;
-                      document.documentElement.classList.remove('dark');
-                      document.documentElement.removeAttribute('data-theme');
-                      document.documentElement.style.removeProperty('--theme-bg');
-                      document.documentElement.style.removeProperty('--theme-surface');
-                      document.documentElement.style.removeProperty('--theme-surface-elevated');
-                      document.documentElement.style.removeProperty('--theme-primary');
-                      document.documentElement.style.removeProperty('--theme-border');
-                      document.body.style.backgroundColor = '#F8FAFC';
-                      let meta = document.querySelector('meta[name="theme-color"]');
-                      if (meta) meta.setAttribute('content', '#FFFFFF');
-                      try {
-                        localStorage.removeItem('vibe_persisted_session');
-                        if (localStorage.getItem('vibe_remember_device') === 'false') {
-                          localStorage.removeItem('vibe_remembered_email');
-                        }
-                      } catch {}
-                      await supabase.auth.signOut();
-                      setSession(null);
-                      setTodos([]);
-                      setCategories([]);
-                      setShowSettings(false);
-                    }}
-                    className="w-full py-3 px-4 font-semibold text-xs tracking-wider uppercase rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-red-500/[0.06] hover:bg-red-500/[0.12] border border-red-500/20 text-red-400"
-                  >
-                    <LogOut size={14} />
-                    Sign Out
-                  </button>
-                </div>
+
+                  <div className="st-row">
+                    <div><b>{tLang('autoMood')}</b><p>{tLang('autoMoodDesc')}</p></div>
+                    {sw(autoMoodEnabled, () => updateAutoMood(!autoMoodEnabled), 'Auto-mood')}
+                  </div>
+                </section>
+
+                <section id="st-look" className="st-sec">
+                  <header><h2>{ar ? 'المظهر' : 'Appearance'}</h2><p>{ar ? 'السمة تغيّر الألوان فقط. التصميم نفسه في كل مكان.' : 'A theme only changes colours; every screen keeps the same layout.'} <b>{themeName}</b></p></header>
+                  <div className="st-seg" role="tablist">
+                    {THEME_CATEGORIES.map(cat => <button key={cat} type="button" role="tab" aria-selected={themeCategory === cat} className={themeCategory === cat ? 'is-on' : ''} onClick={() => setThemeCategory(cat)}>{getLocalizedThemeCategory(cat, locale)}</button>)}
+                  </div>
+                  <div className="st-themes">
+                    {filteredThemes.map(theme => {
+                      const on = bgTheme === theme.id;
+                      const key = theme.slug || theme.id; const ln = getLocalizedThemeName(key, locale); const name = ln && ln !== key ? ln : theme.name;
+                      return (
+                        <button key={theme.id} type="button" className={`st-theme ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => applyTheme(theme.id)}>
+                          <span className="st-theme-swatch" style={{ background: theme.bgColor }}><i style={{ background: theme.surfaceColor }} /><i style={{ background: theme.accentColor }} /></span>
+                          <span className="st-theme-name"><b>{name}</b><small>{getLocalizedThemeCategory(theme.category, locale)}</small></span>
+                          {on && <Check size={16} className="st-check" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section id="st-lang" className="st-sec">
+                  <header><h2>{tLang('language')}</h2><p>{tLang('languageDesc')}</p></header>
+                  <div className="st-seg">
+                    <button type="button" className={locale === 'en' ? 'is-on' : ''} onClick={() => setLocale('en')}>English</button>
+                    <button type="button" className={`font-arabic ${locale === 'ar' ? 'is-on' : ''}`} onClick={() => setLocale('ar')}>العربية</button>
+                  </div>
+                </section>
+
+                <section id="st-notify" className="st-sec">
+                  <header><h2>{ar ? 'الإشعارات' : 'Notifications'}</h2></header>
+                  <div className="st-row">
+                    <div><b>{tLang('pushNotifications')}</b><p>{tLang('pushNotificationsDesc')}</p></div>
+                    {sw(isSubscribed, handlePushToggle, 'Push notifications')}
+                  </div>
+                  {isSubscribed && <button type="button" className="st-link" onClick={sendTestPush}>{tLang('sendTestPush')}</button>}
+                </section>
+
+                <section id="st-ai" className="st-sec">
+                  <header><h2>{ar ? 'الذكاء الاصطناعي' : 'AI'}</h2><p>{tLang('apiKeyDesc')}</p></header>
+                  <div className="st-field">
+                    <div className="st-field-head"><span>{ar ? 'مفتاح Gemini' : 'Gemini API key'}</span><em className={geminiApiKey ? 'is-ok' : ''}>{geminiApiKey ? tLang('keyActive') : tLang('noKey')}</em></div>
+                    <div className="st-inline">
+                      <div className="st-input-wrap">
+                        <input type={showApiKey ? 'text' : 'password'} placeholder={tLang('apiKeyPlaceholder')} value={geminiApiKey} autoComplete="off"
+                          onChange={(e) => { const val = e.target.value; setGeminiApiKey(val); try { localStorage.setItem('vibe_geminiApiKey', val); localStorage.setItem('guest_geminiApiKey', val); } catch {} }} />
+                        <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="st-eye" title={showApiKey ? 'Hide key' : 'Show key'}>{showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                      </div>
+                      <button type="button" onClick={handleSaveApiKey} className="vs-btn is-primary">{apiKeySaved ? tLang('saved') : tLang('save')}</button>
+                    </div>
+                  </div>
+                </section>
+
+                <section id="st-adv" className="st-sec">
+                  <header><h2>{ar ? 'متقدم' : 'Advanced'}</h2></header>
+                  <div className="st-row">
+                    <div><b>Terminal skill (/todo)</b><p>{ar ? 'تحكّم بمهامك من الطرفية داخل Antigravity.' : 'Manage your tasks from a terminal inside Antigravity. Run the installer in PowerShell.'}</p></div>
+                    <a href="/downloads/install-todo-skill.ps1" download="install-todo-skill.ps1" className="vs-btn"><Download size={14} /> {ar ? 'تنزيل' : 'Download'}</a>
+                  </div>
+                  <div className="st-code"><code>.\install-todo-skill.ps1</code><button type="button" onClick={handleCopyCli} className="st-link">{copiedCli ? (ar ? 'تم النسخ' : 'Copied') : (ar ? 'نسخ' : 'Copy')}</button></div>
+                </section>
+
+                <section id="st-account" className="st-sec">
+                  <header><h2>{ar ? 'الحساب' : 'Account'}</h2></header>
+                  <div className="st-row">
+                    <div><b>{session?.user?.email || (ar ? 'ضيف' : 'Guest')}</b><p>{ar ? 'تسجيل الخروج من هذا الجهاز.' : 'Sign out on this device. Your lists and notes stay in your account.'}</p></div>
+                    <button type="button" className="vs-btn st-danger" onClick={signOut}><LogOut size={14} /> {ar ? 'تسجيل الخروج' : 'Sign out'}</button>
+                  </div>
+                </section>
               </div>
             </div>
           </div>
-
-        ) : (
+          );
+        })() : (
           /* Main Content Area */
         <div className={`flex-1 relative flex flex-col min-h-0 ${selectedNote ? 'p-0 h-full' : 'px-6 py-6'}`}>
         
