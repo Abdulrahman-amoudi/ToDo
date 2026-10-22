@@ -326,7 +326,7 @@ export default function NoteExplorer({
           <div className="space-y-6 pb-6">
             {Object.entries(tree).sort((a,b) => a[0].localeCompare(b[0])).map(([folder, folderNotes]) => (
               <div key={folder}>
-                <div className="flex items-center gap-2 mb-3 pl-1">
+                <div className="pn-folder-head flex items-center gap-2 mb-3 pl-1">
                   <FolderOpen size={16} className="text-[var(--theme-primary)]" />
                   <h4 className="text-sm font-bold tracking-tight text-[var(--theme-text-primary)]">{folder}</h4>
                   <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-surface-elevated)] border border-[var(--theme-border-subtle)] text-[var(--theme-text-muted)]">{folderNotes.length}</span>
@@ -340,7 +340,9 @@ export default function NoteExplorer({
                       <div key={note.id} className="relative group/note w-full">
                         <button
                           onClick={() => onSelectNote(note)}
-                          className={`w-full flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-150 border active:scale-[0.99] ${
+                          data-kind={isPdf ? 'pdf' : 'note'}
+                          data-on={isSelected ? '1' : undefined}
+                          className={`pn-file w-full flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all duration-150 border active:scale-[0.99] ${
                             isSelected 
                               ? 'bg-[var(--theme-primary)]/15 border-[var(--theme-primary)] shadow-[0_0_12px_var(--theme-focus-ring)] text-[var(--theme-primary)]' 
                               : 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border-subtle)] hover:bg-[var(--theme-surface-elevated)] hover:border-[var(--theme-border)]'

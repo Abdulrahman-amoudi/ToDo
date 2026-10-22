@@ -1699,7 +1699,7 @@ export default function Home() {
 
   if (!session) {
     return (
-      <div className="min-h-screen w-full bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none">
+      <div className="pn-desk min-h-screen w-full bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none">
         {/* Soft Ambient Radial Halo */}
         <div 
           className="fixed top-0 left-1/2 -translate-x-1/2 w-[650px] max-w-[100vw] h-[360px] rounded-full blur-[140px] pointer-events-none opacity-40 -z-0 bg-gradient-to-b from-indigo-100/70 to-transparent"
@@ -1709,17 +1709,17 @@ export default function Home() {
           initial={{ y: 16, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md bg-white border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.08)] rounded-3xl p-8 relative z-10 text-center flex flex-col items-center"
+          className="pn-cover w-full max-w-md bg-white border border-slate-200/80 shadow-[0_20px_50px_rgba(15,23,42,0.08)] rounded-3xl p-8 relative z-10 text-center flex flex-col items-center"
         >
           {/* Framed Mascot Hero - Sunflower mascot with vibrant blue fill & happy expression */}
           <div className="relative mb-5 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full blur-2xl bg-blue-500/20 scale-125 pointer-events-none" />
-            <div className="w-32 h-32 rounded-3xl bg-blue-50/80 border border-blue-100/80 p-2 flex items-center justify-center shadow-md relative overflow-visible cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200">
+            <div className="pn-sticker w-32 h-32 rounded-3xl bg-blue-50/80 border border-blue-100/80 p-2 flex items-center justify-center shadow-md relative overflow-visible cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200">
               <BloubMascot size={120} state="idle" expression="happy" shape="soleil" color="#3b82f6" isStatic={false} isTyping={false} />
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display">Vibe Todos</h1>
+          <h1 className="pn-cover-title text-2xl font-bold tracking-tight text-slate-900 font-display">Vibe Todos</h1>
           
           {authStep === 'email' ? (
             <p className="text-sm text-slate-500 mt-1.5 mb-6 text-center leading-relaxed">
@@ -1762,7 +1762,7 @@ export default function Home() {
                   placeholder="name@example.com"
                   required
                   disabled={authLoading}
-                  className="w-full py-3.5 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 outline-none text-sm placeholder:text-slate-400 transition-all font-sans"
+                  className="pn-line w-full py-3.5 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-600/20 outline-none text-sm placeholder:text-slate-400 transition-all font-sans"
                 />
               </div>
 
@@ -1796,7 +1796,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={authLoading || !authEmail.trim()}
-                className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                className="pn-stamp w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <KeyRound size={16} />
                 <span>{authLoading ? 'Sending Login Code...' : 'Send Login Code'}</span>
@@ -1822,7 +1822,7 @@ export default function Home() {
                     } 
                   });
                 }} 
-                className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium py-3 rounded-xl flex items-center justify-center gap-2.5 text-sm transition-all duration-150 shadow-sm active:scale-[0.98]"
+                className="pn-plain w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium py-3 rounded-xl flex items-center justify-center gap-2.5 text-sm transition-all duration-150 shadow-sm active:scale-[0.98]"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
                 Continue with Google
@@ -1916,7 +1916,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={authLoading || authOtpCode.length < 6}
-                className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                className="pn-stamp w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShieldCheck size={16} />
                 <span>{authLoading ? 'Verifying Code...' : 'Verify & Sign In'}</span>
@@ -2106,8 +2106,7 @@ export default function Home() {
                 const pct = total ? Math.round((done / total) * 100) : 100;
                 const now = new Date();
                 const dateLine = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-                const R = 26, C = 2 * Math.PI * R;
-                return (
+                                return (
                   <div className="vt-hero w-full flex items-end justify-between gap-4 px-5 pt-2 pb-3">
                     <div className="flex-1 min-w-0">
                       <p className="vt-eyebrow">{dateLine}</p>
@@ -2120,6 +2119,14 @@ export default function Home() {
                       <p className={`text-xs sm:text-sm mt-2 truncate ${t.textSecondary}`}>
                         {pending === 0 ? "Welcome back! All tasks completed." : `Welcome back! ${pending} pending tasks.`}
                       </p>
+                      <div className="vt-ruler mt-4" role="img" aria-label={`${pct}% of all tasks done`}>
+                        <div className="vt-ruler-body">
+                          {Array.from({ length: 21 }).map((_, k) => <i key={k} className={k % 5 === 0 ? 'big' : ''} style={{ left: `${k * 5}%` }} />)}
+                          <div className="vt-ruler-fill" style={{ width: `${pct}%` }} />
+                          <div className="vt-ruler-mark" style={{ left: `${pct}%` }}><b>{pct}%</b></div>
+                        </div>
+                        <div className="vt-ruler-scale"><span>0</span><span>50</span><span>100</span></div>
+                      </div>
                     </div>
                     <div className="relative flex-shrink-0 flex flex-col items-center gap-1">
                       <div
@@ -2141,13 +2148,6 @@ export default function Home() {
                             />
                           );
                         })()}
-                      </div>
-                      <div className="vt-ring" title={`${pct}% done`}>
-                        <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
-                          <circle cx="32" cy="32" r={R} fill="none" stroke="var(--theme-border,rgba(255,255,255,.15))" strokeWidth="6" />
-                          <circle cx="32" cy="32" r={R} fill="none" stroke="var(--theme-primary,#ff6a3d)" strokeWidth="6" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} transform="rotate(-90 32 32)" style={{ transition: 'stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1)' }} />
-                        </svg>
-                        <span>{pct}%</span>
                       </div>
                     </div>
                   </div>
@@ -2291,7 +2291,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setIsHabit(!isHabit)}
-                  className={`w-11 h-6 rounded-full transition-all relative outline-none ${
+                  data-on={isHabit ? '1' : undefined} className={`pn-toggle w-11 h-6 rounded-full transition-all relative outline-none ${
                     isHabit ? 'bg-[var(--theme-primary,#3b82f6)]' : isDark ? 'bg-slate-800' : 'bg-gray-200'
                   }`}
                 >
@@ -2388,9 +2388,9 @@ export default function Home() {
           <div className="flex-1 w-full flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-300 md:shadow-2xl md:my-6 md:rounded-3xl md:border md:border-white/10">
             {/* Left side: HUGE MASCOT */}
             <div className="hidden md:flex md:sticky md:top-0 md:h-screen md:w-1/2 lg:w-3/5 flex-col items-center justify-center p-8 select-none bg-slate-900/30 relative overflow-visible">
-              <div className="w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
+              <div className="pn-polaroid w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
                 <BloubMascot key={`settings-preview-lg-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
-                <div className="mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
+                <div className="pn-caption mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
                   <span className="font-bold text-white capitalize">{getLocalizedShape(resolveShape(targetShape), locale) || targetShape}</span>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400 capitalize">{getLocalizedExpression(targetExpr, locale) || targetExpr}</span>
@@ -2403,7 +2403,7 @@ export default function Home() {
               
               {/* Mascot Preview inside Settings */}
               <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
-                <div className="md:hidden w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
+                <div className="pn-polaroid pn-polaroid-sm md:hidden w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
                   <BloubMascot key={`settings-preview-sm-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
 
@@ -2412,7 +2412,8 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setSettingsTarget('global')}
-                    className={`flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
+                    data-on={settingsTarget === 'global' ? '1' : undefined}
+                    className={`pn-opt flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
                       settingsTarget === 'global'
                         ? 'bg-[var(--theme-primary,#3b82f6)]/20 border-[var(--theme-primary,#3b82f6)] text-white shadow-md scale-105 ring-1 ring-[var(--theme-primary,#3b82f6)]/40'
                         : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
@@ -2431,7 +2432,8 @@ export default function Home() {
                         key={cat.id}
                         type="button"
                         onClick={() => setSettingsTarget(cat.id)}
-                        className={`flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
+                        data-on={settingsTarget === cat.id ? '1' : undefined}
+                        className={`pn-opt flex-shrink-0 flex flex-col items-center py-2 px-3 rounded-2xl border transition-all ${
                           settingsTarget === cat.id
                             ? 'bg-[var(--theme-primary,#3b82f6)]/20 border-[var(--theme-primary,#3b82f6)] text-white shadow-md scale-105 ring-1 ring-[var(--theme-primary,#3b82f6)]/40'
                             : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
@@ -2464,7 +2466,8 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setLocale('en')}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] ${
+                    data-on={locale === 'en' ? '1' : undefined}
+                    className={`pn-seg flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] ${
                       locale === 'en'
                         ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/25'
                         : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
@@ -2475,7 +2478,8 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setLocale('ar')}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] font-arabic ${
+                    data-on={locale === 'ar' ? '1' : undefined}
+                    className={`pn-seg flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-150 active:scale-[0.98] font-arabic ${
                       locale === 'ar'
                         ? 'bg-[var(--theme-primary,#3b82f6)] text-white border-[var(--theme-primary,#3b82f6)] shadow-md shadow-[var(--theme-primary,#3b82f6)]/25'
                         : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
@@ -2507,7 +2511,8 @@ export default function Home() {
                         key={s}
                         type="button"
                         onClick={() => updateTargetShape(s)}
-                        className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-all duration-150 active:scale-95 p-1 ${
+                        data-on={isSelected ? '1' : undefined}
+                        className={`pn-opt flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-all duration-150 active:scale-95 p-1 ${
                           isSelected
                             ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
                             : isDark
@@ -2547,7 +2552,8 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => updateAutoMood(!autoMoodEnabled)}
-                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer select-none active:scale-95 duration-75 ${
+                  data-on={autoMoodEnabled ? '1' : undefined}
+                  className={`pn-toggle w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 cursor-pointer select-none active:scale-95 duration-75 ${
                     autoMoodEnabled ? 'bg-[var(--theme-primary,#3b82f6)]' : 'bg-zinc-700'
                   }`}
                   aria-label="Toggle Auto-Mood Engine"
@@ -2578,7 +2584,8 @@ export default function Home() {
                         key={expr}
                         type="button"
                         onClick={() => updateTargetExpr(expr)}
-                        className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
+                        data-on={isSelected ? '1' : undefined}
+                        className={`pn-opt flex aspect-square flex-col items-center justify-center rounded-2xl border-2 cursor-pointer select-none transition-transform duration-75 active:scale-95 p-1 ${
                           isSelected
                             ? 'bg-slate-800 border-blue-500 shadow-md ring-2 ring-blue-500/30 ring-offset-1 ring-offset-slate-900 scale-105'
                             : isDark
@@ -2606,7 +2613,8 @@ export default function Home() {
                       key={c.id}
                       type="button"
                       onClick={() => updateTargetColor(c.id)}
-                      className={`flex aspect-square items-center justify-center rounded-full cursor-pointer select-none transition-transform duration-75 active:scale-95 ${
+                      data-on={targetColor === c.id ? '1' : undefined}
+                      className={`pn-dot flex aspect-square items-center justify-center rounded-full cursor-pointer select-none transition-transform duration-75 active:scale-95 ${
                         targetColor === c.id
                           ? 'ring-2 ring-blue-500 ring-offset-[3px] ring-offset-[#0f172a] scale-110 shadow-md'
                           : 'hover:scale-110 hover:ring-2 hover:ring-slate-500 hover:ring-offset-[2px] hover:ring-offset-[#0f172a]'
@@ -2630,7 +2638,7 @@ export default function Home() {
                     <Palette size={14} className="text-[var(--theme-primary,#3b82f6)]" /> {tLang('themeStudio')}
                   </span>
                   <span className="text-[10px] font-mono text-[var(--theme-primary,#3b82f6)] uppercase tracking-wider font-bold">
-                    {getLocalizedThemeName(bgTheme, locale) || 'Default'}
+                    {(() => { const tk = getThemeToken(bgTheme); const key = tk.slug || tk.id; const n = getLocalizedThemeName(key, locale); return (n && n !== key ? n : tk.name) || 'Default'; })()}
                   </span>
                 </div>
 
@@ -2641,7 +2649,8 @@ export default function Home() {
                       key={cat}
                       type="button"
                       onClick={() => setThemeCategory(cat)}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold cursor-pointer select-none flex-shrink-0 transition-transform duration-75 active:scale-95 ${
+                      data-on={themeCategory === cat ? '1' : undefined}
+                      className={`pn-seg px-3 py-1 rounded-xl text-xs font-semibold cursor-pointer select-none flex-shrink-0 transition-transform duration-75 active:scale-95 ${
                         themeCategory === cat
                           ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm'
                           : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
@@ -2656,14 +2665,15 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-2.5">
                   {filteredThemes.map(theme => {
                     const isSelected = bgTheme === theme.id;
-                    const localizedName = getLocalizedThemeName(theme.slug || theme.id, locale) || theme.name;
+                    const themeKey = theme.slug || theme.id; const ln = getLocalizedThemeName(themeKey, locale); const localizedName = ln && ln !== themeKey ? ln : theme.name;
                     const localizedCategory = getLocalizedThemeCategory(theme.category, locale);
                     return (
                       <button
                         key={theme.id}
                         type="button"
                         onClick={() => applyTheme(theme.id)}
-                        className={`group relative flex items-center justify-between px-2.5 py-2.5 gap-2.5 rounded-xl border cursor-pointer select-none text-left transition-all duration-150 overflow-hidden active:scale-[0.98] ${
+                        data-on={isSelected ? '1' : undefined}
+                        className={`pn-theme group relative flex items-center justify-between px-2.5 py-2.5 gap-2.5 rounded-xl border cursor-pointer select-none text-left transition-all duration-150 overflow-hidden active:scale-[0.98] ${
                           isSelected
                             ? 'bg-white/[0.08] border-[var(--theme-primary,#3b82f6)] shadow-sm shadow-[var(--theme-primary,#3b82f6)]/20 ring-1 ring-[var(--theme-primary,#3b82f6)]/40 text-white'
                             : 'bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05] hover:border-white/15 text-zinc-300'
@@ -2672,7 +2682,7 @@ export default function Home() {
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           {/* Compact Dual-Tone Swatch Preview */}
                           <div 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center relative flex-shrink-0 bg-black/40 border border-white/10 overflow-hidden shadow-inner"
+                            className="pn-chip w-7 h-7 rounded-lg flex items-center justify-center relative flex-shrink-0 bg-black/40 border border-white/10 overflow-hidden shadow-inner"
                             style={{ backgroundColor: theme.bgColor }}
                           >
                             <div 
@@ -2721,7 +2731,8 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handlePushToggle}
-                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 p-0.5 ${
+                    data-on={isSubscribed ? '1' : undefined}
+                    className={`pn-toggle w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 p-0.5 ${
                       isSubscribed ? 'bg-[var(--theme-primary,#3b82f6)]' : 'bg-zinc-800'
                     }`}
                     aria-label="Toggle Push Notifications"
@@ -3653,7 +3664,7 @@ export default function Home() {
                     {/* Vault Notes Tile */}
                     <button 
                       onClick={() => setShowStudyExplorer(true)}
-                      className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
+                      className={`pn-bookmark text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
                     >
                       <div>
                         <div className="w-9 h-9 rounded-xl bg-[var(--theme-primary,#3b82f6)]/10 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 group-hover:rotate-3">
@@ -3673,7 +3684,7 @@ export default function Home() {
                     {/* AI Quizzing Tile */}
                     <button 
                       onClick={() => setShowStudyExplorer(true)}
-                      className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
+                      className={`pn-bookmark text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
                     >
                       <div>
                         <div className="w-9 h-9 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 group-hover:-rotate-3">
@@ -3691,7 +3702,7 @@ export default function Home() {
                     </button>
 
                     {/* Upload Book Tile */}
-                    <label className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}>
+                    <label className={`pn-bookmark text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}>
                       <input 
                         type="file" 
                         accept=".txt,.md,.csv" 
@@ -3740,7 +3751,7 @@ export default function Home() {
                     {/* Visual Graph Tile */}
                     <button 
                       onClick={() => setShowGraphView(true)}
-                      className={`text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
+                      className={`pn-bookmark text-left p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${t.card} flex flex-col justify-between group`}
                     >
                       <div>
                         <div className="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3 mb-2.5">
@@ -3819,7 +3830,7 @@ export default function Home() {
                           exit={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
                           transition={{ duration: 0.2 }}
                           key={todo.id}
-                          className={`rounded-2xl border transition-all duration-200 overflow-hidden ${todo.completed ? t.cardMuted + ' opacity-60' : isOverdue ? (isDark ? 'bg-red-950/30 border-red-900 shadow-red-900/20' : 'bg-red-50 border-red-200 shadow-red-100') : t.card}`}
+                          data-late={isOverdue && !todo.completed ? '1' : undefined} className={`pn-task rounded-2xl border transition-all duration-200 overflow-hidden ${todo.completed ? t.cardMuted + ' opacity-60' : isOverdue ? (isDark ? 'bg-red-950/30 border-red-900 shadow-red-900/20' : 'bg-red-50 border-red-200 shadow-red-100') : t.card}`}
                         >
                           <div className="flex items-center gap-3 px-4 py-3.5">
                             {todo.isHabit ? (
@@ -3835,7 +3846,7 @@ export default function Home() {
                                 )}
                               </button>
                             ) : (
-                              <button onClick={() => toggleTodo(todo.id, todo.completed)} className="flex-shrink-0">
+                              <button onClick={() => toggleTodo(todo.id, todo.completed)} data-on={todo.completed ? '1' : undefined} data-late={isOverdue ? '1' : undefined} aria-label={todo.completed ? 'Mark as not done' : 'Mark as done'} className="pn-check flex-shrink-0">
                                 {todo.completed
                                   ? <CheckCircle2 size={22} className={isDark ? "text-slate-500" : "text-gray-800"} />
                                   : <Circle size={22} className={isOverdue ? 'text-red-400' : isDark ? 'text-slate-600' : 'text-gray-300'} />

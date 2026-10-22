@@ -100,6 +100,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className={`antialiased font-sans ${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${lemonada.variable} bg-[#F8FAFC] text-slate-900 dark:bg-[var(--theme-bg,#080b14)] dark:text-gray-100 min-h-screen relative overflow-x-hidden transition-colors duration-500`}>
+        <svg aria-hidden="true" width="0" height="0" style={{ position: 'absolute' }}>
+          <filter id="pn-rough"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" /><feDisplacementMap in="SourceGraphic" scale="2.2" /></filter>
+          <filter id="pn-ink"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" result="n" /><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="m" /><feComposite in="SourceGraphic" in2="m" operator="in" result="c" /><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="11" result="w" /><feDisplacementMap in="c" in2="w" scale="2" /></filter>
+        </svg>
         {children}
       </body>
     </html>
