@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo, Shippori_Mincho, Zen_Kaku_Gothic_New, Klee_One } from "next/font/google";
+import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo, IBM_Plex_Sans, IBM_Plex_Mono, Literata } from "next/font/google";
 import "./globals.css";
-import "./paper.css";
+import "./design.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,10 +46,10 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-// Paper Notebook fonts: Japanese stationery faces (mincho titles, gothic body, pencil notes)
-const shippori = Shippori_Mincho({ variable: "--font-shippori", weight: ["500", "700", "800"], subsets: ["latin"], display: "swap" });
-const zenKaku = Zen_Kaku_Gothic_New({ variable: "--font-zenkaku", weight: ["400", "500", "700"], subsets: ["latin"], display: "swap" });
-const klee = Klee_One({ variable: "--font-klee", weight: ["400", "600"], subsets: ["latin"], display: "swap" });
+// Study design fonts: Literata for headings and reading, IBM Plex for interface and numbers
+const plexSans = IBM_Plex_Sans({ variable: "--font-plex", weight: ["400", "500", "600"], subsets: ["latin"], display: "swap" });
+const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", weight: ["400", "500"], subsets: ["latin"], display: "swap" });
+const literata = Literata({ variable: "--font-literata", weight: ["400", "600"], subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Vibe Todos",
@@ -61,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} ${shippori.variable} ${zenKaku.variable} ${klee.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} ${plexSans.variable} ${plexMono.variable} ${literata.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -86,6 +86,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   document.documentElement.classList.remove('dark');
                   document.documentElement.removeAttribute('data-theme');
                 }
+
+                try {
+                  const vars = JSON.parse(localStorage.getItem('vibe_theme_vars') || 'null');
+                  if (vars && theme !== 'bg-[#F3EEE3]') for (const k in vars) document.documentElement.style.setProperty(k, vars[k]);
+                } catch (e) {}
 
                 let lang = localStorage.getItem('vibe_language');
                 document.documentElement.setAttribute('dir', 'ltr');

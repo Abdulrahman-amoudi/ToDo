@@ -869,6 +869,7 @@ export default function Home() {
         Object.entries(vars).forEach(([prop, val]) => {
           document.documentElement.style.setProperty(prop, val);
         });
+        try { localStorage.setItem('vibe_theme_vars', JSON.stringify(vars)); } catch {}
       }
     } catch (e) {
       console.warn('Failed to set theme variables:', e);
