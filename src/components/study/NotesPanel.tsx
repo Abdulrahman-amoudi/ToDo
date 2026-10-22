@@ -26,7 +26,9 @@ import {
   Workflow,
   ScrollText,
   Layers,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Columns2,
+  Maximize2 as MaximizeIcon,
 } from 'lucide-react';
 import type { QuizResponse } from '@/types/quiz';
 import { StudyMarkdownRenderer } from './StudyMarkdownRenderer';
@@ -593,105 +595,32 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   // Common Header & Segmented Switcher
   const panelHeader = (
-    <div className={`p-3 border-b flex flex-col gap-2.5 shrink-0 ${
-      isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)]/90 backdrop-blur-xl' : 'border-gray-200 bg-white'
-    }`}>
-      {/* Top row: Page title, collapse, and status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg bg-[var(--theme-primary,#6366f1)]/15 text-[var(--theme-primary,#818cf8)] border border-[var(--theme-primary,#6366f1)]/25 flex items-center gap-1.5">
-            <Sparkles size={11} className="text-[var(--theme-primary,#818cf8)]" /> Gemini 3.8 Flash
-          </span>
-          <span className="text-xs font-mono font-semibold text-[var(--theme-text-muted)]">
-            Pg. {pageNumber}
-          </span>
-          {onToggleBook && (
-            <button
-              type="button"
-              onClick={onToggleBook}
-              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 ${
-                isBookMinimized
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
-                  : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] hover:text-white border border-[var(--theme-border)]'
-              }`}
-              title={isBookMinimized ? "Restore split view with book" : "Minimize book to focus on study notes"}
-            >
-              <BookOpen size={11} />
-              <span>{isBookMinimized ? "Show Book" : "Minimize Book"}</span>
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {activeTab === 'notes' && (
-            <select
-              value={localNote.lang}
-              onChange={handleLangChange}
-              className={`text-[11px] px-2.5 py-1 rounded-xl border outline-none cursor-pointer transition-colors ${
-                isDark
-                  ? 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)] text-[var(--theme-text-secondary)]'
-                  : 'bg-gray-50 border-gray-200 text-gray-700'
-              }`}
-            >
-              <option value="en">English</option>
-              <option value="ar">عربي</option>
-            </select>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              if (onClose) onClose();
-              else updatePanelState('rail');
-            }}
-            className="p-1.5 rounded-xl text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-subtle)] active:scale-95 transition-all"
-            title="Collapse Panel"
-          >
-            <PanelRightClose size={16} />
+    <div className="rd-panel-head">
+      <div className="rd-tabs" role="tablist">
+        {([
+          ['ai', locale === 'ar' ? 'اسأل' : 'Ask AI'],
+          ['notes', locale === 'ar' ? 'ملاحظات' : 'Notes'],
+          ['quiz', locale === 'ar' ? 'اختبار' : 'Quiz'],
+        ] as const).map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? 'is-on' : ''} onClick={() => setActiveTab(id)}>
+            {label}{id === 'notes' && hasPageNotes && <i className="rd-dot" aria-label="This page has notes" />}
           </button>
-        </div>
+        ))}
       </div>
-
-      {/* Segmented Control Bar */}
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)]/60 text-xs font-semibold backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => setActiveTab('ai')}
-          className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 ${
-            activeTab === 'ai'
-              ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
-              : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
-          }`}
-        >
-          <Sparkles size={13} className={activeTab === 'ai' ? 'text-white' : 'text-[var(--theme-text-muted)]'} />
-          <span>Gemini AI</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('notes')}
-          className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 relative ${
-            activeTab === 'notes'
-              ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
-              : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
-          }`}
-        >
-          <PenTool size={13} className={activeTab === 'notes' ? 'text-white' : 'text-[var(--theme-text-muted)]'} />
-          <span>Notes</span>
-          {hasPageNotes && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('quiz')}
-          className={`py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 ${
-            activeTab === 'quiz'
-              ? 'bg-[var(--theme-primary,#6366f1)] text-white shadow-md font-bold'
-              : 'text-[var(--theme-text-muted)] hover:text-white hover:bg-[var(--theme-surface-elevated)]'
-          }`}
-        >
-          <HelpCircle size={13} className={activeTab === 'quiz' ? 'text-white' : 'text-[var(--theme-text-muted)]'} />
-          <span>Quiz</span>
+      <div className="rd-panel-actions">
+        {activeTab === 'notes' && (
+          <select value={localNote.lang} onChange={handleLangChange} className="rd-select" aria-label="Note language">
+            <option value="en">English</option>
+            <option value="ar">عربي</option>
+          </select>
+        )}
+        {onToggleBook && (
+          <button type="button" onClick={onToggleBook} className={`rd-icon ${isBookMinimized ? 'is-on' : ''}`} title={isBookMinimized ? 'Show the page again' : 'Hide the page and widen this panel'}>
+            {isBookMinimized ? <Columns2 size={15} /> : <MaximizeIcon size={15} />}
+          </button>
+        )}
+        <button type="button" onClick={() => { if (onClose) onClose(); else updatePanelState('rail'); }} className="rd-icon" title="Close panel" aria-label="Close panel">
+          <PanelRightClose size={15} />
         </button>
       </div>
     </div>
@@ -699,75 +628,29 @@ export const NotesPanel = React.memo(function NotesPanel({
 
   // TAB 1: GEMINI 3.8 AI CHAT
   const renderAiStudio = () => (
-    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden relative bg-[var(--theme-surface)]">
-      {/* Dynamic Theme-Reactive Background Ambient Glow */}
-      <div className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out z-0 overflow-hidden" aria-hidden="true">
-        <div 
-          className="absolute -top-16 left-1/2 -translate-x-1/2 w-[440px] h-[360px] rounded-full blur-[110px] opacity-40 transition-all duration-700" 
-          style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }} 
-        />
-        <div 
-          className="absolute top-1/2 -right-16 w-[300px] h-[300px] rounded-full blur-[100px] opacity-30 transition-all duration-700" 
-          style={{ background: 'radial-gradient(circle, var(--theme-accent, var(--theme-primary, #6366f1)) 0%, transparent 70%)' }} 
-        />
-      </div>
-
+    <div className="rd-ai flex flex-col flex-1 h-full min-h-0 overflow-hidden relative">
       {/* Multi-Page Continuity Awareness Pill & Font Size Controls */}
       {/* Refined Page Header & Typography Scale */}
-      <div className="px-4 py-2.5 bg-zinc-950/80 border-b border-white/10 flex items-center justify-between text-xs select-none z-10 shrink-0 gap-3 backdrop-blur-xl">
-        {/* Page indicator & Connected Context Badge */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-white shadow-xs">
-            <BookOpen size={13} className="shrink-0 text-[var(--theme-primary,#3b82f6)]" />
-            <span className="text-xs font-semibold tracking-tight">
-              {locale === 'ar'
-                ? `صفحة ${pageNumber}${numPages && numPages > 1 ? ` / ${numPages}` : ''}`
-                : `Page ${pageNumber}${numPages && numPages > 1 ? ` / ${numPages}` : ''}`}
-            </span>
-          </div>
-
+      <div className="rd-context">
+        <span className="rd-context-text">
+          {locale === 'ar' ? `صفحة ${pageNumber}${numPages ? ` من ${numPages}` : ''}` : `Page ${pageNumber}${numPages ? ` of ${numPages}` : ''}`}
           {(prevPageContent || nextPageContent) && (
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span>{locale === 'ar' ? 'سياق متصل' : 'Synced'}</span>
-              <span className="text-emerald-400/80 font-mono text-[10px]">
-                {prevPageContent ? `P.${prevPageNumber || pageNumber - 1}` : ''}
-                {prevPageContent && nextPageContent ? ' • ' : ''}
-                {nextPageContent ? `P.${nextPageNumber || pageNumber + 1}` : ''}
-              </span>
-            </div>
+            <span className="rd-muted">
+              {locale === 'ar' ? ' · مع الصفحات المجاورة' : ` · also reads p. ${[prevPageContent ? (prevPageNumber || pageNumber - 1) : null, nextPageContent ? (nextPageNumber || pageNumber + 1) : null].filter(Boolean).join(' & ')}`}
+            </span>
           )}
-        </div>
-
-        {/* Tactile Segmented Font Size Controller */}
-        <div className="flex items-center gap-1.5 ms-auto shrink-0">
-          <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5 shadow-inner gap-0.5" title={locale === 'ar' ? 'حجم خط المذاكرة' : 'Text Size'}>
-            {(['normal', 'large', 'xl'] as const).map((size) => {
-              const isSelected = studyFontSize === size;
-              const label = size === 'normal' ? 'A' : size === 'large' ? 'A+' : 'A++';
-              const title = size === 'normal' ? (locale === 'ar' ? 'حجم عادي' : 'Standard') : size === 'large' ? (locale === 'ar' ? 'حجم كبير' : 'Large') : (locale === 'ar' ? 'حجم فائق' : 'Extra Large');
-              return (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => handleSetStudyFontSize(size)}
-                  title={title}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer ${
-                    isSelected
-                      ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-sm font-semibold'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+        </span>
+        <div className="rd-seg rd-seg-sm" title={locale === 'ar' ? 'حجم الخط' : 'Answer text size'}>
+          {(['normal', 'large', 'xl'] as const).map((size) => (
+            <button key={size} type="button" onClick={() => handleSetStudyFontSize(size)} className={studyFontSize === size ? 'is-on' : ''} aria-label={size}>
+              {size === 'normal' ? 'A' : size === 'large' ? 'A+' : 'A++'}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Quick Prompt Chips Bar (Zero Scrollbar Native) */}
-      <div className="p-2.5 border-b border-[var(--theme-border)] flex items-center gap-2 overflow-x-auto no-scrollbar hide-scrollbar scrollbar-none shrink-0 bg-[var(--theme-surface-elevated)]/60 backdrop-blur-md relative z-10 scroll-smooth">
+      <div className="rd-chips">
         <button
           type="button"
           onClick={() => handleAskAi(
@@ -777,7 +660,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'ask'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="rd-chip"
         >
           <Workflow size={12} className="text-purple-400" />
           <span>{t('conceptTree')}</span>
@@ -791,7 +674,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'ask'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="rd-chip"
         >
           <ScrollText size={12} className="text-amber-400" />
           <span>{t('storyMode')}</span>
@@ -805,7 +688,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'summarize'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="rd-chip"
         >
           <Zap size={12} className="text-sky-400" />
           <span>{t('summarizePage')}</span>
@@ -820,7 +703,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'key_takeaways'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="rd-chip"
         >
           <Lightbulb size={12} className="text-yellow-400" />
           <span>{t('keyTakeaways')}</span>
@@ -834,7 +717,7 @@ export const NotesPanel = React.memo(function NotesPanel({
             'ask'
           )}
           disabled={isAiLoading}
-          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface-elevated)] border border-[var(--theme-border)] text-[var(--theme-text-secondary)] hover:text-white transition-all shrink-0 active:scale-95 disabled:opacity-40 shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="rd-chip"
         >
           <Search size={12} className="text-emerald-400" />
           <span>{t('explainConcepts')}</span>
@@ -844,7 +727,7 @@ export const NotesPanel = React.memo(function NotesPanel({
       {/* Messages Thread or Hero Welcome Canvas */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar relative z-10">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[460px] h-full text-center p-3 sm:p-5 space-y-6 animate-in fade-in duration-300">
+          <div className="rd-welcome">
             {/* Mascot with Glowing Theme Aura */}
             <div className="relative group select-none">
               <div 
@@ -856,14 +739,14 @@ export const NotesPanel = React.memo(function NotesPanel({
                 onClick={() => triggerMascot?.('bounce', 'heureux', true)}
                 title="Tap Mascot"
               >
-                <BloubMascot size={104} shape={activeMascotShape} color={activeMascotColor} state="idle" expression="curieux" isStatic={false} />
+                <BloubMascot size={56} shape={activeMascotShape} color={activeMascotColor} state="idle" expression="curieux" isStatic={false} />
               </div>
             </div>
 
             {/* Header / Intro */}
             <div className="space-y-1.5 max-w-sm">
               <div className="vs-ai-model">
-                <span>{locale === 'ar' ? 'Gemini 3.8 Flash • مساحة المذاكرة' : 'Gemini 3.8 Flash • Study Studio'}</span>
+                <span>{locale === 'ar' ? 'Gemini 3.8 Flash' : 'Gemini 3.8 Flash'}</span>
               </div>
               <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
                 {locale === 'ar' ? `وش تحب نراجع في صفحة ${pageNumber}؟` : `Ask about page ${pageNumber}`}
@@ -1533,11 +1416,7 @@ export const NotesPanel = React.memo(function NotesPanel({
         />
 
         <aside
-          className={`fixed inset-y-0 right-0 z-50 w-[92vw] max-w-[480px] h-full shadow-2xl border-l flex flex-col transition-all duration-300 animate-in slide-in-from-right ${
-            isDark
-              ? 'border-[var(--theme-border)] bg-[var(--theme-surface)] backdrop-blur-2xl'
-              : 'border-gray-200 bg-[#fffdf5]'
-          }`}
+          className="rd-panel rd-drawer fixed inset-y-0 right-0 z-50 w-[92vw] max-w-[480px] h-full flex flex-col"
           data-spatial-container="notes-drawer"
         >
           {notebookBody}
@@ -1550,13 +1429,7 @@ export const NotesPanel = React.memo(function NotesPanel({
   return (
     <div
       style={isBookMinimized ? undefined : { width: clampedWidth }}
-      className={`h-full border-l flex flex-col transition-all duration-200 ${
-        isBookMinimized ? 'flex-1 w-full min-w-0' : 'flex-shrink-0'
-      } ${
-        isDark
-          ? 'border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-2xl text-[var(--theme-text-primary)]'
-          : 'border-gray-200 bg-[#fffdf5]'
-      }`}
+      className={`rd-panel h-full flex flex-col ${isBookMinimized ? 'flex-1 w-full min-w-0' : 'flex-shrink-0'}`}
       data-spatial-container="notes-expanded"
     >
       {notebookBody}

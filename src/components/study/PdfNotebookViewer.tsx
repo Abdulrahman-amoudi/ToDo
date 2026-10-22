@@ -7,7 +7,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import ArabicTextLayer from './ArabicTextLayer';
 import NotesPanel from './NotesPanel';
-import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, MousePointer2, ZoomIn, ZoomOut, Eraser, Undo2, Sidebar, Hand, Eye, EyeOff, Square, Baseline, Maximize2, Sparkles, BookOpen, HelpCircle, PanelLeftOpen, PanelRightOpen, Minimize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PenTool, Save, Check, Highlighter, Type, MousePointer2, ZoomIn, ZoomOut, Eraser, Undo2, Sidebar, Hand, Eye, EyeOff, Square, Baseline, Maximize2, Sparkles, BookOpen, HelpCircle, PanelLeftOpen, PanelRightOpen, Minimize2, PanelRight, MonitorSmartphone } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { updateFrontmatterField } from '@/lib/obsidian/parser';
 import { recordMutation, markMutationSynced, markMutationFailed } from '@/lib/storage/offline-wal';
@@ -67,7 +67,8 @@ export default function PdfNotebookViewer({
   const [notesWidth, setNotesWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const [showPdfUi, setShowPdfUi] = useState(true);
-  const [showNotes, setShowNotes] = useState(true);
+  // On phones and portrait tablets the study panel is a drawer, so start with the page visible
+  const [showNotes, setShowNotes] = useState(() => typeof window === 'undefined' ? true : !(window.innerWidth < 1024 || (window.innerHeight >= window.innerWidth && window.innerWidth <= 1180)));
   const [activeNotesTab, setActiveNotesTab] = useState<'ai' | 'notes' | 'quiz'>('ai');
   const [isBookMinimized, setIsBookMinimized] = useState(false);
   const [pendingText, setPendingText] = useState<{x: number, y: number, text: string, color?: string, fontSize?: number, id?: number} | null>(null);
@@ -925,7 +926,7 @@ export default function PdfNotebookViewer({
   const toolsPortal = typeof document !== 'undefined' ? document.getElementById('pdf-tools-portal') : null;
 
   return (
-    <div ref={containerRef} className={`flex w-full flex-1 h-full min-h-[500px] border rounded-2xl overflow-hidden shadow-inner ${isDark ? 'border-[var(--theme-border)] bg-[var(--theme-surface)]' : 'border-gray-200 bg-gray-100'}`}>
+    <div ref={containerRef} className="rd-shell flex w-full flex-1 h-full min-h-[500px] overflow-hidden">
       <style>{`
         .react-pdf__Page__textContent, .textLayer {
           line-height: 1 !important;
@@ -952,13 +953,13 @@ export default function PdfNotebookViewer({
        
        {/* PDF Viewer Side or Minimized Rail */}
        {isBookMinimized ? (
-         <div className="w-12 flex-shrink-0 h-full border-r border-[var(--theme-border)] flex flex-col items-center py-4 justify-between bg-[var(--theme-surface)]/90 backdrop-blur-xl z-20 transition-all select-none">
+         <div className="rd-rail rd-rail-left">
            <div className="flex flex-col items-center gap-3">
              <button
                type="button"
                onClick={() => setIsBookMinimized(false)}
-               className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:brightness-110 transition-all active:scale-95 shadow-md"
-               title="Expand Book / PDF"
+               className="rd-icon"
+               title="Show the page"
                aria-label="Expand Book"
              >
                <BookOpen size={16} />
@@ -992,7 +993,7 @@ export default function PdfNotebookViewer({
          </div>
        ) : (
        <div 
-          className={`flex-1 h-full overflow-auto custom-scrollbar flex flex-col py-6 px-6 relative bg-black/20 ${(pdfTool === 'pan' || (pdfTool === 'highlight' && highlightMode === 'box')) ? 'touch-none' : ''}`}
+          className={`rd-canvas flex-1 h-full overflow-auto custom-scrollbar flex flex-col relative ${(pdfTool === 'pan' || (pdfTool === 'highlight' && highlightMode === 'box')) ? 'touch-none' : ''}`}
           onPointerDown={(e) => {
             if ((e.target as HTMLElement).closest('button, input, select, .pointer-events-auto')) return;
             if (pdfTool === 'pan') {
@@ -1027,194 +1028,47 @@ export default function PdfNotebookViewer({
         >
           {/* PDF Toolbar rendered in portal */}
           {toolsPortal && createPortal(
-             <div className="flex items-center gap-1 sm:gap-1.5">
+             <div className="rd-toolgroup">
                {viewerEngine === 'pdfjs' && (
                  <>
-                   <button 
-                     onClick={() => setPdfTool('pan')} 
-                     className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                       pdfTool === 'pan' 
-                         ? 'text-[var(--theme-primary)] bg-[var(--theme-primary)]/20 border border-[var(--theme-primary)]/30' 
-                         : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
-                     }`} 
-                     title="Pan Tool"
-                     aria-label="Pan Tool"
-                   >
-                     <Hand size={16}/>
-                   </button>
-                   <button 
-                     onClick={() => setPdfTool('cursor')} 
-                     className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                       pdfTool === 'cursor' 
-                         ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30' 
-                         : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
-                     }`} 
-                     title="Pointer Tool"
-                     aria-label="Pointer Tool"
-                   >
-                     <MousePointer2 size={16}/>
-                   </button>
-                   <button 
-                     onClick={() => setPdfTool('highlight')} 
-                     className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                       pdfTool === 'highlight' 
-                         ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' 
-                         : 'text-[var(--theme-text-muted)] hover:text-yellow-400 hover:bg-[var(--theme-surface)]'
-                     }`} 
-                     title="Highlighter Tool"
-                     aria-label="Highlighter Tool"
-                   >
-                     <Highlighter size={16}/>
-                   </button>
-                   
-                   <button 
-                     onClick={() => setPdfTool('text')} 
-                     className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                       pdfTool === 'text' 
-                         ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30' 
-                         : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
-                     }`} 
-                     title="Text Note Tool"
-                     aria-label="Text Note Tool"
-                   >
-                     <Type size={16}/>
-                   </button>
-
+                   <div className="rd-seg rd-seg-icons" role="toolbar" aria-label="Tools">
+                     {([
+                       ['cursor', <MousePointer2 key="i" size={15} />, 'Select text'],
+                       ['pan', <Hand key="i" size={15} />, 'Move the page'],
+                       ['highlight', <Highlighter key="i" size={15} />, 'Highlight'],
+                       ['text', <Type key="i" size={15} />, 'Add a text note'],
+                       ['eraser', <Eraser key="i" size={15} />, 'Erase highlights and notes'],
+                     ] as const).map(([id, icon, label]) => (
+                       <button key={id} type="button" onClick={() => setPdfTool(id)} className={pdfTool === id ? 'is-on' : ''} title={label} aria-label={label} aria-pressed={pdfTool === id}>{icon}</button>
+                     ))}
+                   </div>
+                   <button type="button" onClick={handleUndo} className="rd-icon" title="Undo" aria-label="Undo"><Undo2 size={15} /></button>
                    {pdfTool === 'highlight' && (
-                       <div className="flex items-center gap-1 mx-1 bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] rounded-lg p-1">
-                         <button 
-                           onPointerDown={(e) => e.preventDefault()} 
-                           onClick={() => setHighlightMode(m => m === 'box' ? 'text' : 'box')} 
-                           className={`flex items-center gap-1 px-2 py-0.5 mr-1 rounded border border-[var(--theme-border)] bg-[var(--theme-surface-elevated)] text-xs font-bold text-[var(--theme-text-primary)] transition-all hover:bg-[var(--theme-surface)] active:scale-[0.98]`}
-                           title={highlightMode === 'box' ? "Switch to Text Selection Mode" : "Switch to Box Drawing Mode"}
-                         >
-                           {highlightMode === 'box' ? <Square size={12}/> : <Baseline size={12}/>}
-                           <span className="hidden sm:inline">{highlightMode === 'box' ? 'Box' : 'Text'}</span>
-                         </button>
-                         {['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#fed7aa', '#e9d5ff'].map(c => (
-                           <button 
-                             key={c} 
-                             onPointerDown={(e) => e.preventDefault()} 
-                             onClick={() => setHighlightColor(c)} 
-                             className={`w-4 h-4 rounded-full border ${highlightColor === c ? 'border-white scale-125' : 'border-transparent hover:scale-110'} transition-all`} 
-                             style={{ backgroundColor: c }} 
-                           />
-                         ))}
-                       </div>
+                     <div className="rd-swatches">
+                       <button type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => setHighlightMode(m => m === 'box' ? 'text' : 'box')} className="rd-mini" title={highlightMode === 'box' ? 'Drawing boxes. Switch to highlighting selected text' : 'Highlighting selected text. Switch to drawing boxes'}>
+                         {highlightMode === 'box' ? <Square size={12} /> : <Baseline size={12} />}<span>{highlightMode === 'box' ? 'Box' : 'Text'}</span>
+                       </button>
+                       {['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#fed7aa', '#e9d5ff'].map(c => (
+                         <button key={c} type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => setHighlightColor(c)} className={`rd-swatch ${highlightColor === c ? 'is-on' : ''}`} style={{ backgroundColor: c }} aria-label={`Highlight colour ${c}`} />
+                       ))}
+                     </div>
                    )}
                    {pdfTool === 'text' && (
-                       <div className="flex items-center gap-1 mx-1 bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] rounded-lg p-1">
-                         {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#9333ea', '#ec4899', '#ffffff', '#000000'].map(c => (
-                           <button 
-                             key={c} 
-                             onPointerDown={(e) => e.preventDefault()} 
-                             onClick={() => { setTextColor(c); if (pendingText) setPendingText({ ...pendingText, color: c }); }} 
-                             className={`w-4 h-4 rounded-full border ${textColor === c ? 'border-white scale-125' : 'border-transparent hover:scale-110'} transition-all`} 
-                             style={{ backgroundColor: c }} 
-                           />
-                         ))}
-                       </div>
+                     <div className="rd-swatches">
+                       {['#1f2937', '#ef4444', '#f97316', '#22c55e', '#3b82f6', '#9333ea', '#ffffff'].map(c => (
+                         <button key={c} type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => { setTextColor(c); if (pendingText) setPendingText({ ...pendingText, color: c }); }} className={`rd-swatch ${textColor === c ? 'is-on' : ''}`} style={{ backgroundColor: c }} aria-label={`Text colour ${c}`} />
+                       ))}
+                     </div>
                    )}
-                   
-                   <button 
-                     onClick={() => setPdfTool('eraser')} 
-                     className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                       pdfTool === 'eraser' 
-                         ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' 
-                         : 'text-[var(--theme-text-muted)] hover:text-pink-400 hover:bg-[var(--theme-surface)]'
-                     }`} 
-                     title="Eraser Tool"
-                     aria-label="Eraser Tool"
-                   >
-                     <Eraser size={16}/>
-                   </button>
-                   <button 
-                     onClick={handleUndo} 
-                     className="p-1.5 rounded-lg transition-all active:scale-[0.98] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]" 
-                     title="Undo Annotation"
-                     aria-label="Undo"
-                   >
-                     <Undo2 size={16}/>
-                   </button>
                  </>
                )}
-
-               <div className="w-px h-4 bg-[var(--theme-border)] mx-1"></div>
-
-               <button 
-                 onClick={() => setViewerEngine(v => v === 'pdfjs' ? 'native' : 'pdfjs')} 
-                 className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all active:scale-[0.98] border ${
-                   viewerEngine === 'native' 
-                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
-                     : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] border-[var(--theme-border)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text-primary)]'
-                 }`} 
-                 title="Toggle PDF Engine (Native Browser vs Interactive)"
-               >
-                 <Eye size={14}/>
-                 <span className="text-xs font-bold hidden sm:inline">{viewerEngine === 'native' ? 'Native' : 'Interactive'}</span>
+               <span className="rd-divider" />
+               <button type="button" onClick={() => setViewerEngine(v => v === 'pdfjs' ? 'native' : 'pdfjs')} className={`rd-icon ${viewerEngine === 'native' ? 'is-on' : ''}`}
+                 title={viewerEngine === 'native' ? 'Back to the study viewer (highlights, notes, AI)' : "Use the browser's own PDF viewer"}>
+                 <MonitorSmartphone size={15} />
                </button>
-
-               <div className="w-px h-4 bg-[var(--theme-border)] mx-1"></div>
-
-               <button 
-                 onClick={() => {
-                   if (showNotes && activeNotesTab === 'notes') {
-                     setShowNotes(false);
-                   } else {
-                     setShowNotes(true);
-                     setActiveNotesTab('notes');
-                   }
-                 }} 
-                 className={`p-1.5 rounded-lg transition-all active:scale-[0.98] ${
-                   showNotes && activeNotesTab === 'notes'
-                     ? 'text-[var(--theme-primary)] bg-[var(--theme-primary)]/20 border border-[var(--theme-primary)]/30' 
-                     : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
-                 }`} 
-                 title="Toggle Notes Panel"
-                 aria-label="Toggle Notes"
-               >
-                 <Sidebar size={16}/>
-               </button>
-
-               <button
-                 type="button"
-                 onClick={() => {
-                   if (showNotes && activeNotesTab === 'quiz') {
-                     setShowNotes(false);
-                   } else {
-                     setShowNotes(true);
-                     setActiveNotesTab('quiz');
-                   }
-                 }}
-                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all active:scale-[0.98] border ${
-                   showNotes && activeNotesTab === 'quiz'
-                     ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)] shadow-sm font-bold'
-                     : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] border-[var(--theme-border)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text-primary)]'
-                 }`}
-                 title="Interactive AI Quiz for Document"
-               >
-                 <HelpCircle size={14} />
-                 <span className="text-xs font-bold hidden sm:inline">Quiz</span>
-               </button>
-
-               <div className="w-px h-4 bg-[var(--theme-border)] mx-1"></div>
-               
-               <button 
-                 onClick={() => setZoomLevel(z => Math.max(z - 0.25, 0.5))} 
-                 className="p-1.5 rounded-lg transition-all active:scale-[0.98] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]" 
-                 title="Zoom Out"
-                 aria-label="Zoom Out"
-               >
-                 <ZoomOut size={16}/>
-               </button>
-               <div className="text-xs font-mono text-[var(--theme-text-secondary)] font-bold min-w-[36px] text-center">{Math.round(zoomLevel * 100)}%</div>
-               <button 
-                 onClick={() => setZoomLevel(z => Math.min(z + 0.25, 3.0))} 
-                 className="p-1.5 rounded-lg transition-all active:scale-[0.98] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]" 
-                 title="Zoom In"
-                 aria-label="Zoom In"
-               >
-                 <ZoomIn size={16}/>
+               <button type="button" onClick={() => setShowNotes(s => !s)} className={`rd-icon ${showNotes ? 'is-on' : ''}`} title={showNotes ? 'Hide the study panel' : 'Show the study panel'} aria-label="Study panel">
+                 <PanelRight size={15} />
                </button>
              </div>,
              toolsPortal
@@ -1228,12 +1082,11 @@ export default function PdfNotebookViewer({
               file={resolvedPdfSource} 
               options={options}
               onLoadSuccess={onDocumentLoadSuccess} 
-              loading={<div className="text-slate-400 font-mono text-sm animate-pulse flex h-full items-center">Loading Document...</div>}
-              className="drop-shadow-2xl"
+              loading={<div className="rd-loading">Opening document…</div>}
            >
            
            
-            <div className="relative inline-block shadow-2xl" ref={overlayRef} 
+            <div className="relative inline-block rd-page-wrap" ref={overlayRef} 
                   onPointerDown={(e) => {
                     if (pdfTool === 'text') {
                       // let handleContainerMouseUp handle it
@@ -1453,196 +1306,42 @@ export default function PdfNotebookViewer({
                 renderAnnotationLayer={true} 
                 scale={zoomLevel} 
                 onLoadSuccess={handlePageLoadSuccess}
-                className="rounded-lg overflow-hidden shadow-2xl transition-transform duration-300 transform-gpu"
+                className="rd-page"
               />
             </div>
           </Document>
         </div>
       )}
            
-      {viewerEngine === 'pdfjs' && numPages && !isMobileOrTabletVertical && (
-        <div className="sticky bottom-6 mt-6 left-1/2 -translate-x-1/2 w-max flex items-center gap-2.5 bg-[var(--theme-surface-elevated)]/90 backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--theme-border)] shadow-2xl z-50 text-[var(--theme-text-primary)] animate-in fade-in select-none">
-          <button 
-            onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
-            disabled={pageNumber <= 1} 
-            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)] transition-all"
-            aria-label="Previous page"
-            title="Previous page"
-          >
-            <ChevronLeft size={16}/>
-          </button>
-          
-          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[var(--theme-text-primary)]">
-            <span className="text-[var(--theme-text-muted)]">Pg</span>
-            <input 
-              type="number" 
-              min={1} 
-              max={numPages || 1} 
-              value={pageNumber} 
-              onChange={(e) => {
-                const val = parseInt(e.target.value);
-                if (!isNaN(val)) setPageNumber(Math.min(Math.max(1, val), numPages || 1));
-              }}
-              className="w-11 text-center bg-[var(--theme-surface-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-primary)] rounded-lg py-0.5 outline-none focus:border-[var(--theme-primary)] font-mono text-xs transition-colors"
-            />
-            <span className="text-[var(--theme-text-muted)]">/ {numPages}</span>
-          </div>
-
-          <button 
-            onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} 
-            disabled={pageNumber >= (numPages||1)} 
-            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)] transition-all"
-            aria-label="Next page"
-            title="Next page"
-          >
-            <ChevronRight size={16}/>
-          </button>
-
-          <div className="w-px h-4 bg-[var(--theme-border)] mx-1" />
-
-          {/* Fit to width */}
-          <button
-            type="button"
-            onClick={fitToWidth}
-            className="px-3 py-1.5 rounded-full bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] active:scale-95 text-xs font-semibold text-[var(--theme-text-primary)] flex items-center gap-1.5 transition-all border border-[var(--theme-border)]/50"
-            title="Fit Page to Width"
-          >
-            <Maximize2 size={13} />
-            <span>Fit</span>
-          </button>
-
-          {/* Zoom Out & In */}
-          <button
-            type="button"
-            onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
-            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)] transition-all"
-            title="Zoom Out"
-          >
-            <ZoomOut size={14} />
-          </button>
-          <span className="text-[11px] font-mono font-bold text-[var(--theme-text-muted)] min-w-[34px] text-center">
-            {Math.round(zoomLevel * 100)}%
-          </span>
-          <button
-            type="button"
-            onClick={() => setZoomLevel(z => Math.min(3.0, Number((z + 0.15).toFixed(2))))}
-            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)] transition-all"
-            title="Zoom In"
-          >
-            <ZoomIn size={14} />
-          </button>
-
-          <div className="w-px h-4 bg-[var(--theme-border)] mx-1" />
-
-          {/* Minimize / Expand Book */}
-          <button
-            type="button"
-            onClick={() => setIsBookMinimized(m => !m)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border ${
-              isBookMinimized
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
-                : 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-primary)] border-[var(--theme-border)]/50'
-            }`}
-            title={isBookMinimized ? "Restore book side" : "Minimize book to focus on Notes & AI"}
-          >
-            <BookOpen size={14} />
-            <span>{isBookMinimized ? "Show Book" : "Minimize Book"}</span>
-          </button>
-
-          {/* Minimize / Expand Notes & AI */}
-          <button
-            type="button"
-            onClick={() => setShowNotes(s => !s)}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
-              showNotes
-                ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md shadow-[var(--theme-primary)]/25'
-                : 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-primary)] border border-[var(--theme-border)]/50'
-            }`}
-            title={showNotes ? "Minimize Notes & AI pane" : "Expand Notes & AI pane"}
-          >
-            <Sparkles size={14} />
-            <span>{showNotes ? "Notes & AI" : "Show Notes"}</span>
-          </button>
+      {viewerEngine === 'pdfjs' && numPages && (
+        <div className={`rd-pager ${isMobileOrTabletVertical ? 'is-mobile' : ''}`}>
+          <button type="button" onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} className="rd-icon" aria-label="Previous page" title="Previous page"><ChevronLeft size={16} /></button>
+          <label className="rd-pagefield">
+            <input type="number" min={1} max={numPages || 1} value={pageNumber} aria-label="Page number"
+              onChange={(e) => { const val = parseInt(e.target.value); if (!isNaN(val)) setPageNumber(Math.min(Math.max(1, val), numPages || 1)); }} />
+            <span>of {numPages}</span>
+          </label>
+          <button type="button" onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} disabled={pageNumber >= (numPages || 1)} className="rd-icon" aria-label="Next page" title="Next page"><ChevronRight size={16} /></button>
+          <span className="rd-divider" />
+          <button type="button" onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.1).toFixed(2))))} className="rd-icon" title="Zoom out" aria-label="Zoom out"><ZoomOut size={15} /></button>
+          <button type="button" onClick={fitToWidth} className="rd-zoom" title="Fit to width">{Math.round(zoomLevel * 100)}%</button>
+          <button type="button" onClick={() => setZoomLevel(z => Math.min(3.0, Number((z + 0.1).toFixed(2))))} className="rd-icon" title="Zoom in" aria-label="Zoom in"><ZoomIn size={15} /></button>
+          {isMobileOrTabletVertical && (<><span className="rd-divider" /><button type="button" onClick={() => setShowNotes(true)} className="rd-btn" title="Ask AI, notes and quiz"><Sparkles size={14} /> Study</button></>)}
         </div>
       )}
 
-      {/* Mobile & Vertical Tablet Ergonomic Floating Navigation Pill */}
-      {viewerEngine === 'pdfjs' && numPages && isMobileOrTabletVertical && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-full bg-[var(--theme-surface-elevated)]/95 border border-[var(--theme-border)] backdrop-blur-xl shadow-2xl text-xs max-w-[94vw] animate-in fade-in slide-in-from-bottom-2 text-[var(--theme-text-primary)]">
-          <button 
-            onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
-            disabled={pageNumber <= 1} 
-            className="p-2 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)]"
-            title="Previous Page"
-          >
-            <ChevronLeft size={16}/>
-          </button>
-          <span className="px-2 font-mono font-bold text-[var(--theme-text-primary)]">
-            {pageNumber} / {numPages || 1}
-          </span>
-          <button 
-            onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))} 
-            disabled={pageNumber >= (numPages||1)} 
-            className="p-2 rounded-full hover:bg-[var(--theme-surface-subtle)] disabled:opacity-30 active:scale-95 text-[var(--theme-text-primary)]"
-            title="Next Page"
-          >
-            <ChevronRight size={16}/>
-          </button>
-
-          <div className="w-px h-4 bg-[var(--theme-border)] mx-0.5" />
-
-          <button 
-            onClick={fitToWidth} 
-            className="px-2.5 py-1.5 rounded-full bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] active:scale-95 font-semibold text-[var(--theme-text-primary)] flex items-center gap-1"
-            title="Fit Page to Width"
-          >
-            <Maximize2 size={13}/>
-            <span>Fit</span>
-          </button>
-
-          <button 
-            onClick={() => setZoomLevel(z => Math.max(0.4, Number((z - 0.15).toFixed(2))))}
-            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)]"
-            title="Zoom Out"
-          >
-            <ZoomOut size={15}/>
-          </button>
-          <span className="text-[11px] font-mono text-[var(--theme-text-muted)] font-bold min-w-[32px] text-center">
-            {Math.round(zoomLevel * 100)}%
-          </span>
-          <button 
-            onClick={() => setZoomLevel(z => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
-            className="p-1.5 rounded-full hover:bg-[var(--theme-surface-subtle)] active:scale-95 text-[var(--theme-text-primary)]"
-            title="Zoom In"
-          >
-            <ZoomIn size={15}/>
-          </button>
-
-          <div className="w-px h-4 bg-[var(--theme-border)] mx-0.5" />
-
-          <button 
-            onClick={() => setShowNotes(s => !s)} 
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all active:scale-95 ${
-              showNotes ? 'bg-[var(--theme-primary,#3b82f6)] text-white shadow-md' : 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
-            }`}
-          >
-            <Sparkles size={14}/>
-            <span>AI / Notes</span>
-          </button>
-        </div>
-      )}
     </div>
     )}
 
     {/* Right Rail when Notes are minimized */}
     {!showNotes && !isMobileOrTabletVertical && (
-      <div className="w-12 flex-shrink-0 h-full border-l border-[var(--theme-border)] flex flex-col items-center py-4 justify-between bg-[var(--theme-surface)]/90 backdrop-blur-xl z-20 transition-all select-none">
+      <div className="rd-rail rd-rail-right">
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => { setShowNotes(true); setActiveNotesTab('ai'); }}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--theme-primary,#6366f1)]/20 text-[var(--theme-primary,#818cf8)] border border-[var(--theme-primary,#6366f1)]/40 hover:brightness-110 active:scale-95 transition-all shadow-md"
-            title="Expand AI Studio"
+            className="rd-icon"
+            title="Ask AI about this page"
             aria-label="Expand AI"
           >
             <Sparkles size={16} />

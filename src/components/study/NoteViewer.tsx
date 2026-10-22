@@ -25,7 +25,8 @@ import {
   Minimize2,
   Image as ImageIcon, 
   Loader2,
-  X 
+  X,
+  MoreHorizontal 
 } from 'lucide-react';
 import type { ParsedObsidianNote } from '@/types/obsidian';
 import dynamic from 'next/dynamic';
@@ -74,6 +75,7 @@ export default function NoteViewer({
   const [scratchContent, setScratchContent] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [pdfViewMode, setPdfViewMode] = useState<'pdf' | 'reader'>('pdf');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -556,286 +558,79 @@ export default function NoteViewer({
     <div className="flex flex-col h-full w-full relative font-sans" data-spatial-container="study-viewer">
       {/* Unified Floating Dynamic Island Top Bar (h-13 / 52px) */}
       {!hideTopHeader && (
-        <header
-          className={`h-13 min-h-[52px] shrink-0 px-3 sm:px-4 mb-3 flex items-center justify-between gap-2 sm:gap-3 rounded-2xl border shadow-xl backdrop-blur-xl transition-all ${
-            isDark
-              ? 'border-[var(--theme-border)] bg-[var(--theme-surface-elevated)] text-[var(--theme-text-primary)]'
-              : 'border-gray-200 bg-white/95 text-gray-800'
-          }`}
-          data-spatial-container="dynamic-island-topbar"
-        >
-          {/* Left: Navigation & Document Meta */}
-          <div className="flex items-center gap-2 min-w-0 flex-shrink">
+        <header className="rd-bar" data-spatial-container="reader-topbar">
+          <div className="rd-bar-left">
             {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                className={`p-2 rounded-xl transition-all active:scale-[0.98] min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                  isDark
-                    ? 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)]'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-                title="Back to Vault (Esc)"
-                aria-label="Back to Vault"
-              >
+              <button type="button" onClick={onClose} className="rd-icon" title="Back (Esc)" aria-label="Back">
                 <ArrowLeft size={16} />
               </button>
             )}
-
-            <div className="flex items-center gap-1.5 min-w-0">
-              {pdfUrl ? (
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/25 shrink-0">
-                  <FileText size={12} />
-                  <span>PDF</span>
-                </span>
-              ) : (
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--theme-primary)] px-2 py-0.5 rounded-lg bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 shrink-0">
-                  <Folder size={11} />
-                  <span className="truncate max-w-[80px]">{note.folder || 'Vault'}</span>
-                </span>
-              )}
-
-              <h1
-                className={`text-xs sm:text-sm font-bold tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md ${
-                  isDark ? 'text-[var(--theme-text-primary)]' : 'text-gray-900'
-                }`}
-                title={note.title}
-              >
-                {note.title}
-              </h1>
-
-              {note.wordCount && (
-                <span className="hidden xl:inline-flex items-center gap-1 text-[10px] font-mono text-[var(--theme-text-muted)] px-1.5 py-0.5 rounded-md bg-[var(--theme-surface-subtle)] shrink-0">
-                  <Clock size={10} />
-                  {note.wordCount}w (~{readingTime}m)
-                </span>
-              )}
+            <div className="rd-title-wrap">
+              <h1 className="rd-title" title={note.title}>{note.title.replace(/\.pdf$/i, '')}</h1>
+              <span className="rd-sub">
+                {pdfUrl ? 'PDF' : (note.folder || 'Note')}
+                {note.wordCount ? ` · ${note.wordCount.toLocaleString()} words · ${readingTime} min` : ''}
+                {!pdfUrl && saveStatus === 'saving' ? ' · Saving…' : !pdfUrl && saveStatus === 'dirty' ? ' · Unsaved' : !pdfUrl && saveStatus === 'saved' ? ' · Saved' : ''}
+              </span>
             </div>
           </div>
 
-          {/* Center: PDF Tools Portal or Markdown Auto-Save & Mode Pill */}
-          <div className="flex items-center justify-center gap-1.5 flex-1 min-w-0">
+          <div className="rd-bar-center">
             {pdfUrl ? (
-              <div id="pdf-tools-portal" className="flex items-center justify-center gap-1 overflow-x-auto hide-scrollbar max-w-full"></div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {isEditing && (
-                  <div className={`flex items-center p-0.5 rounded-xl border text-[11px] font-semibold ${
-                    isDark ? 'bg-[var(--theme-surface-subtle)] border-[var(--theme-border)]' : 'bg-gray-100 border-gray-200'
-                  }`}>
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode('blocks')}
-                      className={`px-2.5 py-0.5 rounded-lg transition-all ${
-                        editorMode === 'blocks'
-                          ? 'bg-[var(--theme-primary)] text-white shadow-xs'
-                          : isDark ? 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]' : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Blocks
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode('raw')}
-                      className={`px-2.5 py-0.5 rounded-lg transition-all ${
-                        editorMode === 'raw'
-                          ? 'bg-[var(--theme-primary)] text-white shadow-xs'
-                          : isDark ? 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)]' : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      Raw
-                    </button>
-                  </div>
-                )}
-
-                <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-[var(--theme-text-muted)]">
-                  {saveStatus === 'saving' ? (
-                    <>
-                      <Loader2 size={11} className="animate-spin text-[var(--theme-primary)]" />
-                      <span>Saving...</span>
-                    </>
-                  ) : saveStatus === 'dirty' ? (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      <span>Unsaved</span>
-                    </>
-                  ) : saveStatus === 'saved' ? (
-                    <>
-                      <Check size={11} className="text-emerald-400" />
-                      <span>Saved</span>
-                    </>
-                  ) : null}
-                </div>
+              <div id="pdf-tools-portal" className="rd-tools"></div>
+            ) : isEditing ? (
+              <div className="rd-seg" role="tablist">
+                <button type="button" className={editorMode === 'blocks' ? 'is-on' : ''} onClick={() => setEditorMode('blocks')}>Blocks</button>
+                <button type="button" className={editorMode === 'raw' ? 'is-on' : ''} onClick={() => setEditorMode('raw')}>Markdown</button>
               </div>
-            )}
+            ) : null}
           </div>
 
-          {/* Right: Reading Controls, Outlines, Toggles & AI Quiz */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="rd-bar-right">
             {pdfUrl && (
-              <>
-                {/* View Mode Toggle: Visual PDF vs Extracted Text */}
-                <button
-                  type="button"
-                  onClick={() => setPdfViewMode(pdfViewMode === 'pdf' ? 'reader' : 'pdf')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] ${
-                    pdfViewMode === 'reader'
-                      ? 'bg-[var(--theme-primary)] text-white shadow-md'
-                      : isDark
-                        ? 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                  title="Toggle Reader Mode"
-                >
-                  {pdfViewMode === 'pdf' ? <BookOpen size={13} /> : <FileText size={13} />}
-                  <span className="hidden md:inline">{pdfViewMode === 'pdf' ? 'Reader' : 'PDF'}</span>
-                </button>
-
-                {/* Copy Link */}
-                <button
-                  type="button"
-                  onClick={() => copyDocumentUrl(pdfUrl)}
-                  className={`p-1.5 sm:p-2 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                    isDark
-                      ? 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                  title="Copy Document URL"
-                >
-                  {copiedLink ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                </button>
-
-                {/* Open in New Tab */}
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`hidden md:flex items-center p-2 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                    isDark
-                      ? 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                  title="Open in new window"
-                >
-                  <ExternalLink size={13} />
-                </a>
-
-                {/* Direct Download */}
-                <a
-                  href={pdfUrl}
-                  download={note.title || 'document.pdf'}
-                  className={`hidden md:flex items-center p-2 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                    isDark
-                      ? 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                  title="Download PDF"
-                >
-                  <Download size={13} />
-                </a>
-
-                {/* Fullscreen Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setIsPdfFullscreen(!isPdfFullscreen)}
-                  className={`p-1.5 sm:p-2 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                    isDark
-                      ? 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                  title={isPdfFullscreen ? 'Exit Fullscreen' : 'Fullscreen Viewer'}
-                >
-                  {isPdfFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                </button>
-              </>
+              <div className="rd-seg" role="tablist" aria-label="View">
+                <button type="button" className={pdfViewMode === 'pdf' ? 'is-on' : ''} onClick={() => setPdfViewMode('pdf')}>Page</button>
+                <button type="button" className={pdfViewMode === 'reader' ? 'is-on' : ''} onClick={() => setPdfViewMode('reader')}>Text</button>
+              </div>
             )}
-
             {!pdfUrl && onUpdateNote && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (isEditing) {
-                    triggerSave(editContent);
-                    setIsEditing(false);
-                  } else {
-                    setIsEditing(true);
-                  }
-                }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98] ${
-                  isEditing
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
-                    : isDark
-                      ? 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface)] border border-[var(--theme-border)]'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {isEditing ? <Check size={13} /> : <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>}
-                <span>{isEditing ? 'Save' : 'Edit'}</span>
+              <button type="button" className={`rd-btn ${isEditing ? 'is-primary' : ''}`}
+                onClick={() => { if (isEditing) { triggerSave(editContent); setIsEditing(false); } else { setIsEditing(true); } }}>
+                {isEditing ? <><Check size={14} /> Done</> : 'Edit'}
               </button>
             )}
-
-            {!pdfUrl && (
-              <button
-                type="button"
-                onClick={copyMarkdown}
-                className={`p-2 rounded-xl transition-all active:scale-[0.98] ${
-                  isDark
-                    ? 'bg-[var(--theme-surface-subtle)] hover:bg-[var(--theme-surface)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-                title="Copy Note Markdown"
-              >
-                {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-              </button>
-            )}
-
-            {/* Outline Toggle */}
-            {note.headings && note.headings.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowOutline(!showOutline)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] ${
-                  showOutline
-                    ? 'bg-[var(--theme-primary)] text-white shadow-md'
-                    : isDark
-                      ? 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-surface)] border border-[var(--theme-border)]'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                }`}
-                title="Table of contents outline"
-              >
-                <ListTree size={13} />
-                <span className="hidden lg:inline">Outline</span>
-              </button>
-            )}
-
-            {/* Scratchpad Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowScratchpad(!showScratchpad)}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98] ${
-                showScratchpad
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
-                  : isDark
-                    ? 'bg-[var(--theme-surface-subtle)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-surface)] border border-[var(--theme-border)]'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-              title="Toggle Scratchpad"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
-              <span className="hidden xl:inline">Scratch</span>
-            </button>
-
-            {/* Start Quiz Action */}
             {onStartQuiz && (
-              <button
-                type="button"
-                onClick={() => onStartQuiz(note)}
-                className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white text-xs font-bold shadow-md shadow-[var(--theme-primary)]/25 transition-all active:scale-[0.98]"
-              >
-                <Sparkles size={13} />
-                <span className="hidden sm:inline">AI Quiz</span>
+              <button type="button" className="rd-btn" onClick={() => onStartQuiz(note)} title="Quiz yourself on this document">
+                Quiz me
               </button>
             )}
+            <div className="rd-more">
+              <button type="button" className={`rd-icon ${showMoreMenu ? 'is-on' : ''}`} onClick={() => setShowMoreMenu(v => !v)} aria-haspopup="menu" aria-expanded={showMoreMenu} title="More">
+                <MoreHorizontal size={16} />
+              </button>
+              {showMoreMenu && (
+                <>
+                  <div className="rd-menu-scrim" onClick={() => setShowMoreMenu(false)} />
+                  <div className="rd-menu" role="menu" onClick={() => setShowMoreMenu(false)}>
+                    {note.headings && note.headings.length > 0 && (
+                      <button type="button" role="menuitem" onClick={() => setShowOutline(!showOutline)}><ListTree size={15} />{showOutline ? 'Hide outline' : 'Show outline'}</button>
+                    )}
+                    <button type="button" role="menuitem" onClick={() => setShowScratchpad(!showScratchpad)}><FileText size={15} />{showScratchpad ? 'Hide scratchpad' : 'Scratchpad'}</button>
+                    {pdfUrl ? (
+                      <>
+                        <button type="button" role="menuitem" onClick={() => setIsPdfFullscreen(!isPdfFullscreen)}>{isPdfFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}{isPdfFullscreen ? 'Exit full screen' : 'Full screen'}</button>
+                        <div className="rd-menu-sep" />
+                        <button type="button" role="menuitem" onClick={() => copyDocumentUrl(pdfUrl)}>{copiedLink ? <Check size={15} /> : <Copy size={15} />}Copy link</button>
+                        <a role="menuitem" href={pdfUrl} target="_blank" rel="noopener noreferrer"><ExternalLink size={15} />Open in new tab</a>
+                        <a role="menuitem" href={pdfUrl} download={note.title || 'document.pdf'}><Download size={15} />Download PDF</a>
+                      </>
+                    ) : (
+                      <button type="button" role="menuitem" onClick={copyMarkdown}>{copied ? <Check size={15} /> : <Copy size={15} />}Copy as Markdown</button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
       )}
@@ -889,10 +684,10 @@ export default function NoteViewer({
               )}
             </div>
           ) : pdfUrl ? (
-            <div className={`flex flex-col w-full h-full min-h-0 flex-1 gap-3 ${isPdfFullscreen ? 'fixed inset-0 z-50 p-4 sm:p-6 bg-[var(--theme-bg)]/95 backdrop-blur-2xl' : ''}`}>
+            <div className={`flex flex-col w-full h-full min-h-0 flex-1 ${isPdfFullscreen ? 'rd-fullscreen' : ''}`}>
               {/* If in fullscreen OR hideTopHeader is true (dual-pane embed), render compact portal bar */}
               {(isPdfFullscreen || hideTopHeader) && (
-                <div className="flex items-center justify-between px-4 py-2 rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-xl shadow-xl text-xs shrink-0 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="rd-bar rd-bar-compact">
                   <div className="flex items-center gap-2">
                     {isPdfFullscreen ? (
                       <button
