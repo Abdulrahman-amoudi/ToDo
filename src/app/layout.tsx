@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo } from "next/font/google";
+import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo, Shippori_Mincho, Zen_Kaku_Gothic_New, Klee_One } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,6 +45,11 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+// Paper Notebook fonts: Japanese stationery faces (mincho titles, gothic body, pencil notes)
+const shippori = Shippori_Mincho({ variable: "--font-shippori", weight: ["500", "700", "800"], subsets: ["latin"], display: "swap" });
+const zenKaku = Zen_Kaku_Gothic_New({ variable: "--font-zenkaku", weight: ["400", "500", "700"], subsets: ["latin"], display: "swap" });
+const klee = Klee_One({ variable: "--font-klee", weight: ["400", "600"], subsets: ["latin"], display: "swap" });
+
 export const metadata: Metadata = {
   title: "Vibe Todos",
   description: "A premium AI-powered todo app.",
@@ -55,7 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} ${shippori.variable} ${zenKaku.variable} ${klee.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

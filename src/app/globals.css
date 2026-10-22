@@ -1242,3 +1242,114 @@ html[data-theme="bg-[#F3EEE3]"] .clay-pill-active{background:var(--pn-hl)!import
 html[data-theme="bg-[#F3EEE3]"] .bg-slate-900,html[data-theme="bg-[#F3EEE3]"] .bg-zinc-950\/90,html[data-theme="bg-[#F3EEE3]"] .bg-zinc-900{background-color:var(--pn-card)!important}
 html[data-theme="bg-[#F3EEE3]"] .shadow-2xl{box-shadow:0 30px 60px -24px rgba(27,33,49,.45)!important}
 html[data-theme="bg-[#F3EEE3]"] .vt-eyebrow{font-size:1.2rem!important;white-space:nowrap}
+
+/* ==========================================================================
+   PAPER NOTEBOOK · ORIGAMI (v3)
+   Fonts: Shippori Mincho (titles), Zen Kaku Gothic New (text), Klee One
+   (pencil notes). Shapes: folded corners, creases, accordion folds, washi
+   colours per card, paper tags instead of pills.
+   ========================================================================== */
+html[data-theme="bg-[#F3EEE3]"]{
+  --font-sans: var(--font-zenkaku), "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-display: var(--font-shippori), "Shippori Mincho", "Hiragino Mincho ProN", serif;
+  --font-serif: var(--font-shippori), "Shippori Mincho", serif;
+  --pn-title: var(--font-shippori), "Shippori Mincho", "Hiragino Mincho ProN", serif;
+  --pn-pencil: var(--font-klee), "Klee One", "Comic Sans MS", cursive;
+  --pn-text: var(--font-zenkaku), "Zen Kaku Gothic New", system-ui, sans-serif;
+  --washi-1:#F6DDD8; --washi-1b:#E7B9B1;   /* sakura */
+  --washi-2:#DDE8CC; --washi-2b:#B9CC9C;   /* matcha */
+  --washi-3:#F6E4AE; --washi-3b:#E3C66E;   /* kincha */
+  --washi-4:#D7E3F1; --washi-4b:#A9C0DD;   /* sora */
+  --washi-5:#E6DCEF; --washi-5b:#C6B3DA;   /* fuji */
+  --fold:30px;
+}
+html[data-theme="bg-[#F3EEE3]"] body{font-family:var(--pn-text)!important}
+html[data-theme="bg-[#F3EEE3]"] h1,html[data-theme="bg-[#F3EEE3]"] h2,html[data-theme="bg-[#F3EEE3]"] h3,
+html[data-theme="bg-[#F3EEE3]"] .vt-hero-title,html[data-theme="bg-[#F3EEE3]"] .font-display{font-family:var(--pn-title)!important;font-weight:800!important;letter-spacing:-.01em!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-hero-title{font-size:clamp(2.5rem,9vw,3.4rem)!important;line-height:1.05!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-hero-title::after{display:none!important}
+/* pencil notes replace handwriting/mono caps */
+html[data-theme="bg-[#F3EEE3]"] .uppercase.tracking-wider,html[data-theme="bg-[#F3EEE3]"] .uppercase.tracking-widest,html[data-theme="bg-[#F3EEE3]"] .uppercase.tracking-wide,
+html[data-theme="bg-[#F3EEE3]"] .vt-eyebrow,html[data-theme="bg-[#F3EEE3]"] .font-mono,html[data-theme="bg-[#F3EEE3]"] .vt-stat{
+  font-family:var(--pn-pencil)!important;font-size:.92rem!important;font-weight:600!important;letter-spacing:.01em!important;text-transform:none!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-eyebrow{font-size:1rem!important;color:var(--pn-red)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-stat{background:none!important;padding:0!important;color:var(--pn-muted)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-stat b{font-family:var(--pn-title)!important;font-weight:800!important;font-size:1.25rem!important;color:var(--pn-ink)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-stat + .vt-stat::before{content:"·";margin-right:6px;color:var(--pn-muted)}
+html[data-theme="bg-[#F3EEE3]"] .vt-count{font-family:var(--pn-title)!important;font-weight:800!important;font-size:42px!important;color:var(--pn-ink)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-count small{font-family:var(--pn-pencil)!important;font-size:13px!important}
+
+/* ---- origami list cards: washi paper, folded corner, diagonal crease ---- */
+html[data-theme="bg-[#F3EEE3]"] .vt-card{
+  --face:var(--washi-3);--back:var(--washi-3b);
+  border:0!important;border-radius:0!important;overflow:visible!important;
+  background:
+    linear-gradient(118deg,rgba(255,255,255,.42) 0 49.7%,rgba(27,33,49,.10) 49.85%,rgba(27,33,49,.035) 50.1% 100%),
+    var(--face)!important;
+  box-shadow:0 1px 0 rgba(27,33,49,.06),0 12px 18px -12px rgba(27,33,49,.40)!important;
+  clip-path:polygon(0 0,calc(100% - var(--fold)) 0,100% var(--fold),100% 100%,0 100%);
+  filter:drop-shadow(0 1px 0 rgba(27,33,49,.08));
+}
+html[data-theme="bg-[#F3EEE3]"] .vt-grid > li:nth-child(5n+1) .vt-card{--face:var(--washi-3);--back:var(--washi-3b)}
+html[data-theme="bg-[#F3EEE3]"] .vt-grid > li:nth-child(5n+2) .vt-card{--face:var(--washi-1);--back:var(--washi-1b)}
+html[data-theme="bg-[#F3EEE3]"] .vt-grid > li:nth-child(5n+3) .vt-card{--face:var(--washi-2);--back:var(--washi-2b)}
+html[data-theme="bg-[#F3EEE3]"] .vt-grid > li:nth-child(5n+4) .vt-card{--face:var(--washi-4);--back:var(--washi-4b)}
+html[data-theme="bg-[#F3EEE3]"] .vt-grid > li:nth-child(5n+5) .vt-card{--face:var(--washi-5);--back:var(--washi-5b)}
+html[data-theme="bg-[#F3EEE3]"] .vt-grid > li{filter:drop-shadow(0 10px 10px rgba(27,33,49,.16))}
+html[data-theme="bg-[#F3EEE3]"] .vt-card::before{   /* the folded-over corner flap */
+  content:"";position:absolute;inset:0 0 auto auto!important;width:var(--fold)!important;height:var(--fold)!important;
+  background:linear-gradient(225deg,transparent 0 50%,var(--back) 50% 100%)!important;opacity:1!important;transform:none!important;border-radius:0!important;
+  box-shadow:none!important;filter:drop-shadow(-2px 2px 2px rgba(27,33,49,.18))}
+html[data-theme="bg-[#F3EEE3]"] .vt-card[data-type="study"]::before{background:linear-gradient(225deg,transparent 0 50%,var(--back) 50% 100%)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-card:hover{transform:translateY(-3px) rotate(-.6deg)!important;box-shadow:0 1px 0 rgba(27,33,49,.06),0 18px 24px -14px rgba(27,33,49,.5)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-card:hover::before{--fold:38px;width:38px!important;height:38px!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-card{transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-progress-track{background:rgba(27,33,49,.10)!important;border-radius:0!important;height:6px!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-progress-fill{background:var(--pn-ink)!important;border-radius:0!important;box-shadow:none!important}
+
+/* ---- paper tags instead of pills (ToDo / Study / counts) ---- */
+html[data-theme="bg-[#F3EEE3]"] .rounded-full.text-\[10px\],html[data-theme="bg-[#F3EEE3]"] .rounded-full.text-\[11px\]{
+  border-radius:0!important;border:0!important;padding-left:12px!important;background:rgba(255,255,255,.7)!important;color:var(--pn-ink2)!important;
+  clip-path:polygon(7px 0,100% 0,100% 100%,7px 100%,0 50%);font-family:var(--pn-pencil)!important;text-transform:none!important;letter-spacing:0!important;font-size:12px!important}
+
+/* ---- every other card: index card with a dog-ear (no clipping, safe for menus) ---- */
+html[data-theme="bg-[#F3EEE3]"] .clay-card,html[data-theme="bg-[#F3EEE3]"] .clay-card-interactive,html[data-theme="bg-[#F3EEE3]"] .theme-surface-elevated{
+  border-radius:2px!important;position:relative;
+  background-image:linear-gradient(225deg,var(--pn-paper) 0 14px,#E4DCCB 14px 20px,transparent 20px)!important;background-repeat:no-repeat!important}
+html[data-theme="bg-[#F3EEE3]"] .rounded-2xl,html[data-theme="bg-[#F3EEE3]"] .rounded-3xl,html[data-theme="bg-[#F3EEE3]"] .rounded-xl{border-radius:3px!important}
+
+/* ---- actions: folded paper tags in kincha yellow, creased ---- */
+html[data-theme="bg-[#F3EEE3]"] .theme-btn-primary,html[data-theme="bg-[#F3EEE3]"] .clay-btn-primary,html[data-theme="bg-[#F3EEE3]"] .clay-btn-purple,html[data-theme="bg-[#F3EEE3]"] .clay-btn-emerald,
+html[data-theme="bg-[#F3EEE3]"] [class~="bg-[var(--theme-primary,#3b82f6)]"],html[data-theme="bg-[#F3EEE3]"] [class~="bg-[var(--theme-primary)]"]{
+  border:0!important;border-radius:0!important;box-shadow:none!important;color:var(--pn-ink)!important;
+  background:linear-gradient(160deg,rgba(255,255,255,.45) 0 48%,rgba(27,33,49,.10) 48.4% 49%,transparent 49.4%),#F2C94C!important;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+  filter:drop-shadow(0 3px 2px rgba(27,33,49,.25))}
+html[data-theme="bg-[#F3EEE3]"] .clay-fab{
+  border:0!important;border-radius:0!important;box-shadow:none!important;color:var(--pn-ink)!important;transform:scale(1.18);
+  background:linear-gradient(90deg,#F7D96B 0 50%,#E2B93A 50% 100%)!important;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+/* ---- inputs: write on the line ---- */
+html[data-theme="bg-[#F3EEE3]"] .clay-input,html[data-theme="bg-[#F3EEE3]"] textarea{border-radius:0!important}
+html[data-theme="bg-[#F3EEE3]"] .clay-input{background:rgba(255,255,255,.6)!important;border:0!important;border-bottom:2px solid var(--pn-ink)!important;box-shadow:none!important}
+html[data-theme="bg-[#F3EEE3]"] .clay-input:focus{border-bottom-color:var(--pn-blue)!important;box-shadow:0 2px 0 var(--pn-blue)!important}
+
+/* ---- dock: an accordion-folded paper strip ---- */
+html[data-theme="bg-[#F3EEE3]"] .vt-dock{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;overflow:hidden;
+  background:linear-gradient(90deg,#FFFDF8 0 25%,#EFE8D9 25% 50%,#FFFDF8 50% 75%,#EFE8D9 75% 100%)!important;
+  filter:drop-shadow(0 10px 12px rgba(27,33,49,.22))}
+html[data-theme="bg-[#F3EEE3]"] .vt-dock > div{gap:0}
+html[data-theme="bg-[#F3EEE3]"] .vt-dock-btn{flex:1;border-radius:0!important;padding-top:10px!important;padding-bottom:10px!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-dock-btn span:last-child{font-family:var(--pn-pencil)!important;font-size:12px!important;letter-spacing:0!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-dock-pill{transform:none!important;border-radius:0!important;background:#F2C94C!important;
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 86%,0 100%)}
+
+/* ---- hero ring as a paper disc ---- */
+html[data-theme="bg-[#F3EEE3]"] .vt-ring circle:first-child{stroke:rgba(27,33,49,.10)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-ring circle:last-child{stroke:var(--pn-ink)!important;stroke-linecap:butt!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-ring span{font-family:var(--pn-pencil)!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-section-head{border-bottom:0!important;background:linear-gradient(90deg,var(--pn-ink) 0 100%) bottom/100% 2px no-repeat}
+html[data-theme="bg-[#F3EEE3]"] .vt-card > div:first-child{padding-right:20px}
+html[data-theme="bg-[#F3EEE3]"] .vt-stat + .vt-stat::before{content:none!important}
+html[data-theme="bg-[#F3EEE3]"] .vt-stat{margin-right:6px}
+html[data-theme="bg-[#F3EEE3]"] .vt-progress span{font-family:var(--pn-pencil)!important;font-size:12px!important}
