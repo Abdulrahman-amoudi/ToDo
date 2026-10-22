@@ -1681,7 +1681,7 @@ export default function PdfNotebookViewer({
         {/* Draggable Resizer - only on desktop horizontal layout when book is not minimized */}
         {!isMobileOrTabletVertical && !isBookMinimized && (
           <div 
-            className="w-3 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/20 active:bg-[var(--theme-primary)]/40 transition-colors z-20 relative flex-shrink-0 group flex items-center justify-center" title="Drag to resize notebook pane"
+            className="pn-split w-3 cursor-col-resize bg-transparent hover:bg-[var(--theme-primary)]/20 active:bg-[var(--theme-primary)]/40 transition-colors z-20 relative flex-shrink-0 group flex items-center justify-center" title="Drag to resize notebook pane"
             onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }} 
             onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
             aria-label="Resize Notes Panel"

@@ -15,7 +15,7 @@ import { useLanguage } from '@/lib/i18n/useLanguage';
 import { getLocalizedShape, getLocalizedThemeName } from '@/lib/i18n/translations';
 
 export const THEMES = [
-  { id: 'bg-[#F3EEE3]', name: 'Paper', color: '#F6F4EF' },
+  { id: 'bg-[#F3EEE3]', name: 'Light', color: '#FFFFFF' },
   { id: 'bg-[#13110e]', name: 'Graphite Notebook', color: '#ff6a3d' },
   { id: 'bg-[#080d2a]', name: 'Dark Blue', color: '#080d2a' },
   { id: 'bg-[#1a0b2e]', name: 'Midnight Violet', color: '#1a0b2e' },

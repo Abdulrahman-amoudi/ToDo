@@ -545,6 +545,10 @@ export default function Home() {
     return true;
   });
   const [vaultNotes, setVaultNotes] = useState<ObsidianNoteSummary[]>([]);
+  const [vaultLoading, setVaultLoading] = useState(false);
+  const [libQuery, setLibQuery] = useState('');
+  const [libFilter, setLibFilter] = useState<'all' | 'pdf' | 'note'>('all');
+  const [libManage, setLibManage] = useState(false);
   const [hoveredHeatmapDay, setHoveredHeatmapDay] = useState<{ date: string; count: number; label: string } | null>(null);
 
   const updateAutoMood = useCallback((enabled: boolean) => {
@@ -1394,9 +1398,10 @@ export default function Home() {
       setVaultNotes([]);
       return;
     }
-    if (activeTab === 'stats' || activeTab === 'home' || activeTab === 'quizzes' || (activeTab === 'lists' && !isListView && activeCatObj?.type === 'study')) {
+    if (activeTab === 'stats' || activeTab === 'home' || activeTab === 'quizzes' || activeTab === 'library' || (activeTab === 'lists' && !isListView && activeCatObj?.type === 'study')) {
       const params = new URLSearchParams();
       params.set('userId', session.user.id);
+      if (!vaultNotes.length) setVaultLoading(true);
       fetch(`/api/obsidian/notes?${params.toString()}`)
         .then(res => res.json())
         .then(data => {
@@ -1409,9 +1414,11 @@ export default function Home() {
         .catch(err => {
           console.warn('Vault notes fetch for stats/study:', err);
           setVaultNotes([]);
-        });
+        })
+        .finally(() => setVaultLoading(false));
     }
-  }, [activeTab, isListView, activeCatObj?.type, session?.user?.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, isListView, activeCatObj?.type, session?.user?.id, libManage]);
 
   // Study Streak Calculation
   const studyStreak = useMemo(() => {
@@ -2146,7 +2153,48 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen w-full bg-[var(--theme-bg,#080b14)] transition-colors duration-500 font-sans text-white relative overflow-x-hidden">
+    <div className={`vs-app ${selectedNote ? 'vs-reading' : ''} min-h-screen w-full bg-[var(--theme-bg,#080b14)] font-sans text-white relative overflow-x-hidden`}>
+      {/* Desktop sidebar (Notion-style); phones use the bottom tab bar */}
+      <aside className="vs-side" aria-label="Main">
+        <div className="vs-side-brand">
+          <span className="vs-side-mascot"><BloubMascot size={26} state="idle" expression={mascotExpression} shape={mascotShape} color={mascotColor} isStatic={true} /></span>
+          <span className="vs-side-name">Vibe Study</span>
+        </div>
+        <nav className="vs-side-nav">
+          {([
+            ['home', <Clock key="i" size={16} />, locale === 'ar' ? 'اليوم' : 'Today'],
+            ['library', <LibraryIcon key="i" size={16} />, locale === 'ar' ? 'المكتبة' : 'Library'],
+            ['quizzes', <Brain key="i" size={16} />, locale === 'ar' ? 'اختبارات' : 'Quizzes'],
+            ['lists', <ListTodo key="i" size={16} />, locale === 'ar' ? 'المهام' : 'Tasks'],
+            ['stats', <BarChart3 key="i" size={16} />, locale === 'ar' ? 'التقدم' : 'Progress'],
+          ] as const).map(([id, icon, label]) => (
+            <button key={id} className={`vs-side-item ${activeTab === id || (id === 'lists' && activeTab === 'today') ? 'is-on' : ''}`}
+              onClick={() => { setSelectedNote(null); setShowQuizSession(false); if (id === 'lists') setIsListView(true); setActiveTab(id); }}>
+              {icon}<span>{label}</span>
+              {id === 'lists' && todos.filter(td => !td.completed).length > 0 && <em>{todos.filter(td => !td.completed).length}</em>}
+            </button>
+          ))}
+        </nav>
+        <div className="vs-side-label">{locale === 'ar' ? 'المواد' : 'Subjects'}</div>
+        <nav className="vs-side-nav vs-side-scroll">
+          {categories.map(c => (
+            <button key={c.id} className={`vs-side-item ${activeTab === 'lists' && !isListView && activeCategory === c.id ? 'is-on' : ''}`}
+              onClick={() => { setSelectedNote(null); setShowQuizSession(false); setActiveTab('lists'); handleCategoryClick(c); }}>
+              {c.type === 'study' ? <BookOpen size={16} /> : <CheckSquare size={16} />}<span>{c.name}</span>
+            </button>
+          ))}
+          <button className="vs-side-item is-muted" onClick={() => { setSelectedNote(null); setActiveTab('lists'); setIsListView(true); }}>
+            <Plus size={16} /><span>{locale === 'ar' ? 'مادة جديدة' : 'New subject'}</span>
+          </button>
+        </nav>
+        <div className="vs-side-foot">
+          <button className={`vs-side-item ${activeTab === 'settings' ? 'is-on' : ''}`} onClick={() => { setSelectedNote(null); setActiveTab('settings'); }}>
+            <Settings size={16} /><span>{locale === 'ar' ? 'الإعدادات' : 'Settings'}</span>
+          </button>
+          {session?.user?.email && <p className="vs-side-user">{session.user.email}</p>}
+        </div>
+      </aside>
+
       {/* Ambient Top Aura Glow */}
       <div 
         className="fixed top-0 left-1/2 -translate-x-1/2 w-[720px] max-w-[100vw] h-[380px] rounded-full blur-[120px] pointer-events-none opacity-25 sm:opacity-35 transition-all duration-700 -z-0"
@@ -2444,9 +2492,9 @@ export default function Home() {
 
       {/* Main Content Area or Settings */}
       {activeTab === 'settings' ? (
-          <div className="flex-1 w-full flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-300 md:shadow-2xl md:my-6 md:rounded-3xl md:border md:border-white/10">
+          <div className="vs-settings flex-1 w-full flex flex-col overflow-hidden animate-in">
             {/* Left side: HUGE MASCOT */}
-            <div className="hidden md:flex md:sticky md:top-0 md:h-screen md:w-1/2 lg:w-3/5 flex-col items-center justify-center p-8 select-none bg-slate-900/30 relative overflow-visible">
+            <div className="hidden">
               <div className="pn-polaroid w-80 h-80 rounded-3xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300" onClick={() => triggerMascot('idle', targetExpr)}>
                 <BloubMascot key={`settings-preview-lg-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={200} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 <div className="pn-caption mt-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 border border-white/10 text-[11px] font-mono uppercase tracking-wider text-slate-300">
@@ -2458,11 +2506,12 @@ export default function Home() {
             </div>
 
             {/* Right side: Settings controls */}
-            <div className="w-full md:w-1/2 lg:w-2/5 h-full overflow-y-auto custom-scrollbar pb-32 pt-6 px-6 bg-[var(--theme-surface,#101422)]/95 border-l border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
+            <div className="vs-settings-col w-full max-w-2xl mx-auto h-full overflow-y-auto custom-scrollbar pb-32 pt-8 px-5">
+              <h1 className="vs-h1 mb-6">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</h1>
               
               {/* Mascot Preview inside Settings */}
               <div className="bg-[var(--theme-surface-elevated,#171c2f)] rounded-3xl p-4 mb-6 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] flex flex-col items-center">
-                <div className="pn-polaroid pn-polaroid-sm md:hidden w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
+                <div className="pn-polaroid pn-polaroid-sm w-32 h-32 flex items-center justify-center mb-4 cursor-pointer hover:scale-105 transition-transform duration-300 overflow-visible" onClick={() => triggerMascot('idle', targetExpr)}>
                   <BloubMascot key={`settings-preview-sm-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={120} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
                 </div>
 
@@ -3044,12 +3093,46 @@ export default function Home() {
             </div>
           </div>
         ) : activeTab === 'library' ? (
-          studyReader || (
-            <div className="vs-page space-y-6">
-              <header className="vs-head"><div><h1 className="vs-h1">Library</h1><p className="vs-lede">Your PDFs and notes, synced from your vault. Open one to read it or quiz yourself on it.</p></div></header>
-              <div className="vs-panel vs-explorer"><NoteExplorer userId={session?.user?.id} onSelectNote={(n) => { setShowQuizSession(false); handleSelectNote(n); }} isDark={isDark} /></div>
-            </div>
-          )
+          studyReader || (() => {
+            const q = libQuery.trim().toLowerCase();
+            const rows = [...vaultNotes]
+              .filter(n => libFilter === 'all' || (libFilter === 'pdf' ? vsIsPdf(n) : !vsIsPdf(n)))
+              .filter(n => !q || n.title.toLowerCase().includes(q) || (n.folder || '').toLowerCase().includes(q) || (n.tags || []).some(tg => tg.toLowerCase().includes(q)))
+              .sort((a, b) => (b.lastModifiedMs || 0) - (a.lastModifiedMs || 0));
+            return (
+              <div className="vs-page">
+                <header className="vs-head">
+                  <div><h1 className="vs-h1">{locale === 'ar' ? 'المكتبة' : 'Library'}</h1><p className="vs-lede">{vaultNotes.length} documents · {vsWords >= 1000 ? `${(vsWords / 1000).toFixed(1)}k` : vsWords} words</p></div>
+                  <button className={`vs-btn ${libManage ? '' : 'is-primary'}`} onClick={() => setLibManage(v => !v)}>{libManage ? 'Done' : <><Plus size={14} /> Upload or sync</>}</button>
+                </header>
+                {libManage ? (
+                  <div className="vs-panel vs-explorer"><NoteExplorer userId={session?.user?.id} onSelectNote={(n) => { setShowQuizSession(false); handleSelectNote(n); }} isDark={isDark} /></div>
+                ) : (
+                  <>
+                    <div className="vs-toolbar">
+                      <div className="vs-search"><input value={libQuery} onChange={e => setLibQuery(e.target.value)} placeholder="Search by name, folder or tag" aria-label="Search library" /></div>
+                      <div className="vs-seg" role="tablist">
+                        {(['all', 'pdf', 'note'] as const).map(f => <button key={f} role="tab" aria-selected={libFilter === f} className={libFilter === f ? 'is-on' : ''} onClick={() => setLibFilter(f)}>{f === 'all' ? 'All' : f === 'pdf' ? 'PDFs' : 'Notes'}</button>)}
+                      </div>
+                    </div>
+                    <div className="vs-table" role="table">
+                      <div className="vs-tr vs-th" role="row"><span>Name</span><span>Folder</span><span className="vs-num">Words</span><span className="vs-num">Updated</span></div>
+                      {vaultLoading && !vaultNotes.length ? Array.from({ length: 5 }).map((_, k) => <div key={k} className="vs-tr vs-skel" role="row"><span /><span /><span /><span /></div>) :
+                        rows.length ? rows.map(n => (
+                          <div key={n.id} className="vs-tr" role="row" tabIndex={0} onClick={() => vsOpen(n, 'library')} onKeyDown={e => { if (e.key === 'Enter') vsOpen(n, 'library'); }}>
+                            <span className="vs-name"><span className={`vs-doc ${vsIsPdf(n) ? 'is-pdf' : ''}`}>{vsIsPdf(n) ? 'PDF' : 'MD'}</span><b>{n.title.replace(/\.pdf$/i, '')}</b>
+                              <button className="vs-row-quiz" onClick={e => { e.stopPropagation(); vsOpen(n, 'quizzes', true); }}>Quiz</button></span>
+                            <span className="vs-muted">{n.folder || '—'}</span>
+                            <span className="vs-num vs-muted">{n.wordCount ? n.wordCount.toLocaleString() : '—'}</span>
+                            <span className="vs-num vs-muted">{n.lastModifiedMs ? new Date(n.lastModifiedMs).toLocaleDateString(locale === 'ar' ? 'ar' : 'en-GB', { day: 'numeric', month: 'short' }) : '—'}</span>
+                          </div>
+                        )) : <div className="vs-empty">{vaultNotes.length ? 'Nothing matches that search.' : <>No documents yet. <button onClick={() => setLibManage(true)}>Upload a PDF or sync your vault</button>.</>}</div>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()
         ) : activeTab === 'quizzes' ? (
           studyReader || (
             <div className="vs-page space-y-6">
@@ -3283,353 +3366,68 @@ export default function Home() {
             </div>
           </div>
         ) : activeTab === 'stats' ? (
-          /* Bento Grid Stats Dashboard */
-          <div className="w-full space-y-5 py-2 animate-in fade-in zoom-in-95 duration-300">
-            {/* Clean Page Header Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-display">
-                  Your progress
-                </h1>
-                <p className="text-sm text-zinc-400 mt-0.5">
-                  Everything you've ticked off, across all your lists.
-                </p>
-              </div>
-              <div className="flex items-center gap-2.5 self-start sm:self-auto bg-white/[0.03] border border-white/[0.08] rounded-full px-3.5 py-1.5 text-xs text-zinc-300">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Flame size={13} className="text-amber-400 shrink-0 fill-amber-400/20" />
-                  <span>{studyStreak} Day Streak</span>
-                </span>
-                <span className="text-zinc-600">•</span>
-                <span className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Sync Online
-                </span>
-              </div>
-            </div>
-
-            {/* Top Row: 4 Metric Cards */}
-            <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3.5">
-              {/* Card 1: Completed Tasks */}
-              <div className={`p-5 rounded-2xl ${t.card} flex flex-col justify-between relative overflow-hidden group border`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Completed</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-                    <CheckCircle2 size={16} />
-                  </div>
+          (() => {
+            const done = todos.filter(td => td.completed).length;
+            const weeks = heatmapData.weeks;
+            let lastLabel = -9; const monthLabels = weeks.map((w, k) => { const d = new Date(w[w.length - 1].date); const isNew = k === 0 || new Date(weeks[k - 1][weeks[k - 1].length - 1].date).getMonth() !== d.getMonth(); if (!isNew || k - lastLabel < 3) return ''; lastLabel = k; return d.toLocaleDateString(locale === 'ar' ? 'ar' : 'en-GB', { month: 'short' }); });
+            const activeDays = weeks.flat().filter(d => d.count > 0).length;
+            const docs = [...vaultNotes].sort((a, b) => (b.wordCount || 0) - (a.wordCount || 0)).slice(0, 8);
+            const maxWords = Math.max(1, ...docs.map(d => d.wordCount || 0));
+            const mood = autoMoodEnabled ? computeReactiveMood() : mascotExpression;
+            return (
+              <div className="vs-page">
+                <header className="vs-head"><div><h1 className="vs-h1">{locale === 'ar' ? 'التقدم' : 'Progress'}</h1><p className="vs-lede">{activeDays} active days in the last 12 weeks.</p></div></header>
+                <div className="vs-kpis">
+                  <div><span>Tasks done</span><b>{done}<small> / {todos.length}</small></b></div>
+                  <div><span>Open tasks</span><b>{todos.length - done}</b></div>
+                  <div><span>Streak</span><b>{studyStreak}<small> {studyStreak === 1 ? 'day' : 'days'}</small></b></div>
+                  <div><span>Library</span><b>{vaultNotes.length}<small> docs · {totalVaultWords >= 1000 ? `${(totalVaultWords / 1000).toFixed(1)}k` : totalVaultWords} words</small></b></div>
                 </div>
-                <div>
-                  <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight mb-1 ${t.textPrimary}`}>
-                    {todos.filter(t => t.completed).length}
-                  </div>
-                  <p className={`text-[11px] ${t.textSecondary}`}>
-                    {todos.length > 0 ? `${Math.round((todos.filter(t => t.completed).length / todos.length) * 100)}% of all tasks` : '0 total tasks'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 2: Pending Tasks */}
-              <div className={`p-5 rounded-2xl ${t.card} flex flex-col justify-between relative overflow-hidden group border`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Pending</span>
-                  <div className="w-8 h-8 rounded-xl bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center">
-                    <Clock size={16} />
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight mb-1 ${t.textPrimary}`}>
-                    {todos.filter(t => !t.completed).length}
-                  </div>
-                  <p className={`text-[11px] ${t.textSecondary}`}>
-                    Across {categories.length} active lists
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 3: Current Study Streak */}
-              <div className={`p-5 rounded-2xl ${t.card} flex flex-col justify-between relative overflow-hidden group border`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Study Streak</span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
-                    <Flame size={16} className="text-amber-400 fill-amber-400/20" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-1.5 mb-1">
-                    <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-amber-400">
-                      {studyStreak}
-                    </span>
-                    <span className="text-sm font-bold text-amber-400/80">Days</span>
-                    <Flame size={16} className="text-amber-400 fill-amber-400/20 shrink-0 ml-0.5" />
-                  </div>
-                  <p className={`text-[11px] ${t.textSecondary}`}>
-                    Daily momentum active
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 4: Focus Score */}
-              <div className={`p-5 rounded-2xl ${t.card} flex flex-col justify-between relative overflow-hidden group border`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${t.textMuted}`}>Focus Score</span>
-                  <div className="w-8 h-8 rounded-xl bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center">
-                    <Target size={16} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${t.textPrimary}`}>
-                      {focusScore}
-                    </span>
-                    <span className={`text-lg font-bold ${t.textMuted}`}>%</span>
-                  </div>
-                  <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-1.5">
-                    <div 
-                      className="h-full bg-[var(--theme-primary,#3b82f6)] rounded-full transition-all duration-500" 
-                      style={{ width: `${focusScore}%` }} 
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Middle Row: 90-Day Activity & Study Heatmap (Wide Expansive Layout) */}
-            <div className={`p-5 sm:p-6 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={17} className="text-[var(--theme-primary,#3b82f6)]" />
-                    <h3 className={`text-sm sm:text-base font-bold ${t.textPrimary}`}>
-                      90-Day Activity & Study Heatmap
-                    </h3>
-                  </div>
-                  <p className={`text-xs mt-0.5 ${t.textSecondary}`}>
-                    Daily task completions and study sessions over the last 12 weeks
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  {hoveredHeatmapDay && (
-                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/10 text-white animate-in fade-in duration-150">
-                      {hoveredHeatmapDay.count} activities • {hoveredHeatmapDay.label}
-                    </span>
-                  )}
-                  <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-white/5 border border-white/10 text-[var(--theme-primary,#3b82f6)]">
-                    {heatmapData.totalContributions} Contributions
-                  </span>
-                </div>
-              </div>
-
-              {/* Heatmap Grid (Wide & Expansive) */}
-              <div className="overflow-x-auto pb-2 custom-scrollbar">
-                {/* Month Labels on top */}
-                <div className="min-w-[560px] flex justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500 mb-2 px-1">
-                  <span>JUL</span>
-                  <span>AUG</span>
-                  <span>SEP</span>
-                  <span>OCT</span>
-                </div>
-
-                <div className="pn-graph min-w-[560px] flex items-center justify-between gap-1.5 pt-1 pb-1">
-                  {heatmapData.weeks.map((week, wIndex) => (
-                    <div key={`week-${wIndex}`} className="flex flex-col gap-1.5 flex-1">
-                      {week.map((day) => {
-                        const count = day.count;
-                        let cellBg = 'bg-white/[0.04] border border-white/[0.05]';
-                        if (count === 1) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/25 border border-[var(--theme-primary,#3b82f6)]/35';
-                        else if (count === 2) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/50 border border-[var(--theme-primary,#3b82f6)]/60';
-                        else if (count === 3) cellBg = 'bg-[var(--theme-primary,#3b82f6)]/75 border border-[var(--theme-primary,#3b82f6)]/80 shadow-sm shadow-[var(--theme-primary,#3b82f6)]/20';
-                        else if (count >= 4) cellBg = 'bg-[var(--theme-primary,#3b82f6)] border border-white/20 shadow-sm shadow-[var(--theme-primary,#3b82f6)]/40';
-
-                        return (
-                          <div
-                            key={day.date}
-                            onMouseEnter={() => setHoveredHeatmapDay(day)}
-                            onMouseLeave={() => setHoveredHeatmapDay(null)}
-                            data-level={Math.min(4, count)} className={`pn-cell w-full aspect-square rounded-[4px] transition-all duration-150 cursor-pointer hover:scale-125 hover:z-20 ${cellBg}`}
-                            title={`${day.count} activities on ${day.label}`}
-                          />
-                        );
-                      })}
+                <section className="vs-block">
+                  <div className="vs-sec"><h2>Activity</h2><span className="vs-muted">{heatmapData.totalContributions} this quarter</span></div>
+                  <div className="vs-heat-wrap">
+                    <div className="vs-heat-months">{monthLabels.map((m, k) => <span key={k}>{m}</span>)}</div>
+                    <div className="vs-heat">
+                      {weeks.map((w, k) => <div key={k} className="vs-heat-col">{w.map(d => <i key={d.date} data-l={Math.min(4, d.count)} title={`${d.count} on ${d.label}`} />)}</div>)}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Heatmap Legend with Fire Icon */}
-              <div className="flex items-center justify-between pt-3 mt-1 border-t border-white/[0.06] text-[11px] text-zinc-400">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Flame size={14} className="text-amber-400 shrink-0 fill-amber-400/20" />
-                  <span>Consistency Score: {Math.min(100, Math.round((heatmapData.totalContributions / 84) * 100))}%</span>
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-zinc-500">Less</span>
-                  <div className="w-2.5 h-2.5 rounded-[2px] bg-white/[0.04] border border-white/[0.05]" />
-                  <div className="w-2.5 h-2.5 rounded-[2px] bg-[var(--theme-primary,#3b82f6)]/25" />
-                  <div className="w-2.5 h-2.5 rounded-[2px] bg-[var(--theme-primary,#3b82f6)]/50" />
-                  <div className="w-2.5 h-2.5 rounded-[2px] bg-[var(--theme-primary,#3b82f6)]/75" />
-                  <div className="w-2.5 h-2.5 rounded-[2px] bg-[var(--theme-primary,#3b82f6)]" />
-                  <span className="text-[10px] text-zinc-500">More</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Row: 2 Split Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-              {/* Left Card: Vault & Study Breakdown (lg:col-span-7) */}
-              <div className={`lg:col-span-7 p-5 rounded-2xl border transition-all ${t.card} flex flex-col justify-between space-y-4`}>
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center">
-                        <BookOpen size={16} />
-                      </div>
-                      <h4 className={`text-sm font-bold ${t.textPrimary}`}>Vault & Study Breakdown</h4>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--theme-primary,#3b82f6)]">
-                      {totalVaultPdfs} Documents
-                    </span>
+                    <div className="vs-heat-legend"><span>Less</span>{[0, 1, 2, 3, 4].map(l => <i key={l} data-l={l} />)}<span>More</span></div>
                   </div>
-
-                  <p className={`text-xs ${t.textSecondary} mb-4`}>
-                    ~{totalVaultWords >= 1000 ? (totalVaultWords / 1000).toFixed(1) + 'k' : totalVaultWords} words indexed across your Cloud Vault
-                  </p>
-
-                  {/* Real Study Document Progress Bars */}
-                  {studyDocs.length > 0 ? (
-                    <div className="space-y-3">
-                      {studyDocs.map((item, idx) => (
-                        <div key={idx} className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className={`font-semibold truncate max-w-[220px] ${t.textPrimary}`}>{item.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono text-zinc-400">{item.words}</span>
-                              <span className="text-[11px] font-bold text-[var(--theme-primary,#3b82f6)]">{item.pct}%</span>
-                            </div>
-                          </div>
-                          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-[var(--theme-primary,#3b82f6)] rounded-full transition-all duration-500" 
-                              style={{ width: `${item.pct}%` }} 
-                            />
-                          </div>
+                </section>
+                <div className="vs-grid">
+                  <section className="vs-block">
+                    <div className="vs-sec"><h2>Library by size</h2><button onClick={() => setActiveTab('library')}>Open library →</button></div>
+                    {docs.length ? <div className="vs-bars">{docs.map(n => (
+                      <button key={n.id} className="vs-barrow" onClick={() => vsOpen(n, 'library')}>
+                        <span className="vs-barrow-top"><b>{n.title.replace(/\.pdf$/i, '')}</b><span>{(n.wordCount || 0).toLocaleString()} words</span></span>
+                        <span className="vs-track"><i style={{ width: `${Math.max(2, ((n.wordCount || 0) / maxWords) * 100)}%` }} /></span>
+                      </button>))}</div> : <div className="vs-empty">No documents yet.</div>}
+                  </section>
+                  <div className="vs-col">
+                    <section className="vs-block">
+                      <div className="vs-sec"><h2>By subject</h2></div>
+                      <div className="vs-bars">{categories.filter(c => c.type !== 'study').map(c => {
+                        const all = todos.filter(td => td.categoryId === c.id); const d = all.filter(td => td.completed).length;
+                        return (<button key={c.id} className="vs-barrow" onClick={() => { setActiveTab('lists'); handleCategoryClick(c); }}>
+                          <span className="vs-barrow-top"><b>{c.name}</b><span>{d} / {all.length}</span></span>
+                          <span className="vs-track"><i style={{ width: `${all.length ? (d / all.length) * 100 : 0}%` }} /></span></button>);
+                      })}</div>
+                    </section>
+                    <section className="vs-block">
+                      <div className="vs-sec"><h2>Bloub</h2><button onClick={() => setActiveTab('settings')}>Customise →</button></div>
+                      <div className="vs-bloub">
+                        <BloubMascot size={56} state={animState} expression={animState !== 'idle' ? (animExpression || mood) : mood} shape={mascotShape} color={mascotColor} isStatic={false} />
+                        <div className="min-w-0 flex-1">
+                          <p className="vs-row-title">Level {level}</p>
+                          <p className="vs-row-sub">{xpInLevel} of 300 XP to level {level + 1} · feeling {getLocalizedExpression(mood, locale) || mood}</p>
+                          <span className="vs-track"><i style={{ width: `${levelProgress}%` }} /></span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-6 px-4 text-center rounded-xl bg-white/[0.02] border border-white/[0.05] space-y-2">
-                      <BookOpen size={22} className="mx-auto text-zinc-500 opacity-60" />
-                      <p className="text-xs text-zinc-300 font-medium">No Vault Documents Yet</p>
-                      <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
-                        Add PDFs or notes in your Study lists to track learning metrics here.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-400">
-                  <span className="flex items-center gap-1.5">
-                    <Database size={13} className="text-[var(--theme-primary,#3b82f6)]" />
-                    <span>Supabase Realtime Sync</span>
-                  </span>
-                  <span className="font-mono text-[11px] text-[var(--theme-primary,#3b82f6)]">Online</span>
+                      </div>
+                    </section>
+                  </div>
                 </div>
               </div>
-
-              {/* Right Card: Bloub Companion Status (lg:col-span-5) */}
-              <div className={`lg:col-span-5 p-5 rounded-2xl border transition-all ${t.card} flex flex-col justify-between space-y-3`}>
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] flex items-center justify-center">
-                        <Sparkles size={16} />
-                      </div>
-                      <h4 className={`text-sm font-bold ${t.textPrimary}`}>Bloub Companion Status</h4>
-                    </div>
-                    {autoMoodEnabled ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/25">
-                        Auto-Mood Active
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
-                        Manual Mood
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Mascot Preview & XP Bar */}
-                  <div className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] mb-2">
-                    <div 
-                      className="w-20 h-20 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() => triggerMascot('idle', 'heureux')}
-                    >
-                      <BloubMascot 
-                        size={80} 
-                        state={animState} 
-                        expression={animState !== 'idle' ? (animExpression || mascotExpression) : (autoMoodEnabled ? computeReactiveMood() : mascotExpression)} 
-                        shape={mascotShape} 
-                        color={mascotColor} 
-                        onInteract={() => triggerMascot('idle', 'heureux')}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${t.textPrimary}`}>
-                          Mood: {autoMoodEnabled ? computeReactiveMood() : mascotExpression}
-                        </span>
-                        <span className="text-xs flex items-center">
-                          {computeReactiveMood() === 'fier' ? (
-                            <Crown size={14} className="text-amber-400" />
-                          ) : computeReactiveMood() === 'attentif' ? (
-                            <Target size={14} className="text-[var(--theme-primary,#3b82f6)]" />
-                          ) : computeReactiveMood() === 'heureux' ? (
-                            <Sparkles size={14} className="text-emerald-400" />
-                          ) : (
-                            <Smile size={14} className="text-[var(--theme-primary,#3b82f6)]" />
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] mb-1">
-                        <span className="font-semibold text-[var(--theme-primary,#3b82f6)]">Level {level} Explorer</span>
-                        <span className="font-mono text-zinc-400">{xpInLevel} / 300 XP</span>
-                      </div>
-                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-[var(--theme-primary,#3b82f6)] rounded-full transition-all duration-500" 
-                          style={{ width: `${levelProgress}%` }} 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3-Column Mini Attribute Grid (Eliminates dead vertical space) */}
-                <div className="grid grid-cols-3 gap-2.5 my-1">
-                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
-                    <CheckCircle2 size={15} className="text-emerald-400 mb-1" />
-                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">Cleared</span>
-                    <span className="text-base font-mono font-bold text-white mt-0.5">{todos.filter(t => t.completed).length}</span>
-                  </div>
-                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
-                    <BookOpen size={15} className="text-[var(--theme-primary,#3b82f6)] mb-1" />
-                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">Studied</span>
-                    <span className="text-base font-mono font-bold text-white mt-0.5">{totalVaultPdfs}</span>
-                  </div>
-                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
-                    <Zap size={15} className="text-amber-400 mb-1" />
-                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">Next Lv</span>
-                    <span className="text-xs font-mono font-bold text-amber-300 mt-1">{300 - xpInLevel} XP</span>
-                  </div>
-                </div>
-
-                {/* Motivational Speech Bubble */}
-                <div className="p-3 rounded-xl bg-[var(--theme-primary,#3b82f6)]/10 border border-[var(--theme-primary,#3b82f6)]/20 text-xs leading-relaxed text-[var(--theme-text-primary)] relative">
-                  <p className="font-medium">
-                    &ldquo;{motivationalMessage}&rdquo;
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })()
           ) : activeTab === 'lists' && !isListView ? (
             /* Main Workspace View: Branching based on List Type (Study vs ToDo) */
             <div className={selectedNote ? "h-full flex flex-col min-h-0 flex-1" : ""}>

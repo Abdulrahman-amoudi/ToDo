@@ -862,20 +862,19 @@ export const NotesPanel = React.memo(function NotesPanel({
 
             {/* Header / Intro */}
             <div className="space-y-1.5 max-w-sm">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30">
-                <Sparkles size={11} />
+              <div className="vs-ai-model">
                 <span>{locale === 'ar' ? 'Gemini 3.8 Flash • مساحة المذاكرة' : 'Gemini 3.8 Flash • Study Studio'}</span>
               </div>
               <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                {locale === 'ar' ? `وش تحب نراجع في صفحة ${pageNumber}؟` : `What would you like to master on Pg. ${pageNumber}?`}
+                {locale === 'ar' ? `وش تحب نراجع في صفحة ${pageNumber}؟` : `Ask about page ${pageNumber}`}
               </h3>
               <p className="text-xs text-[var(--theme-text-muted)] leading-relaxed">
-                {locale === 'ar' ? 'مستند حصراً ومباشرة إلى هذا المستند. اسأل عن أي نقطة، ابنِ شجرة مفاهيم، أو حوّل الدرس لقصة.' : 'Grounded 100% in this document. Ask questions, construct concept trees, or turn lessons into stories.'}
+                {locale === 'ar' ? 'مستند حصراً ومباشرة إلى هذا المستند. اسأل عن أي نقطة، ابنِ شجرة مفاهيم، أو حوّل الدرس لقصة.' : 'Answers come only from this document. Pick a starting point or type a question below.'}
               </p>
             </div>
 
             {/* 4 Rich Starter Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md pt-1 text-left">
+            <div className="vs-ai-actions w-full max-w-md pt-1 text-left">
               <button
                 type="button"
                 onClick={() => handleAskAi(

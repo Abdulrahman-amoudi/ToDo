@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo, Atkinson_Hyperlegible_Next, Atkinson_Hyperlegible_Mono, Charis_SIL } from "next/font/google";
+import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo, Charis_SIL } from "next/font/google";
 import "./globals.css";
 import "./design.css";
 
@@ -46,9 +46,7 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-// Study fonts: Atkinson Hyperlegible (Braille Institute, built for legibility) for the interface and numbers, Charis SIL (an academic book face) for headings and reading
-const uiFont = Atkinson_Hyperlegible_Next({ variable: "--font-ui", weight: ["400", "500", "600", "700"], subsets: ["latin"], display: "swap" });
-const numFont = Atkinson_Hyperlegible_Mono({ variable: "--font-num", weight: ["400", "500"], subsets: ["latin"], display: "swap" });
+// Interface uses the system UI font (like Notion); Charis SIL is the reading face
 const readFont = Charis_SIL({ variable: "--font-read", weight: ["400", "700"], subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
@@ -61,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} ${uiFont.variable} ${numFont.variable} ${readFont.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${plusJakarta.variable} ${cairo.variable} ${lemonada.variable} ${readFont.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
