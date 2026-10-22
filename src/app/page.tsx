@@ -9,7 +9,7 @@ import {
   PaintBucket, LogOut, Download, Smartphone, Repeat, Bell, Monitor, Flame, 
   Cpu, AlertCircle, Mic, Camera, GraduationCap, BookOpen, Sparkles, Brain, 
   CheckSquare, Layers, FileText, Smile, ArrowLeft, Database, Target, Zap, 
-  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown, ExternalLink, Globe, Languages 
+  TrendingUp, Award, Clock, Copy, Check, Eye, EyeOff, Terminal, Crown, ExternalLink, Globe, Languages, Library as LibraryIcon 
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/useLanguage';
 import {
@@ -159,7 +159,7 @@ export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState('default');
-  const [activeTab, setActiveTab] = useState<'lists' | 'today' | 'stats' | 'settings'>('lists');
+  const [activeTab, setActiveTab] = useState<'home' | 'library' | 'quizzes' | 'lists' | 'today' | 'stats' | 'settings'>('home');
   const [inputText, setInputText] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('todo_input_draft') || '';
@@ -447,11 +447,13 @@ export default function Home() {
     window.history.pushState('home', '');
     const handlePopState = () => {
       const s = viewStateRef.current;
-      if (!s.isListView || s.showSettings || s.showAddModal || s.activeTab !== 'lists') {
+      if (!s.isListView || s.showSettings || s.showAddModal || s.activeTab !== 'home') {
         setIsListView(true);
         setShowSettings(false);
         setShowAddModal(false);
-        setActiveTab('lists');
+        setSelectedNote(null);
+        setShowQuizSession(false);
+        setActiveTab('home');
         window.history.pushState('home', '');
       }
     };
@@ -1392,7 +1394,7 @@ export default function Home() {
       setVaultNotes([]);
       return;
     }
-    if (activeTab === 'stats' || (activeTab === 'lists' && !isListView && activeCatObj?.type === 'study')) {
+    if (activeTab === 'stats' || activeTab === 'home' || activeTab === 'quizzes' || (activeTab === 'lists' && !isListView && activeCatObj?.type === 'study')) {
       const params = new URLSearchParams();
       params.set('userId', session.user.id);
       fetch(`/api/obsidian/notes?${params.toString()}`)
@@ -2087,6 +2089,62 @@ export default function Home() {
     );
   }
 
+  const closeReader = () => { setShowQuizSession(false); setSelectedNote(null); };
+  const studyReader = selectedNote ? (
+    showQuizSession ? (
+      <div className="vs-reader h-full flex flex-col flex-1 min-h-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] animate-in">
+        <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center gap-3 shrink-0">
+          <button onClick={closeReader} className="vs-btn"><ArrowLeft size={14} /> {locale === 'ar' ? 'رجوع' : 'Back'}</button>
+          <h3 className="text-sm font-semibold truncate">{selectedNote.title}</h3>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 w-full h-full min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-[var(--theme-border)] overflow-hidden">
+          <div className="lg:col-span-7 h-full flex flex-col p-2 sm:p-4 overflow-hidden min-h-0">
+            <NoteViewer note={selectedNote} isDark={isDark} isLoading={isFetchingNote} hideTopHeader={true} apiKey={geminiApiKey} triggerMascot={triggerMascot} onUpdateNote={handleUpdateNote} mascotShape={mascotShape} mascotColor={mascotColor} />
+          </div>
+          <div className="lg:col-span-5 h-full flex flex-col overflow-hidden min-h-0">
+            <QuizSession note={selectedNote} apiKey={geminiApiKey} isDark={isDark} onClose={() => setShowQuizSession(false)} triggerMascot={triggerMascot} />
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="animate-in h-full flex flex-col flex-1 min-h-0">
+        <NoteViewer note={selectedNote} isDark={isDark} isLoading={isFetchingNote} apiKey={geminiApiKey} triggerMascot={triggerMascot} mascotShape={mascotShape} mascotColor={mascotColor}
+          onClose={closeReader} onStartQuiz={() => setShowQuizSession(true)} onUpdateNote={handleUpdateNote}
+          onWikilinkClick={async (target) => {
+            try {
+              setIsFetchingNote(true);
+              const res = await fetch(`/api/obsidian/search?q=${encodeURIComponent(target)}`);
+              const data = await res.json();
+              if (data.results && data.results.length > 0) handleSelectNote(data.results[0].note || data.results[0]);
+              else setIsFetchingNote(false);
+            } catch { setIsFetchingNote(false); }
+          }} />
+      </div>
+    )
+  ) : null;
+
+  const vsHour = new Date().getHours();
+  const vsGreeting = locale === 'ar' ? (vsHour < 12 ? 'صباح الخير' : 'مساء الخير') : (vsHour < 12 ? 'Good morning' : vsHour < 18 ? 'Good afternoon' : 'Good evening');
+  const vsToday = new Date().toISOString().split('T')[0];
+  const vsDue = todos.filter(td => !td.completed && (td.isHabit || (td.dueDate && td.dueDate <= vsToday)))
+    .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')).slice(0, 6);
+  const vsOverdue = todos.filter(td => !td.completed && !td.isHabit && td.dueDate && td.dueDate < vsToday).length;
+  const vsRecent = [...vaultNotes].sort((a, b) => (b.lastModifiedMs || 0) - (a.lastModifiedMs || 0)).slice(0, 4);
+  const vsWeek = heatmapData.weeks.flat().slice(-7);
+  const vsWeekMax = Math.max(1, ...vsWeek.map(d => d.count));
+  const vsWords = vaultNotes.reduce((sum, n) => sum + (n.wordCount || 0), 0);
+  const vsIsPdf = (n: { tags?: string[]; relativePath?: string }) => !!(n.tags?.includes('pdf') || n.relativePath?.toLowerCase().endsWith('.pdf'));
+  const vsOpen = (n: ObsidianNoteSummary, tab: 'library' | 'quizzes', quiz = false) => { setActiveTab(tab); setShowQuizSession(quiz); handleSelectNote(n); };
+  const vsCatName = (id?: string) => categories.find(c => c.id === id)?.name || '';
+  const vsDocRow = (n: ObsidianNoteSummary, tab: 'library' | 'quizzes', quiz = false) => (
+    <button key={n.id} className="vs-row" onClick={() => vsOpen(n, tab, quiz)}>
+      <span className={`vs-doc ${vsIsPdf(n) ? 'is-pdf' : ''}`}>{vsIsPdf(n) ? 'PDF' : 'MD'}</span>
+      <span className="vs-row-main"><span className="vs-row-title">{n.title}</span>
+        <span className="vs-row-sub">{[n.folder, n.wordCount ? `${n.wordCount.toLocaleString()} words` : '', n.lastModifiedMs ? new Date(n.lastModifiedMs).toLocaleDateString(locale === 'ar' ? 'ar' : 'en-GB', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')}</span></span>
+      <span className="vs-row-act">{quiz ? (locale === 'ar' ? 'اختبرني' : 'Quiz me') : (locale === 'ar' ? 'فتح' : 'Open')}</span>
+    </button>
+  );
+
   return (
     <div className="min-h-screen w-full bg-[var(--theme-bg,#080b14)] transition-colors duration-500 font-sans text-white relative overflow-x-hidden">
       {/* Ambient Top Aura Glow */}
@@ -2094,9 +2152,9 @@ export default function Home() {
         className="fixed top-0 left-1/2 -translate-x-1/2 w-[720px] max-w-[100vw] h-[380px] rounded-full blur-[120px] pointer-events-none opacity-25 sm:opacity-35 transition-all duration-700 -z-0"
         style={{ background: 'radial-gradient(circle, var(--theme-primary,#3b82f6) 0%, transparent 70%)' }}
       />
-      <main className={`w-full ${selectedNote ? 'max-w-[100vw] px-0 md:px-4' : (!isListView && activeTab === 'lists' && activeCatObj?.type === 'study') ? 'max-w-[100vw] px-2 sm:px-6' : (activeTab === 'settings' ? 'max-w-5xl px-4 pb-28' : activeTab === 'stats' ? 'max-w-5xl mx-auto px-4 md:px-8 pt-6 pb-28' : isListView ? 'max-w-md md:max-w-3xl lg:max-w-4xl px-4 sm:px-6' : 'max-w-md md:max-w-2xl px-4')} mx-auto ${selectedNote ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-[100dvh] pb-24'} flex flex-col relative transition-all duration-500`}>
+      <main className={`w-full ${selectedNote ? 'max-w-[100vw] px-0 md:px-4' : (!isListView && activeTab === 'lists' && activeCatObj?.type === 'study') ? 'max-w-[100vw] px-2 sm:px-6' : (activeTab === 'home' || activeTab === 'library' || activeTab === 'quizzes') ? 'max-w-5xl px-4 pb-28' : (activeTab === 'settings' ? 'max-w-5xl px-4 pb-28' : activeTab === 'stats' ? 'max-w-5xl mx-auto px-4 md:px-8 pt-6 pb-28' : isListView ? 'max-w-md md:max-w-3xl lg:max-w-4xl px-4 sm:px-6' : 'max-w-md md:max-w-2xl px-4')} mx-auto ${selectedNote ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-[100dvh] pb-24'} flex flex-col relative transition-all duration-500`}>
         {/* Header */}
-        {activeTab !== 'settings' && activeTab !== 'stats' && !selectedNote && (
+        {(activeTab === 'lists' || activeTab === 'today') && !selectedNote && (
           <header className="pt-6 pb-2 px-2 relative z-30 transition-colors duration-500">
             {activeTab === 'lists' && isListView ? (
               /* Hero Header Banner for My Lists */
@@ -2901,8 +2959,106 @@ export default function Home() {
         
         {/* Floating Mascot removed from list views in favor of sleek header docking (preserves: showAddModal ? 96 : 160) */}
 
-        {/* Lists Master View */}
-        {activeTab === 'lists' && isListView ? (
+        {/* Study home, Library and Quizzes */}
+        {activeTab === 'home' ? (
+          <div className="vs-page space-y-8">
+            <header className="vs-head">
+              <div className="min-w-0">
+                <p className="vs-date">{new Date().toLocaleDateString(locale === 'ar' ? 'ar' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}{studyStreak > 0 ? ` · ${studyStreak}-day streak` : ''}</p>
+                <h1 className="vs-h1">{vsGreeting}.</h1>
+                <p className="vs-lede">
+                  {vsOverdue > 0 ? <><b className="vs-late">{vsOverdue} overdue</b>, </> : null}
+                  <b>{todos.filter(td => !td.completed).length}</b> open tasks and <b>{vaultNotes.length}</b> documents in your library.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button className="vs-mascot" onClick={() => triggerMascot('idle', 'heureux')} aria-label="Bloub">
+                  <BloubMascot size={52} state={animState} expression={animState !== 'idle' ? (animExpression || mascotExpression) : mascotExpression} shape={mascotShape} color={mascotColor} isStatic={false} />
+                </button>
+                <button className="vs-icon" onClick={() => setActiveTab('settings')} aria-label="Settings"><Settings size={18} /></button>
+              </div>
+            </header>
+            <div className="vs-grid">
+              <div className="vs-col">
+                <section>
+                  <div className="vs-sec"><h2>Pick up where you left off</h2><button onClick={() => setActiveTab('library')}>Library →</button></div>
+                  <div className="vs-panel">
+                    {vsRecent.length ? vsRecent.map(n => vsDocRow(n, 'library')) : (
+                      <div className="vs-empty">No documents yet. Open <button onClick={() => setActiveTab('library')}>Library</button> to upload a PDF or sync your vault.</div>
+                    )}
+                  </div>
+                </section>
+                <section>
+                  <div className="vs-sec"><h2>Quiz yourself</h2><button onClick={() => setActiveTab('quizzes')}>All quizzes →</button></div>
+                  {vsRecent[0] ? (
+                    <div className="vs-panel vs-quizcard">
+                      <div className="min-w-0">
+                        <p className="vs-row-sub">From <b>{vsRecent[0].title}</b> · questions written by Gemini</p>
+                        <p className="vs-quizq">Test yourself on what you read last, then check the explanations.</p>
+                      </div>
+                      <button className="vs-btn is-primary" onClick={() => vsOpen(vsRecent[0], 'quizzes', true)}>Start quiz</button>
+                    </div>
+                  ) : <div className="vs-panel"><div className="vs-empty">Add a note or PDF to make your first quiz.</div></div>}
+                </section>
+              </div>
+              <div className="vs-col">
+                <section>
+                  <div className="vs-sec"><h2>Due</h2><button onClick={() => setActiveTab('today')}>All due →</button></div>
+                  <div className="vs-panel">
+                    {vsDue.length ? vsDue.map(td => {
+                      const late = !!(td.dueDate && td.dueDate < vsToday);
+                      return (
+                        <div key={td.id} className="vs-row is-static">
+                          <button className="pn-check" data-late={late ? '1' : undefined} aria-label="Mark as done" onClick={() => td.isHabit ? incrementHabit(td) : toggleTodo(td.id, td.completed)} />
+                          <span className="vs-row-main"><span className="vs-row-title">{td.text}</span>
+                            <span className={`vs-row-sub ${late ? 'vs-late' : ''}`}>{[td.isHabit ? 'Habit' : late ? 'Overdue' : 'Today', vsCatName(td.categoryId)].filter(Boolean).join(' · ')}</span></span>
+                        </div>
+                      );
+                    }) : <div className="vs-empty">Nothing due today.</div>}
+                  </div>
+                </section>
+                <section>
+                  <div className="vs-sec"><h2>This week</h2><button onClick={() => setActiveTab('stats')}>Progress →</button></div>
+                  <div className="vs-panel">
+                    <div className="vs-week">{vsWeek.map((d, i) => <div key={d.date} className="vs-bar-col"><div className={`vs-bar ${i === vsWeek.length - 1 ? 'is-today' : ''}`} style={{ height: `${Math.max(4, (d.count / vsWeekMax) * 100)}%` }} title={`${d.count} on ${d.label}`} /><span>{new Date(d.date).toLocaleDateString(locale === 'ar' ? 'ar' : 'en-GB', { weekday: 'narrow' })}</span></div>)}</div>
+                    <div className="vs-stats">
+                      <div><b>{todos.filter(td => td.completed).length}</b><span>tasks done</span></div>
+                      <div><b>{vsWords >= 1000 ? `${(vsWords / 1000).toFixed(1)}k` : vsWords}</b><span>words in vault</span></div>
+                      <div><b>{studyStreak}</b><span>day streak</span></div>
+                    </div>
+                  </div>
+                </section>
+                <section>
+                  <div className="vs-sec"><h2>Subjects</h2><button onClick={() => { setActiveTab('lists'); setIsListView(true); }}>All →</button></div>
+                  <div className="vs-panel">
+                    {categories.map(c => (
+                      <button key={c.id} className="vs-row" onClick={() => { setActiveTab('lists'); handleCategoryClick(c); }}>
+                        <span className={`vs-dot ${c.type === 'study' ? 'is-study' : ''}`} />
+                        <span className="vs-row-main"><span className="vs-row-title">{c.name}</span><span className="vs-row-sub">{c.type === 'study' ? 'Study' : `${todos.filter(td => td.categoryId === c.id && !td.completed).length} open`}</span></span>
+                        <ChevronRight size={16} className="vs-chev" />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'library' ? (
+          studyReader || (
+            <div className="vs-page space-y-6">
+              <header className="vs-head"><div><h1 className="vs-h1">Library</h1><p className="vs-lede">Your PDFs and notes, synced from your vault. Open one to read it or quiz yourself on it.</p></div></header>
+              <div className="vs-panel vs-explorer"><NoteExplorer userId={session?.user?.id} onSelectNote={(n) => { setShowQuizSession(false); handleSelectNote(n); }} isDark={isDark} /></div>
+            </div>
+          )
+        ) : activeTab === 'quizzes' ? (
+          studyReader || (
+            <div className="vs-page space-y-6">
+              <header className="vs-head"><div><h1 className="vs-h1">Quizzes</h1><p className="vs-lede">Pick a note or PDF. Gemini writes the questions, you answer, and every answer comes with an explanation.</p></div></header>
+              {!geminiApiKey && <div className="vs-panel"><div className="vs-empty">Add your Gemini API key in <button onClick={() => setActiveTab('settings')}>Settings</button> to make quizzes.</div></div>}
+              <div className="vs-panel">{vaultNotes.length ? [...vaultNotes].sort((a, b) => (b.lastModifiedMs || 0) - (a.lastModifiedMs || 0)).map(n => vsDocRow(n, 'quizzes', true)) : <div className="vs-empty">No documents yet. Add some in <button onClick={() => setActiveTab('library')}>Library</button>.</div>}</div>
+            </div>
+          )
+        ) : activeTab === 'lists' && isListView ? (
           <div className="space-y-4">
             <div className="vt-section-head flex items-center justify-between px-1">
               <h2 className={`text-xs font-semibold uppercase tracking-wider ${t.textMuted}`}>Collections</h2>
@@ -3965,20 +4121,21 @@ export default function Home() {
       {(() => {
         const activeColorHex = COLORS.find(c => c.id === mascotColor)?.hex;
         return (
-          <nav className={`vt-dock fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm z-40 transition-all duration-300 ${isNavVisible && !selectedNote ? "bottom-4" : "-bottom-24"}`}>
+          <nav className={`vt-dock fixed left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-40 transition-all duration-300 ${isNavVisible && !selectedNote ? "bottom-4" : "-bottom-24"}`}>
             <div className="flex justify-between items-center text-xs font-medium">
               {([
-                ['lists', <ListTodo key="i" size={18} />, tLang('navLists'), () => { setActiveTab('lists'); setIsListView(true); }],
-                ['today', <Calendar key="i" size={18} />, tLang('today'), () => setActiveTab('today')],
-                ['stats', <BarChart3 key="i" size={18} />, tLang('navStats'), () => setActiveTab('stats')],
-                ['settings', <Settings key="i" size={18} />, tLang('navSettings'), () => setActiveTab('settings')],
+                ['home', <Clock key="i" size={18} />, locale === 'ar' ? 'اليوم' : 'Today', () => { setActiveTab('home'); setSelectedNote(null); setShowQuizSession(false); }],
+                ['library', <LibraryIcon key="i" size={18} />, locale === 'ar' ? 'المكتبة' : 'Library', () => { setActiveTab('library'); setSelectedNote(null); setShowQuizSession(false); }],
+                ['quizzes', <Brain key="i" size={18} />, locale === 'ar' ? 'اختبارات' : 'Quizzes', () => { setActiveTab('quizzes'); setSelectedNote(null); setShowQuizSession(false); }],
+                ['lists', <ListTodo key="i" size={18} />, locale === 'ar' ? 'المهام' : 'Tasks', () => { setActiveTab('lists'); setIsListView(true); setSelectedNote(null); }],
+                ['stats', <BarChart3 key="i" size={18} />, locale === 'ar' ? 'التقدم' : 'Progress', () => setActiveTab('stats')],
               ] as const).map(([id, icon, label, go]) => {
-                const on = activeTab === id;
+                const on = activeTab === id || (id === 'lists' && activeTab === 'today');
                 return (
                   <button key={id} onClick={go as () => void} aria-current={on ? 'page' : undefined}
-                    className={`vt-dock-btn relative flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-colors active:scale-90 ${on ? 'is-on' : ''}`}
+                    className={`vt-dock-btn relative flex-1 flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl transition-colors active:scale-90 ${on ? 'is-on' : ''}`}
 >
-                    {on && <motion.span layoutId="vt-dock-pill" className="vt-dock-pill" transition={{ type: 'spring', stiffness: 520, damping: 38 }} />}
+                    {on && <motion.span layoutId="vt-dock-pill" className="vt-dock-pill" transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }} />}
                     <span className="relative">{icon}</span>
                     <span className="relative text-[10px] font-mono tracking-wider">{label}</span>
                   </button>

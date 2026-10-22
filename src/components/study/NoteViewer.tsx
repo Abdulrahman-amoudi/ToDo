@@ -360,9 +360,9 @@ export default function NoteViewer({
           .replace(/\s+/g, '-');
 
         const headingClasses = {
-          1: 'text-2xl sm:text-3xl font-extrabold mt-6 mb-3 tracking-tight text-purple-400 dark:text-purple-300 border-b border-purple-500/20 pb-2',
+          1: 'vs-md-h1 text-2xl sm:text-3xl font-bold mt-6 mb-3 text-[var(--theme-text-primary)] border-b border-[var(--theme-border)] pb-2',
           2: 'text-xl sm:text-2xl font-bold mt-5 mb-2.5 tracking-tight text-white dark:text-slate-100',
-          3: 'text-lg sm:text-xl font-semibold mt-4 mb-2 text-purple-300 dark:text-purple-200',
+          3: 'text-lg sm:text-xl font-semibold mt-4 mb-2 text-[var(--theme-text-primary)]',
           4: 'text-base sm:text-lg font-semibold mt-3.5 mb-1.5 text-slate-200',
           5: 'text-sm font-semibold mt-3 mb-1 text-slate-300',
           6: 'text-xs font-semibold mt-2.5 mb-1 text-slate-400'
