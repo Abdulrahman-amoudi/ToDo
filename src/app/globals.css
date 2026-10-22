@@ -1063,3 +1063,39 @@ html[data-theme="bg-[#13110e]"] {
   --color-blue-900: #5a1d0d;
   --color-blue-950: #2e0f07;
 }
+
+/* ==========================================================================
+   VIBE TODOS 2026 — "Night Desk" home layout (hero, list tiles, dock)
+   ========================================================================== */
+.vt-eyebrow{font-family:var(--font-geist-mono),ui-monospace,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--theme-primary,#ff6a3d)}
+.vt-hero-title{font-family:var(--font-bricolage),var(--font-plus-jakarta),sans-serif;font-weight:800;font-size:clamp(2.6rem,9vw,3.6rem);line-height:.92;letter-spacing:-.045em;margin-top:6px;text-wrap:balance}
+[dir="rtl"] .vt-hero-title{font-family:var(--font-arabic);letter-spacing:0}
+.vt-stat{font-family:var(--font-geist-mono),ui-monospace,monospace;font-size:12px;color:var(--theme-text-muted,#9aa);display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;border:1px dashed var(--theme-border,rgba(255,255,255,.16));border-radius:10px}
+.vt-stat b{font-family:var(--font-bricolage),sans-serif;font-size:16px;color:var(--theme-text-primary,#fff);font-weight:700;font-variant-numeric:tabular-nums}
+.vt-ring{position:relative;width:64px;height:64px;display:grid;place-items:center;margin-top:-18px}
+.vt-ring svg{position:absolute;inset:0}
+.vt-ring span{font-family:var(--font-geist-mono),monospace;font-size:12px;font-weight:600;color:var(--theme-text-primary,#fff);font-variant-numeric:tabular-nums}
+
+.vt-section-head{border-bottom:1px solid var(--theme-border-subtle,rgba(255,255,255,.08));padding-bottom:10px}
+
+.vt-card{position:relative;overflow:hidden;min-height:132px;background:var(--theme-surface,#1c1a16)!important;border:1px solid var(--theme-border,rgba(240,230,210,.16))!important;border-radius:18px!important;box-shadow:4px 4px 0 0 rgba(0,0,0,.45)!important;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s,border-color .18s!important}
+.vt-card::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--theme-primary,#ff6a3d);opacity:.9}
+.vt-card[data-type="study"]::before{background:repeating-linear-gradient(180deg,var(--theme-primary,#ff6a3d) 0 6px,transparent 6px 10px)}
+.vt-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 rgba(0,0,0,.5)!important;border-color:color-mix(in srgb,var(--theme-primary,#ff6a3d) 55%,transparent)!important}
+.vt-card:active{transform:translate(2px,2px);box-shadow:0 0 0 0 rgba(0,0,0,.45)!important}
+.vt-card > div:first-child{padding-left:6px}
+.vt-count{display:flex;flex-direction:column;align-items:flex-end;font-family:var(--font-bricolage),sans-serif;font-weight:800;font-size:34px;line-height:.9;color:var(--theme-text-primary,#fff);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.vt-count small{font-family:var(--font-geist-mono),monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--theme-text-muted,#9aa);margin-top:4px}
+.vt-progress{display:flex;align-items:center;gap:10px;padding-left:6px}
+.vt-progress-track{flex:1;height:6px;border-radius:99px;background:color-mix(in srgb,var(--theme-text-muted,#999) 18%,transparent);overflow:hidden}
+.vt-progress-fill{height:100%;border-radius:99px;background:var(--theme-primary,#ff6a3d);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.vt-progress span{font-family:var(--font-geist-mono),monospace;font-size:11px;color:var(--theme-text-muted,#9aa);font-variant-numeric:tabular-nums}
+
+.vt-dock{padding:6px 8px;border-radius:20px;background:color-mix(in srgb,var(--theme-surface,#1c1a16) 92%,transparent);border:1px solid var(--theme-border,rgba(240,230,210,.16));box-shadow:4px 4px 0 0 rgba(0,0,0,.5),0 18px 40px -12px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.vt-dock-btn{color:var(--theme-text-muted,#a1a1aa)}
+.vt-dock-btn:hover{color:var(--theme-text-primary,#fff)}
+.vt-dock-btn.is-on{color:var(--theme-text-primary,#fff);font-weight:600}
+.vt-dock-pill{position:absolute;inset:0;border-radius:12px;background:color-mix(in srgb,var(--theme-primary,#ff6a3d) 18%,transparent);border:1px solid color-mix(in srgb,var(--theme-primary,#ff6a3d) 45%,transparent)}
+
+@media (prefers-reduced-motion: reduce){.vt-card,.vt-progress-fill{transition:none!important}}
+@media (max-width:420px){.vt-stat{font-size:11px;padding:3px 8px}.vt-stat b{font-size:14px}}

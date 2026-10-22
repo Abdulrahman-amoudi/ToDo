@@ -2092,41 +2092,60 @@ export default function Home() {
           <header className="pt-6 pb-2 px-2 relative z-30 transition-colors duration-500">
             {activeTab === 'lists' && isListView ? (
               /* Hero Header Banner for My Lists */
-              <div className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-4 sm:gap-5 border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))] bg-[var(--theme-surface,#12141a)]/70 backdrop-blur-md shadow-lg">
-                <div 
-                  className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible flex-shrink-0"
-                  onClick={() => triggerMascot('idle', 'heureux')}
-                  title="Interact with Bloub"
-                >
-                  {(() => {
-                    const isAnim = animState !== 'idle';
-                    const heroExpr = autoMoodEnabled ? computeReactiveMood() : (mascotExpression || 'heureux');
-                    return (
-                      <BloubMascot 
-                        size={84}
-                        state={animState} 
-                        expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
-                        shape={heroShape} 
-                        color={heroColor} 
-                        onInteract={() => triggerMascot('idle', 'heureux')}
-                      />
-                    );
-                  })()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className={`text-2xl sm:text-3xl font-display font-bold tracking-tight transition-colors ${t.textPrimary}`}>
-                      My Lists
-                    </h1>
-                    <span className="text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-[var(--theme-primary,#3b82f6)]/15 text-[var(--theme-primary,#3b82f6)] border border-[var(--theme-primary,#3b82f6)]/25">
-                      {categories.length} Lists
-                    </span>
+              (() => {
+                const pending = todos.filter(x => !x.completed).length;
+                const done = todos.filter(x => x.completed).length;
+                const total = pending + done;
+                const pct = total ? Math.round((done / total) * 100) : 100;
+                const now = new Date();
+                const dateLine = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+                const R = 26, C = 2 * Math.PI * R;
+                return (
+                  <div className="vt-hero w-full flex items-end justify-between gap-4 px-5 pt-2 pb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="vt-eyebrow">{dateLine}</p>
+                      <h1 className={`vt-hero-title font-display ${t.textPrimary}`}>My Lists</h1>
+                      <div className="mt-3 flex items-center gap-3 flex-wrap">
+                        <span className="vt-stat"><b>{categories.length}</b> lists</span>
+                        <span className="vt-stat"><b>{pending}</b> pending</span>
+                        <span className="vt-stat"><b>{done}</b> done</span>
+                      </div>
+                      <p className={`text-xs sm:text-sm mt-2 truncate ${t.textSecondary}`}>
+                        {pending === 0 ? "Welcome back! All tasks completed." : `Welcome back! ${pending} pending tasks.`}
+                      </p>
+                    </div>
+                    <div className="relative flex-shrink-0 flex flex-col items-center gap-1">
+                      <div
+                        className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible"
+                        onClick={() => triggerMascot('idle', 'heureux')}
+                        title="Interact with Bloub"
+                      >
+                        {(() => {
+                          const isAnim = animState !== 'idle';
+                          const heroExpr = autoMoodEnabled ? computeReactiveMood() : (mascotExpression || 'heureux');
+                          return (
+                            <BloubMascot 
+                              size={96}
+                              state={animState} 
+                              expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
+                              shape={heroShape} 
+                              color={heroColor} 
+                              onInteract={() => triggerMascot('idle', 'heureux')}
+                            />
+                          );
+                        })()}
+                      </div>
+                      <div className="vt-ring" title={`${pct}% done`}>
+                        <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+                          <circle cx="32" cy="32" r={R} fill="none" stroke="var(--theme-border,rgba(255,255,255,.15))" strokeWidth="6" />
+                          <circle cx="32" cy="32" r={R} fill="none" stroke="var(--theme-primary,#ff6a3d)" strokeWidth="6" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} transform="rotate(-90 32 32)" style={{ transition: 'stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1)' }} />
+                        </svg>
+                        <span>{pct}%</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className={`text-xs sm:text-sm mt-0.5 truncate ${t.textSecondary}`}>
-                    {todos.filter(t => !t.completed).length === 0 ? "Welcome back! All tasks completed." : `Welcome back! ${todos.filter(t => !t.completed).length} pending tasks.`}
-                  </p>
-                </div>
-              </div>
+                );
+              })()
             ) : (
               /* Regular Header for inside individual list or Today */
               <div className="flex justify-between items-center py-3 px-5 rounded-2xl bg-[var(--theme-bg,#080b14)]/95 backdrop-blur-md border border-[var(--theme-border-subtle,rgba(255,255,255,0.08))]">
@@ -2866,11 +2885,11 @@ export default function Home() {
         {/* Lists Master View */}
         {activeTab === 'lists' && isListView ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between px-1">
+            <div className="vt-section-head flex items-center justify-between px-1">
               <h2 className={`text-xs font-semibold uppercase tracking-wider ${t.textMuted}`}>Collections</h2>
               <span className="text-[11px] font-mono text-zinc-500">{categories.length} lists</span>
             </div>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3.5 relative">
+            <ul className="vt-grid grid grid-cols-1 sm:grid-cols-2 gap-3.5 relative">
               <AnimatePresence mode="popLayout">
               {categories.map(cat => {
                 const count = todos.filter(t => t.categoryId === cat.id && !t.completed).length;
@@ -2879,6 +2898,9 @@ export default function Home() {
                 const isEditing = editingListId === cat.id;
                 const dynCat = getDynamicMascotProps(catShape, catColor, count);
                 const isStudyList = cat.type === 'study';
+                const listTotal = todos.filter(t => t.categoryId === cat.id).length;
+                const listDone = listTotal - count;
+                const listPct = listTotal ? Math.round((listDone / listTotal) * 100) : 0;
 
                 return (
                   <motion.li 
@@ -2891,7 +2913,8 @@ export default function Home() {
                     className="relative"
                   >
                     <div 
-                      className={`group flex flex-col justify-between rounded-2xl p-4 cursor-pointer transition-all ${t.card}`}
+                      className={`vt-card group flex flex-col justify-between rounded-2xl p-4 cursor-pointer transition-all ${t.card}`}
+                      data-type={isStudyList ? 'study' : 'todo'}
                       onPointerDown={() => handleCategoryPressIn(cat)}
                       onPointerUp={handleCategoryPressOut}
                       onPointerLeave={handleCategoryPressOut}
@@ -2938,12 +2961,20 @@ export default function Home() {
                               Workspace
                             </span>
                           ) : (
-                            <span className={`text-sm font-medium px-3 py-1 rounded-full ${isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className="vt-count" title={`${count} pending`}>
                               {count}
+                              <small>left</small>
                             </span>
                           )}
                         </div>
                       </div>
+
+                      {!isStudyList && (
+                        <div className="vt-progress mt-4" aria-label={`${listPct}% done`}>
+                          <div className="vt-progress-track"><div className="vt-progress-fill" style={{ width: `${listPct}%` }} /></div>
+                          <span>{listDone}/{listTotal}</span>
+                        </div>
+                      )}
 
                       {/* Context Menu (Revealed on long press) */}
                       <AnimatePresence>
@@ -3913,39 +3944,25 @@ export default function Home() {
       {(() => {
         const activeColorHex = COLORS.find(c => c.id === mascotColor)?.hex;
         return (
-          <nav className={`fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-white/10 bg-zinc-950/90 shadow-2xl backdrop-blur-xl py-1.5 px-3 z-40 transition-all duration-300 ${isNavVisible && !selectedNote ? "bottom-4" : "-bottom-24"}`}>
+          <nav className={`vt-dock fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm z-40 transition-all duration-300 ${isNavVisible && !selectedNote ? "bottom-4" : "-bottom-24"}`}>
             <div className="flex justify-between items-center text-xs font-medium">
-              <button 
-                onClick={() => { setActiveTab('lists'); setIsListView(true); }}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'lists' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
-                style={{ color: activeTab === 'lists' ? activeColorHex : undefined }}>
-                <ListTodo size={18} />
-                <span className="text-[10px] font-mono tracking-wider">{tLang('navLists')}</span>
-              </button>
-              
-              <button 
-                onClick={() => setActiveTab('today')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'today' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
-                style={{ color: activeTab === 'today' ? activeColorHex : undefined }}>
-                <Calendar size={18} />
-                <span className="text-[10px] font-mono tracking-wider">{tLang('today')}</span>
-              </button>
-
-              <button 
-                onClick={() => setActiveTab('stats')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'stats' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
-                style={{ color: activeTab === 'stats' ? activeColorHex : undefined }}>
-                <BarChart3 size={18} />
-                <span className="text-[10px] font-mono tracking-wider">{tLang('navStats')}</span>
-              </button>
-
-              <button 
-                onClick={() => setActiveTab('settings')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90 ${activeTab === 'settings' ? 'font-semibold text-white bg-white/10' : 'text-zinc-400 hover:text-zinc-200'}`}
-                style={{ color: activeTab === 'settings' ? activeColorHex : undefined }}>
-                <Settings size={18} />
-                <span className="text-[10px] font-mono tracking-wider">{tLang('navSettings')}</span>
-              </button>
+              {([
+                ['lists', <ListTodo key="i" size={18} />, tLang('navLists'), () => { setActiveTab('lists'); setIsListView(true); }],
+                ['today', <Calendar key="i" size={18} />, tLang('today'), () => setActiveTab('today')],
+                ['stats', <BarChart3 key="i" size={18} />, tLang('navStats'), () => setActiveTab('stats')],
+                ['settings', <Settings key="i" size={18} />, tLang('navSettings'), () => setActiveTab('settings')],
+              ] as const).map(([id, icon, label, go]) => {
+                const on = activeTab === id;
+                return (
+                  <button key={id} onClick={go as () => void} aria-current={on ? 'page' : undefined}
+                    className={`vt-dock-btn relative flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-colors active:scale-90 ${on ? 'is-on' : ''}`}
+>
+                    {on && <motion.span layoutId="vt-dock-pill" className="vt-dock-pill" transition={{ type: 'spring', stiffness: 520, damping: 38 }} />}
+                    <span className="relative">{icon}</span>
+                    <span className="relative text-[10px] font-mono tracking-wider">{label}</span>
+                  </button>
+                );
+              })}
             </div>
           </nav>
         );
