@@ -465,9 +465,9 @@ export default function Home() {
   // Settings
   const [bgTheme, setBgTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('vibe_bgTheme') || localStorage.getItem('guest_bgTheme') || 'bg-[#13110e]';
+      return localStorage.getItem('vibe_bgTheme') || localStorage.getItem('guest_bgTheme') || 'bg-[#F3EEE3]';
     }
-    return 'bg-[#13110e]';
+    return 'bg-[#F3EEE3]';
   });
   const [catSettings, setCatSettings] = useState<Record<string, {shape: string, color: string, expression?: string}>>(() => {
     if (typeof window !== 'undefined') {
@@ -698,7 +698,14 @@ export default function Home() {
 
     // 1. Remote Supabase metadata is the single source of truth across devices
     // Check remote first, fallback to user-scoped localStorage, fallback to initial default
-    const effectiveTheme = meta.bgTheme || localStorage.getItem(prefKey('bgTheme')) || 'obsidian';
+    let effectiveTheme = meta.bgTheme || localStorage.getItem(prefKey('bgTheme')) || 'bg-[#F3EEE3]';
+    // One-time switch to the 2026 Paper Notebook redesign (users can pick any old theme again in Settings)
+    try {
+      if (!localStorage.getItem('vt_paper_redesign_v1')) {
+        effectiveTheme = 'bg-[#F3EEE3]';
+        localStorage.setItem('vt_paper_redesign_v1', '1');
+      }
+    } catch {}
     const effectiveShape = meta.mascotShape || localStorage.getItem(prefKey('mascotShape')) || 'squircle';
     const effectiveColor = meta.mascotColor || localStorage.getItem(prefKey('mascotColor')) || 'bleu';
     const effectiveExpr = (meta.mascotExpression || localStorage.getItem(prefKey('mascotExpression')) || 'timide') as ExpressionId;
@@ -3114,10 +3121,10 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-display">
-                  Analytics & Progress
+                  Your progress
                 </h1>
                 <p className="text-sm text-zinc-400 mt-0.5">
-                  Real-time insights across your lists and Cloud Vault
+                  Everything you've ticked off, across all your lists.
                 </p>
               </div>
               <div className="flex items-center gap-2.5 self-start sm:self-auto bg-white/[0.03] border border-white/[0.08] rounded-full px-3.5 py-1.5 text-xs text-zinc-300">

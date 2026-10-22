@@ -51,6 +51,32 @@ export interface StitchThemeToken {
 
 export const STITCH_THEMES: readonly StitchThemeToken[] = [
   {
+    id: 'bg-[#F3EEE3]',
+    slug: 'paper-notebook',
+    name: 'Paper Notebook',
+    category: 'Studio',
+    color: '#2747C9',
+    customColor: '#2747C9',
+    surfaceColor: '#FFFDF8',
+    neutralColor: '#F3EEE3',
+    colorVariant: 'TONAL_SPOT',
+    cssVariables: {
+      '--theme-bg': '#F3EEE3',
+      '--theme-surface': '#FFFDF8',
+      '--theme-surface-elevated': '#FFFFFF',
+      '--theme-surface-subtle': 'rgba(39, 71, 201, 0.06)',
+      '--theme-surface-overlay': 'rgba(243, 238, 227, 0.97)',
+      '--theme-border': 'rgba(27, 33, 49, 0.16)',
+      '--theme-border-subtle': 'rgba(27, 33, 49, 0.09)',
+      '--theme-primary': '#2747C9',
+      '--theme-primary-hover': '#1F3AA8',
+      '--theme-text-primary': '#1B2131',
+      '--theme-text-secondary': '#3E465C',
+      '--theme-text-muted': '#6E7487',
+      '--theme-focus-ring': 'rgba(39, 71, 201, 0.30)',
+    },
+  },
+  {
     id: 'bg-[#13110e]',
     slug: 'graphite-notebook',
     name: 'Graphite Notebook',
