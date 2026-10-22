@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Caveat, Lemonada, Bricolage_Grotesque, Instrument_Serif, Plus_Jakarta_Sans, Cairo, Shippori_Mincho, Zen_Kaku_Gothic_New, Klee_One } from "next/font/google";
 import "./globals.css";
+import "./paper.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,14 +70,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                let theme = null;
-                for (let i = 0; i < localStorage.length; i++) {
+                let theme = localStorage.getItem('vibe_bgTheme');
+                for (let i = 0; !theme && i < localStorage.length; i++) {
                   const key = localStorage.key(i);
                   if (key && (key.startsWith('bloub_prefs_') || key.endsWith('_bgTheme') || key === 'vibe_bgTheme') && key.includes('bgTheme')) {
                     theme = localStorage.getItem(key);
                     break;
                   }
                 }
+                if (!theme || !localStorage.getItem('vt_paper_redesign_v1')) theme = 'bg-[#F3EEE3]';
                 if (theme && theme !== 'minimal') {
                   document.documentElement.classList.add('dark');
                   document.documentElement.setAttribute('data-theme', theme);
@@ -94,12 +96,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   document.documentElement.setAttribute('lang', 'en');
                   document.body && document.body.classList.remove('font-arabic');
                 }
-              } catch (e) {}
+              } catch (e) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.setAttribute('data-theme', 'bg-[#F3EEE3]');
+              }
             `,
           }}
         />
       </head>
-      <body className={`antialiased font-sans ${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${lemonada.variable} bg-[#F8FAFC] text-slate-900 dark:bg-[var(--theme-bg,#080b14)] dark:text-gray-100 min-h-screen relative overflow-x-hidden transition-colors duration-500`}>
+      <body className={`antialiased font-sans ${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${lemonada.variable} bg-[#F8FAFC] text-slate-900 dark:bg-[var(--theme-bg,#080b14)] dark:text-gray-100 min-h-screen relative overflow-x-hidden`}>
         <svg aria-hidden="true" width="0" height="0" style={{ position: 'absolute' }}>
           <filter id="pn-rough"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" /><feDisplacementMap in="SourceGraphic" scale="2.2" /></filter>
           <filter id="pn-ink"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" result="n" /><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="m" /><feComposite in="SourceGraphic" in2="m" operator="in" result="c" /><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="11" result="w" /><feDisplacementMap in="c" in2="w" scale="2" /></filter>

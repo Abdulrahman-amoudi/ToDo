@@ -2923,9 +2923,9 @@ export default function Home() {
                 return (
                   <motion.li 
                     layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -24, rotate: -1.5 }}
                     transition={{ duration: 0.2 }}
                     key={cat.id} 
                     className="relative"
@@ -3272,7 +3272,7 @@ export default function Home() {
                   <span>OCT</span>
                 </div>
 
-                <div className="min-w-[560px] flex items-center justify-between gap-1.5 pt-1 pb-1">
+                <div className="pn-graph min-w-[560px] flex items-center justify-between gap-1.5 pt-1 pb-1">
                   {heatmapData.weeks.map((week, wIndex) => (
                     <div key={`week-${wIndex}`} className="flex flex-col gap-1.5 flex-1">
                       {week.map((day) => {
@@ -3288,7 +3288,7 @@ export default function Home() {
                             key={day.date}
                             onMouseEnter={() => setHoveredHeatmapDay(day)}
                             onMouseLeave={() => setHoveredHeatmapDay(null)}
-                            className={`w-full aspect-square rounded-[4px] transition-all duration-150 cursor-pointer hover:scale-125 hover:z-20 ${cellBg}`}
+                            data-level={Math.min(4, count)} className={`pn-cell w-full aspect-square rounded-[4px] transition-all duration-150 cursor-pointer hover:scale-125 hover:z-20 ${cellBg}`}
                             title={`${day.count} activities on ${day.label}`}
                           />
                         );
@@ -3797,7 +3797,7 @@ export default function Home() {
                 {/* Add Task FAB */}
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="fixed bottom-24 right-6 sm:right-[calc(50%-13rem)] w-14 h-14 bg-[var(--theme-primary,#3b82f6)] text-white rounded-full shadow-xl shadow-[var(--theme-primary,#3b82f6)]/30 flex items-center justify-center hover:brightness-110 transition-all hover:scale-105 active:scale-95 z-40"
+                  className="pn-fab fixed bottom-24 right-6 sm:right-[calc(50%-13rem)] w-14 h-14 bg-[var(--theme-primary,#3b82f6)] text-white rounded-full shadow-xl shadow-[var(--theme-primary,#3b82f6)]/30 flex items-center justify-center hover:brightness-110 transition-all hover:scale-105 active:scale-95 z-40"
                 >
                   <Plus size={28} />
                 </button>
@@ -3827,7 +3827,7 @@ export default function Home() {
                           layout
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+                          exit={{ opacity: 0, x: -24, rotate: -1.5 }}
                           transition={{ duration: 0.2 }}
                           key={todo.id}
                           data-late={isOverdue && !todo.completed ? '1' : undefined} className={`pn-task rounded-2xl border transition-all duration-200 overflow-hidden ${todo.completed ? t.cardMuted + ' opacity-60' : isOverdue ? (isDark ? 'bg-red-950/30 border-red-900 shadow-red-900/20' : 'bg-red-50 border-red-200 shadow-red-100') : t.card}`}
@@ -3920,8 +3920,10 @@ export default function Home() {
                                 <span className={`text-xs mr-1 ${t.textMuted}`}>Priority:</span>
                                 {(['high', 'medium', 'low'] as const).map(p => (
                                   <button key={p}
+                                    data-on={todo.priority === p ? '1' : undefined}
+                                    data-p={p}
                                     onClick={() => mutate({ type: 'SET_PRIORITY', id: todo.id, priority: p }).then(d => { if (d) { setTodos(d.todos); setCategories(d.categories); } })}
-                                    className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all border ${
+                                    className={`pn-prio px-2 py-0.5 rounded-full text-xs font-medium transition-all border ${
                                       todo.priority === p ? 'text-white border-transparent' : isDark ? 'text-slate-400 border-slate-700' : 'text-gray-500 border-gray-200'
                                     }`}
                                     style={todo.priority === p ? { backgroundColor: PRIORITY_COLOR[p] } : {}}

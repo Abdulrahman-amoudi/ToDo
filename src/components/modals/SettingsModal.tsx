@@ -195,10 +195,10 @@ export default function SettingsModal({
       onClick={onClose}
     >
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 14 }}
+        transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
         className={`rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl my-auto max-h-[90vh] overflow-y-auto custom-scrollbar border ${
           isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-gray-100 text-gray-900'
         }`}
