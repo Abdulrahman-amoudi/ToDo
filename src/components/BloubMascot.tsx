@@ -111,7 +111,7 @@ const SHAPE_ANIMATIONS: Record<string, { duration: number }> = {
   fromage: { duration: 1150 },
 };
 
-export const BloubMascot = React.memo(function BloubMascot({
+const BloubMascotInner = React.memo(function BloubMascot({
   size = 120,
   state = 'idle',
   color = 'ambre',
@@ -2769,5 +2769,11 @@ export const BloubMascot = React.memo(function BloubMascot({
     </svg>
   );
 });
+
+/**
+ * Bloub only appears where `keep` is passed (the sign-in screen's sun).
+ * Everywhere else in the app the mascot is intentionally hidden.
+ */
+export const BloubMascot = ({ keep, ...props }: Props & { keep?: boolean }) => (keep ? <BloubMascotInner {...props} /> : null);
 
 export default BloubMascot;

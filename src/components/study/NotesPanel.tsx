@@ -728,21 +728,6 @@ export const NotesPanel = React.memo(function NotesPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar relative z-10">
         {messages.length === 0 ? (
           <div className="rd-welcome">
-            {/* Mascot with Glowing Theme Aura */}
-            <div className="relative group select-none">
-              <div 
-                className="absolute inset-0 rounded-full blur-2xl opacity-50 scale-125 transition-all duration-700 pointer-events-none"
-                style={{ background: 'radial-gradient(circle, var(--theme-primary, #6366f1) 0%, transparent 70%)' }}
-              />
-              <div 
-                className="relative z-10 transition-transform duration-300 group-hover:scale-105 active:scale-95 cursor-pointer" 
-                onClick={() => triggerMascot?.('bounce', 'heureux', true)}
-                title="Tap Mascot"
-              >
-                <BloubMascot size={56} shape={activeMascotShape} color={activeMascotColor} state="idle" expression="curieux" isStatic={false} />
-              </div>
-            </div>
-
             {/* Header / Intro */}
             <div className="space-y-1.5 max-w-sm">
               <div className="vs-ai-model">

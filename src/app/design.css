@@ -349,9 +349,9 @@ html[data-theme] .vs-settings-col > div{background:transparent!important;border:
 .pn-cover .pn-cover-title{font-weight:700!important;color:var(--theme-text-primary)!important}
 .pn-cover p,.pn-cover label,.pn-cover span{color:var(--theme-text-muted)!important}
 .pn-cover input:not([type="checkbox"]){background:color-mix(in oklab,var(--theme-text-primary) 5%,var(--theme-bg))!important;border:1px solid color-mix(in oklab,var(--theme-text-primary) 12%,var(--theme-bg))!important;border-radius:6px!important;color:var(--theme-text-primary)!important;box-shadow:none!important}
-.pn-cover .pn-stamp{background:var(--theme-text-primary)!important;color:var(--theme-bg)!important;border:0!important;border-radius:6px!important;box-shadow:none!important;font-weight:500!important}
+html .pn-cover .pn-stamp.pn-stamp.pn-stamp{background:var(--theme-text-primary)!important;color:var(--theme-bg)!important;border:0!important;border-radius:6px!important;box-shadow:none!important;font-weight:500!important}
 .pn-cover .pn-stamp :is(span,svg){color:var(--theme-bg)!important}
-.pn-cover .pn-plain{background:transparent!important;color:var(--theme-text-primary)!important;border:1px solid color-mix(in oklab,var(--theme-text-primary) 14%,var(--theme-bg))!important;border-radius:6px!important;box-shadow:none!important}
+html .pn-cover .pn-plain.pn-plain.pn-plain{background:transparent!important;color:var(--theme-text-primary)!important;border:1px solid color-mix(in oklab,var(--theme-text-primary) 14%,var(--theme-bg))!important;border-radius:6px!important;box-shadow:none!important}
 .pn-cover .pn-plain span{color:var(--theme-text-primary)!important}
 .pn-cover input[type="checkbox"]{accent-color:var(--theme-text-primary)}
 .vt-ruler-body{position:relative;height:4px;background:rgba(127,127,127,.2);border-radius:2px;overflow:hidden}
@@ -541,3 +541,6 @@ html[data-theme] [class*="border-l-"][class*="border-[var(--theme-primary"]{bord
 html[data-theme] svg[aria-label^="Mascot"],html[data-theme] svg[aria-label^="Mascot"] *{filter:none!important}
 html[data-theme] .mascot-golden-aura,html[data-theme] .tap-golden-aura,html[data-theme] [class*="typing-dot-ambient"]{display:none!important}
 html[data-theme] .mascot-shadow-rig{opacity:.12!important}
+/* logo mark + list icons (Bloub only lives on the sign-in screen now) */
+html[data-theme] .vs-side-logo{width:22px;height:22px;display:grid;place-items:center;border-radius:5px;background:var(--vs-text);color:var(--theme-bg);font:700 13px var(--vs-sans)}
+html[data-theme] .vs-list-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:6px;background:var(--vs-sunk);color:var(--vs-muted);flex-shrink:0}

@@ -1704,7 +1704,7 @@ export default function Home() {
   };
 
   if (loadingAuth) {
-    return <div className={`min-h-screen ${bgTheme} flex flex-col items-center justify-center`}><BloubMascot size={96} state="idle" expression="heureux" shape={mascotShape} color={mascotColor} /><p className="mt-4 text-gray-500 text-sm font-medium animate-pulse">Loading...</p></div>;
+    return <div className={`min-h-screen ${bgTheme} flex flex-col items-center justify-center`}><BloubMascot keep size={96} state="idle" expression="heureux" shape={mascotShape} color={mascotColor} /><p className="mt-4 text-gray-500 text-sm font-medium animate-pulse">Loading...</p></div>;
   }
 
   if (!session) {
@@ -1725,7 +1725,7 @@ export default function Home() {
           <div className="relative mb-5 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full blur-2xl bg-blue-500/20 scale-125 pointer-events-none" />
             <div className="pn-sticker w-32 h-32 rounded-3xl bg-blue-50/80 border border-blue-100/80 p-2 flex items-center justify-center shadow-md relative overflow-visible cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200">
-              <BloubMascot size={120} state="idle" expression="happy" shape="soleil" color="#3b82f6" isStatic={false} isTyping={false} />
+              <BloubMascot keep size={120} state="idle" expression="happy" shape="soleil" color="#3b82f6" isStatic={false} isTyping={false} />
             </div>
           </div>
 
@@ -1733,7 +1733,7 @@ export default function Home() {
           
           {authStep === 'email' ? (
             <p className="text-sm text-slate-500 mt-1.5 mb-6 text-center leading-relaxed">
-              Sign in to sync your study notes, tasks, and customized mascot across devices.
+              Sign in to keep your notes, PDFs and tasks in sync across your devices.
             </p>
           ) : (
             <div className="text-center mt-1.5 mb-5 space-y-1.5">
@@ -2157,7 +2157,7 @@ export default function Home() {
       {/* Desktop sidebar (Notion-style); phones use the bottom tab bar */}
       <aside className="vs-side" aria-label="Main">
         <div className="vs-side-brand">
-          <span className="vs-side-mascot"><BloubMascot size={26} state="idle" expression={mascotExpression} shape={mascotShape} color={mascotColor} isStatic={true} /></span>
+          <span className="vs-side-logo" aria-hidden="true">V</span>
           <span className="vs-side-name">Vibe Study</span>
         </div>
         <nav className="vs-side-nav">
@@ -2235,28 +2235,6 @@ export default function Home() {
                         <div className="vt-ruler-scale"><span>0</span><span>50</span><span>100</span></div>
                       </div>
                     </div>
-                    <div className="relative flex-shrink-0 flex flex-col items-center gap-1">
-                      <div
-                        className="relative cursor-pointer hover:scale-105 transition-transform duration-200 overflow-visible"
-                        onClick={() => triggerMascot('idle', 'heureux')}
-                        title="Interact with Bloub"
-                      >
-                        {(() => {
-                          const isAnim = animState !== 'idle';
-                          const heroExpr = autoMoodEnabled ? computeReactiveMood() : (mascotExpression || 'heureux');
-                          return (
-                            <BloubMascot 
-                              size={96}
-                              state={animState} 
-                              expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
-                              shape={heroShape} 
-                              color={heroColor} 
-                              onInteract={() => triggerMascot('idle', 'heureux')}
-                            />
-                          );
-                        })()}
-                      </div>
-                    </div>
                   </div>
                 );
               })()
@@ -2291,32 +2269,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Docked Mascot Companion in Ambient Header (Eliminates Center Screen Bloat) */}
-                <div 
-                  data-mascot-container="hero"
-                  className="flex items-center justify-center relative cursor-pointer hover:scale-105 active:scale-95 transition-transform flex-shrink-0 ml-3"
-                  onClick={() => triggerMascot('idle', 'heureux')}
-                  title="Bloub Companion"
-                >
-                  <div className="absolute inset-0 rounded-full blur-md opacity-35 bg-[var(--theme-primary,#3b82f6)] pointer-events-none" />
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center relative z-10">
-                    {(() => {
-                      const isAnim = animState !== 'idle';
-                      const catExpr = showListHero ? (catSettings[activeCategory]?.expression) : null;
-                      const heroExpr = autoMoodEnabled ? computeReactiveMood() : (catExpr || mascotExpression || 'neutre');
-                      return (
-                        <BloubMascot 
-                          size={46}
-                          state={animState} 
-                          expression={isAnim ? (animExpression || mascotExpression) : (heroExpr as ExpressionId)} 
-                          shape={heroShape} 
-                          color={heroColor} 
-                          onInteract={() => triggerMascot('idle', 'heureux')}
-                        />
-                      );
-                    })()}
-                  </div>
-                </div>
               </div>
             )}
           </header>
@@ -2511,7 +2463,7 @@ export default function Home() {
             await supabase.auth.signOut();
             setSession(null); setTodos([]); setCategories([]); setShowSettings(false);
           };
-          const sections: [string, string][] = [['st-bloub', 'Bloub'], ['st-look', ar ? 'المظهر' : 'Appearance'], ['st-lang', ar ? 'اللغة' : 'Language'], ['st-notify', ar ? 'الإشعارات' : 'Notifications'], ['st-ai', ar ? 'الذكاء الاصطناعي' : 'AI'], ['st-adv', ar ? 'متقدم' : 'Advanced'], ['st-account', ar ? 'الحساب' : 'Account']];
+          const sections: [string, string][] = [['st-look', ar ? 'المظهر' : 'Appearance'], ['st-lang', ar ? 'اللغة' : 'Language'], ['st-notify', ar ? 'الإشعارات' : 'Notifications'], ['st-ai', ar ? 'الذكاء الاصطناعي' : 'AI'], ['st-adv', ar ? 'متقدم' : 'Advanced'], ['st-account', ar ? 'الحساب' : 'Account']];
           const themeName = (() => { const tk = getThemeToken(bgTheme); const key = tk.slug || tk.id; const n = getLocalizedThemeName(key, locale); return (n && n !== key ? n : tk.name) || 'Default'; })();
           return (
           <div className="vs-settings st flex-1 w-full overflow-y-auto custom-scrollbar">
@@ -2521,67 +2473,6 @@ export default function Home() {
               </nav>
               <div className="st-main">
                 <h1 className="vs-h1">{ar ? 'الإعدادات' : 'Settings'}</h1>
-
-                <section id="st-bloub" className="st-sec">
-                  <header><h2>Bloub</h2><p>{ar ? 'رفيقك في المذاكرة. خصّصه لكل التطبيق أو لقائمة واحدة.' : 'Your study buddy. Style him for the whole app or for one list.'}</p></header>
-                  <div className="st-bloub">
-                    <button type="button" className="st-bloub-stage" onClick={() => triggerMascot('idle', targetExpr)} aria-label="Play">
-                      <BloubMascot key={`st-prev-${settingsTarget}-${targetShape}-${targetExpr}-${targetColor}`} size={88} state={animState} expression={targetExpr} shape={targetShape} color={targetColor} isStatic={false} />
-                    </button>
-                    <div className="st-bloub-meta">
-                      <label className="st-label" htmlFor="st-target">{ar ? 'تخصيص' : 'Customising'}</label>
-                      <select id="st-target" className="st-select" value={settingsTarget} onChange={e => setSettingsTarget(e.target.value)}>
-                        <option value="global">{ar ? 'كل التطبيق' : 'Whole app'}</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                      <p className="st-hint">{getLocalizedShape(resolveShape(targetShape), locale) || targetShape} · {getLocalizedExpression(targetExpr, locale) || targetExpr}</p>
-                    </div>
-                  </div>
-
-                  <div className="st-field">
-                    <div className="st-field-head"><span>{tLang('shape')}</span></div>
-                    <div className="st-tiles">
-                      {SHAPE_IDS.map(sh => {
-                        const on = targetShape === sh || normalizeShape(targetShape) === sh;
-                        return (
-                          <button key={sh} type="button" className={`st-tile ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => updateTargetShape(sh)} title={getLocalizedShape(sh, locale) || sh}>
-                            <BloubMascot key={`st-shape-${sh}-${targetExpr}-${targetColor}`} size={46} state="idle" expression={targetExpr} shape={sh} color={targetColor} isStatic={true} />
-                            <span>{getLocalizedShape(sh, locale) || sh}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="st-field">
-                    <div className="st-field-head"><span>{tLang('expression')}</span>{autoMoodEnabled && <em>{ar ? 'يتغيّر تلقائياً' : 'Changes automatically while auto-mood is on'}</em>}</div>
-                    <div className="st-tiles">
-                      {SETTINGS_EXPRESSIONS.map(ex => {
-                        const on = isExprSelected(targetExpr, ex);
-                        return (
-                          <button key={ex} type="button" className={`st-tile ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => updateTargetExpr(ex)} title={getLocalizedExpression(ex, locale) || ex}>
-                            <BloubMascot key={`st-expr-${ex}-${targetShape}-${targetColor}`} size={46} state="idle" expression={ex} shape={targetShape} color={targetColor} isStatic={true} />
-                            <span>{getLocalizedExpression(ex, locale) || ex}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="st-field">
-                    <div className="st-field-head"><span>{tLang('colour')}</span></div>
-                    <div className="st-colors">
-                      {COLORS.map(c => (
-                        <button key={c.id} type="button" className={`st-color ${targetColor === c.id ? 'is-on' : ''}`} aria-pressed={targetColor === c.id} aria-label={c.id} title={c.id} onClick={() => updateTargetColor(c.id)} style={{ ['--c' as string]: c.hex }} />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="st-row">
-                    <div><b>{tLang('autoMood')}</b><p>{tLang('autoMoodDesc')}</p></div>
-                    {sw(autoMoodEnabled, () => updateAutoMood(!autoMoodEnabled), 'Auto-mood')}
-                  </div>
-                </section>
 
                 <section id="st-look" className="st-sec">
                   <header><h2>{ar ? 'المظهر' : 'Appearance'}</h2><p>{ar ? 'السمة تغيّر الألوان فقط. التصميم نفسه في كل مكان.' : 'A theme only changes colours; every screen keeps the same layout.'} <b>{themeName}</b></p></header>
@@ -2674,9 +2565,6 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button className="vs-mascot" onClick={() => triggerMascot('idle', 'heureux')} aria-label="Bloub">
-                  <BloubMascot size={52} state={animState} expression={animState !== 'idle' ? (animExpression || mascotExpression) : mascotExpression} shape={mascotShape} color={mascotColor} isStatic={false} />
-                </button>
                 <button className="vs-icon" onClick={() => setActiveTab('settings')} aria-label="Settings"><Settings size={18} /></button>
               </div>
             </header>
@@ -2833,9 +2721,7 @@ export default function Home() {
                     >
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3.5">
-                          <div className="w-12 h-12 drop-shadow-sm flex items-center justify-center flex-shrink-0">
-                            <BloubMascot size={42} state="idle" expression={dynCat.expr} shape={catShape} color={dynCat.color} isStatic={true} />
-                          </div>
+                          <div className="vs-list-icon">{cat.type === 'study' ? <BookOpen size={18} /> : <CheckSquare size={18} />}</div>
                           <div className="flex flex-col">
                             {isEditing ? (
                               <form onSubmit={(e) => { e.preventDefault(); saveCategory(cat.id); }} onClick={e => e.stopPropagation()}>
@@ -3065,17 +2951,6 @@ export default function Home() {
                           <span className="vs-track"><i style={{ width: `${all.length ? (d / all.length) * 100 : 0}%` }} /></span></button>);
                       })}</div>
                     </section>
-                    <section className="vs-block">
-                      <div className="vs-sec"><h2>Bloub</h2><button onClick={() => setActiveTab('settings')}>Customise →</button></div>
-                      <div className="vs-bloub">
-                        <BloubMascot size={56} state={animState} expression={animState !== 'idle' ? (animExpression || mood) : mood} shape={mascotShape} color={mascotColor} isStatic={false} />
-                        <div className="min-w-0 flex-1">
-                          <p className="vs-row-title">Level {level}</p>
-                          <p className="vs-row-sub">{xpInLevel} of 300 XP to level {level + 1} · feeling {getLocalizedExpression(mood, locale) || mood}</p>
-                          <span className="vs-track"><i style={{ width: `${levelProgress}%` }} /></span>
-                        </div>
-                      </div>
-                    </section>
                   </div>
                 </div>
               </div>
@@ -3115,19 +2990,6 @@ export default function Home() {
                 {!selectedNote && !showStudyExplorer && !showGraphView && (
                   <div className={`p-5 rounded-2xl border transition-all ${t.card} relative overflow-hidden`}>
                     <div className="flex items-center gap-4">
-                      <div 
-                        className="w-18 h-18 flex items-center justify-center flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                        onClick={() => triggerMascot('idle', 'heureux')}
-                      >
-                        <BloubMascot 
-                          size={72} 
-                          state={animState} 
-                          expression={animState !== 'idle' ? (animExpression || mascotExpression) : ((catSettings[activeCategory]?.expression || mascotExpression || 'neutre') as ExpressionId)} 
-                          shape={catSettings[activeCategory]?.shape || mascotShape || 'squircle'} 
-                          color={catSettings[activeCategory]?.color || mascotColor || '#3b82f6'} 
-                          onInteract={() => triggerMascot('idle', 'heureux')}
-                        />
-                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className={`text-lg font-bold truncate ${t.textPrimary}`}>{activeCatObj.name}</h3>
