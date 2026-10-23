@@ -2,7 +2,7 @@
 
 A study app that started as a to-do list. Upload your PDFs, read them in a clean reader, ask AI about any page, and turn your notes into quizzes. Tasks, lists and progress tracking are built in.
 
-![Vibe Todos in 15 seconds](docs/vibe-todos.gif)
+![Vibe Todos in 17 seconds](docs/vibe-todos.gif)
 
 **Live app:** [to-do-virid-beta.vercel.app](https://to-do-virid-beta.vercel.app)
 
@@ -12,6 +12,7 @@ A study app that started as a to-do list. Upload your PDFs, read them in a clean
 - **PDF reader.** A quiet reading view with highlights and notes right on the page, including proper Arabic (RTL) text selection.
 - **Ask AI.** Ask questions about the page you're reading and get answers in context.
 - **Quizzes.** Turn your notes into practice questions.
+- **17 themes.** From Dark Blue to Neon Rose, one tap re-skins the whole app.
 
 ## Built with
 
