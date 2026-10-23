@@ -76,7 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     break;
                   }
                 }
-                if (!theme || !localStorage.getItem('vt_paper_redesign_v1')) theme = 'bg-[#F3EEE3]';
+                if (!theme) theme = 'bg-[#13110e]';  // first visit opens in dark mode
                 if (theme && theme !== 'minimal') {
                   document.documentElement.classList.add('dark');
                   document.documentElement.setAttribute('data-theme', theme);
@@ -87,7 +87,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 
                 try {
                   const vars = JSON.parse(localStorage.getItem('vibe_theme_vars') || 'null');
-                  if (vars && theme !== 'bg-[#F3EEE3]') for (const k in vars) document.documentElement.style.setProperty(k, vars[k]);
+                  if (vars) for (const k in vars) document.documentElement.style.setProperty(k, vars[k]);
                 } catch (e) {}
 
                 let lang = localStorage.getItem('vibe_language');
@@ -101,7 +101,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 }
               } catch (e) {
                 document.documentElement.classList.add('dark');
-                document.documentElement.setAttribute('data-theme', 'bg-[#F3EEE3]');
+                document.documentElement.setAttribute('data-theme', 'bg-[#13110e]');
               }
             `,
           }}

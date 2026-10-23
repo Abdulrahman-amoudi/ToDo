@@ -467,9 +467,9 @@ export default function Home() {
   // Settings
   const [bgTheme, setBgTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('vibe_bgTheme') || localStorage.getItem('guest_bgTheme') || 'bg-[#F3EEE3]';
+      return localStorage.getItem('vibe_bgTheme') || localStorage.getItem('guest_bgTheme') || 'bg-[#13110e]';
     }
-    return 'bg-[#F3EEE3]';
+    return 'bg-[#13110e]';
   });
   const [catSettings, setCatSettings] = useState<Record<string, {shape: string, color: string, expression?: string}>>(() => {
     if (typeof window !== 'undefined') {
@@ -704,11 +704,11 @@ export default function Home() {
 
     // 1. Remote Supabase metadata is the single source of truth across devices
     // Check remote first, fallback to user-scoped localStorage, fallback to initial default
-    let effectiveTheme = meta.bgTheme || localStorage.getItem(prefKey('bgTheme')) || 'bg-[#F3EEE3]';
+    let effectiveTheme = meta.bgTheme || localStorage.getItem(prefKey('bgTheme')) || 'bg-[#13110e]';
     // One-time switch to the 2026 Paper Notebook redesign (users can pick any old theme again in Settings)
     try {
       if (!localStorage.getItem('vt_paper_redesign_v1')) {
-        effectiveTheme = 'bg-[#F3EEE3]';
+        if (!meta.bgTheme && !localStorage.getItem(prefKey('bgTheme'))) effectiveTheme = 'bg-[#13110e]';
         localStorage.setItem('vt_paper_redesign_v1', '1');
       }
     } catch {}
@@ -2157,7 +2157,15 @@ export default function Home() {
       {/* Desktop sidebar (Notion-style); phones use the bottom tab bar */}
       <aside className="vs-side" aria-label="Main">
         <div className="vs-side-brand">
-          <span className="vs-side-logo" aria-hidden="true">V</span>
+          <span className="vs-side-logo" aria-hidden="true">
+            {/* app logo (two eyes + check); its colour follows the active theme */}
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <rect width="24" height="24" rx="5.5" fill="var(--theme-primary, #2383E2)" />
+              <rect x="7.2" y="5" width="3" height="5" rx="1.5" fill="#fff" />
+              <rect x="13.8" y="5" width="3" height="5" rx="1.5" fill="#fff" />
+              <polyline points="17 12.5 10.5 18.5 7 15" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
           <span className="vs-side-name">Vibe Study</span>
         </div>
         <nav className="vs-side-nav">

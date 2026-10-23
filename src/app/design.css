@@ -542,5 +542,5 @@ html[data-theme] svg[aria-label^="Mascot"],html[data-theme] svg[aria-label^="Mas
 html[data-theme] .mascot-golden-aura,html[data-theme] .tap-golden-aura,html[data-theme] [class*="typing-dot-ambient"]{display:none!important}
 html[data-theme] .mascot-shadow-rig{opacity:.12!important}
 /* logo mark + list icons (Bloub only lives on the sign-in screen now) */
-html[data-theme] .vs-side-logo{width:22px;height:22px;display:grid;place-items:center;border-radius:5px;background:var(--vs-text);color:var(--theme-bg);font:700 13px var(--vs-sans)}
+html[data-theme] .vs-side-logo{width:22px;height:22px;display:grid;place-items:center;flex-shrink:0}
 html[data-theme] .vs-list-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:6px;background:var(--vs-sunk);color:var(--vs-muted);flex-shrink:0}
