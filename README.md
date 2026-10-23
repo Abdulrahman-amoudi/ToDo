@@ -2,7 +2,7 @@
 
 A study app that started as a to-do list. Upload your PDFs, read them in a clean reader, ask AI about any page, and turn your notes into quizzes. Tasks, lists and progress tracking are built in.
 
-![Vibe Todos in 17 seconds](docs/vibe-todos.gif)
+![Vibe Todos: the detective and his camera buddy tour the app](docs/vibe-todos-pixel.gif)
 
 **Live app:** [to-do-virid-beta.vercel.app](https://to-do-virid-beta.vercel.app)
 
